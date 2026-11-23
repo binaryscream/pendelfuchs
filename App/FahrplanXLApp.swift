@@ -66,5 +66,5 @@ enum AppTab: Hashable {
 
 extension EnvironmentValues {
     /// Aktive Datenquelle (wählt je Anfrage zwischen Transitous und VVO).
-    @Entry var transit: any TransitProvider = ProviderRouter()
+    @Entry var transit: any TransitProvider = DataSources.router()
 }

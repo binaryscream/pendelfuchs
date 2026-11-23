@@ -13,7 +13,13 @@ enum DataSources {
     }
 
     static func router(useVVO: Bool = DataSources.useVVO) -> ProviderRouter {
-        ProviderRouter(vvo: useVVO ? VVOProvider() : nil)
+        ProviderRouter(transitous: TransitousProvider(userAgent: TransitousProvider.userAgent(version: appVersion)),
+                       vvo: useVVO ? VVOProvider() : nil)
+    }
+
+    /// Version aus der Info.plist (in App und Widget gleich).
+    static var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
     }
 
     /// Pflicht-Quellenangabe von Transitous.

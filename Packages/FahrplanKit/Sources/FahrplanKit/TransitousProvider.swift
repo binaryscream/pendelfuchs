@@ -10,8 +10,15 @@ import Foundation
 public struct TransitousProvider: TransitProvider {
     public let id: ProviderID = .transitous
 
-    /// Pflicht laut Nutzungsbedingungen. Vor der Veröffentlichung eine Kontaktadresse (URL/E-Mail) ergänzen.
-    public static let defaultUserAgent = "FahrplanXL/0.1 (Open-Source-App in Entwicklung)"
+    /// Kontaktangabe für Transitous (Pflicht laut Nutzungsbedingungen).
+    public static let contactURL = "https://github.com/binaryscream/fahrplan-xl"
+
+    /// App-Name, Version und Kontakt, z. B. `FahrplanXL/0.1.0 (+https://github.com/…)`.
+    public static func userAgent(version: String) -> String {
+        "FahrplanXL/\(version) (+\(contactURL))"
+    }
+
+    public static let defaultUserAgent = userAgent(version: "dev")
 
     private let baseURL: URL
     private let session: URLSession

@@ -28,6 +28,7 @@ DELFI / opendata-oepnv.de, CC BY 4.0, plus Echtzeit). OpenAPI-Spezifikation:
 - Nur für **kostenlose Open-Source-Projekte**, nicht kommerziell (wegen der Datenlizenzen). Quellcode muss
   unter einer Open-Source-Lizenz veröffentlicht sein (Prototypen vorher sind ok). → Passt zu GPL-3.0, App muss gratis bleiben.
 - **User-Agent** mit App-Name, Version und Kontakt (E-Mail oder URL) bei jeder Anfrage.
+  → umgesetzt: `FahrplanXL/<Version> (+https://github.com/binaryscream/fahrplan-xl)`.
 - **Quellenangabe:** sichtbarer Link auf `https://transitous.org/sources/` plus OpenStreetMap-Nennung.
 - Viele Verbindungssuchen (> 720 `/plan`-Anfragen pro 24 h) und viele Nutzer gelten als hohe Last →
   vor einer Veröffentlichung mit vielen Nutzern im Matrix-Kanal von Transitous absprechen.
