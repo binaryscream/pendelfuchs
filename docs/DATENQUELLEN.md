@@ -1,5 +1,61 @@
 # Datenquellen – Stand 23.11.2026
 
+> **Ziel: Veröffentlichung im App Store.** Apple verlangt (Richtlinie 5.2.2), dass fremde Dienste nur mit
+> Erlaubnis genutzt werden. Deshalb ist bei jeder Quelle unten vermerkt, ob die Nutzung erlaubt ist.
+
+## Übersicht und Empfehlung
+
+| Quelle | Kann | Erlaubt für veröffentlichte App? | Rolle |
+|---|---|---|---|
+| **Transitous** (MOTIS 2) | Ganz Deutschland/Europa: Suche, Abfahrten, Verbindungen, Echtzeit | ✅ für kostenlose Open-Source-Apps, mit Auflagen | **Hauptquelle** |
+| VVO-WebAPI | VVO-Gebiet, sehr detailliert (Preise, Auslastung) | ❓ inoffiziell, keine Bedingungen – **beim VVO anfragen** | Ergänzung, falls erlaubt |
+| VVO TRIAS | VVO-Gebiet, offizielle Schnittstelle | ✅ laut Community-Doku nach Absprache | Alternative zur WebAPI |
+| DB OpenBoards | Abfahrtstafeln an Bahnhöfen mit Echtzeit/Gleis | ❓ kostenlos, Lizenz unklar | Optional für Gleisinfos |
+| DB RIS::Boards u. a. | Abfahrtstafeln, Fahrtverläufe | ❌ kostenpflichtig / nur DB-Vertriebspartner | – |
+| db-vendo-client | DB-Navigator-Schnittstelle | ❌ inoffiziell, laut eigener Doku Erlaubnis nötig | Nicht für Veröffentlichung |
+
+**Empfehlung:** Transitous als Hauptquelle für ganz Deutschland. Die VVO-WebAPI bleibt in der Entwicklung
+aktiv; vor der Veröffentlichung schriftliche Erlaubnis bei `opendata@vvo-online.de` einholen (oder auf TRIAS wechseln).
+Ohne Erlaubnis läuft die App rein über Transitous.
+
+## Transitous – `https://api.transitous.org/api/` ✅ getestet
+
+Gemeinschaftlich betriebener Routing-Dienst (MOTIS 2) auf Basis offener Fahrplandaten (für Deutschland:
+DELFI / opendata-oepnv.de, CC BY 4.0, plus Echtzeit). OpenAPI-Spezifikation:
+`https://raw.githubusercontent.com/motis-project/motis/refs/tags/v2.11.4/openapi.yaml`.
+
+**Nutzungsbedingungen** (transitous.org/api, sinngemäß):
+- Nur für **kostenlose Open-Source-Projekte**, nicht kommerziell (wegen der Datenlizenzen). Quellcode muss
+  unter einer Open-Source-Lizenz veröffentlicht sein (Prototypen vorher sind ok). → Passt zu GPL-3.0, App muss gratis bleiben.
+- **User-Agent** mit App-Name, Version und Kontakt (E-Mail oder URL) bei jeder Anfrage.
+- **Quellenangabe:** sichtbarer Link auf `https://transitous.org/sources/` plus OpenStreetMap-Nennung.
+- Viele Verbindungssuchen (> 720 `/plan`-Anfragen pro 24 h) und viele Nutzer gelten als hohe Last →
+  vor einer Veröffentlichung mit vielen Nutzern im Matrix-Kanal von Transitous absprechen.
+- Kein Scraping, keine Staging-/internen Hosts. Betrieb „best effort“, ohne Garantie, Zugang kann entzogen werden.
+- Optional: Link zur Spendenseite.
+
+**Getestete Endpunkte** (23.11.2026):
+
+| Endpunkt | Zweck | Ergebnis |
+|---|---|---|
+| `GET /v1/geocode?text=Pirna%20Bahnhof&type=STOP` | Haltestellensuche | ✅ `de-DELFI_de:14628:3370`, mit Koordinaten (WGS84) |
+| `GET /v5/stoptimes?stopId=…&n=8` | Abfahrten | ✅ Dresden Hbf: Straßenbahn, Bus, RE, Fernzug, FlixBus – mit Echtzeit (z. B. Linie 10 +7 min) und Gleis/Steig |
+| `GET /v5/plan?fromPlace=…&toPlace=…` | Verbindungssuche | ✅ Pirna → Postplatz: S1 → Straßenbahn 3/7/11, Echtzeit und Gleis je Teilstrecke, Blättern per `nextPageCursor` |
+
+Beobachtungen:
+- Haltestellen-IDs sind die bundesweiten **DHIDs** mit Präfix (`de-DELFI_de:14628:3370`). Die VVO-WebAPI
+  liefert dieselbe DHID im Feld `DhId` → beide Quellen lassen sich sauber zuordnen.
+- Zeiten als ISO-8601 in **UTC**.
+- Fernverkehr und Fernbusse sind enthalten – damit deckt Transitous auch den Teil ab, für den wir die DB brauchten.
+
+## VVO / DVB – `https://webapi.vvo-online.de` ✅ getestet, ❓ Erlaubnis offen
+
+**Status:** Inoffiziell. Keine veröffentlichten Nutzungsbedingungen; die Community-Doku
+(github.com/kiliankoe/vvo) schreibt „No official terms, use respectfully“. Eine Open-Data-Seite des VVO
+gibt es nicht (mehr) (404). Kontakt für Open-Data-/API-Fragen laut Community-Doku: `opendata@vvo-online.de`.
+Dort gibt es auch eine offizielle **TRIAS**-Schnittstelle (`https://efa.vvo-online.de/std3/trias`),
+„kommerzielle Nutzung nach Absprache“ (Angabe der Community-Doku, nicht vom VVO selbst bestätigt).
+
 ## VVO / DVB – `https://webapi.vvo-online.de` ✅ getestet
 
 Inoffizielle, aber offene JSON-API (kein API-Key), auch von `dvbjs`/`dvbpy` genutzt.
@@ -34,16 +90,24 @@ Verbindungssuche (`/tr/trips`):
 
 Bekannte IDs: Dresden Hbf `33000028`, Pirna Bahnhof `33003370`.
 
-## DB ⚠️ offen
+## Deutsche Bahn
 
-- `v6.db.transport.rest` (Community-Projekt `db-rest`): **Domain löst am 23.11.2026 nicht auf** – vermutlich eingestellt.
-- Zu prüfen:
-  - `db-vendo-client` (spricht direkt die bahn.de-Schnittstelle an; inoffiziell, müsste in Swift nachgebaut werden)
-  - DB API Marketplace „Timetables“ (offiziell, kostenloser Key, aber nur Abfahrtstafeln, keine Verbindungssuche)
-- Für Züge im VVO-Gebiet liefert die VVO-API bereits Echtzeit – DB wird v. a. für Fern- und Regionalverkehr außerhalb gebraucht.
+- **Keine offizielle, frei nutzbare Verbindungssuche** im DB API Marketplace.
+- **OpenBoards** (kostenlos, 10 Anfragen/s): Abfahrts-/Ankunftstafeln mit Echtzeit, Gleisen, Ausfällen,
+  Störungen. Nutzungsrechte ergeben sich aus separaten Lizenzen (Verweis auf bahnhof.de-Bedingungen) – vor
+  Einsatz in einer veröffentlichten App klären.
+- **RIS::Boards / RIS::Journeys / RIS::Connections:** kostenpflichtig bzw. nur für DB-Vertriebspartner.
+- Allgemeine Nutzungsbedingungen (Stand 05/2022): Inhalte nur gemäß jeweiliger Lizenz und unverändert nutzen.
+- **db-vendo-client** (inoffizielle DB-Navigator-/bahn.de-Schnittstellen, ISC-Lizenz): laut eigener Doku
+  „streng genommen Erlaubnis nötig“, häufige Sperren → **nicht für die veröffentlichte App**.
+- `v6.db.transport.rest`: Domain löst nicht auf, eingestellt.
 
 ## Architektur-Idee
 
 Gemeinsames Protokoll `TransitProvider` (Haltestellensuche, Abfahrten, Verbindungen).
-Ein `ProviderRouter` wählt je nach Verkehrsmittel und Region die Quelle und kann
-Teilstrecken einer Verbindung mit Echtzeit aus der jeweils besten Quelle anreichern.
+Ein `ProviderRouter` wählt je nach Region und Verfügbarkeit die Quelle:
+- Standard überall: **Transitous**.
+- Im VVO-Gebiet zusätzlich VVO (Preise, Auslastung, sehr aktuelle Echtzeit) – nur wenn die Nutzung erlaubt ist,
+  per Schalter abschaltbar.
+- Zuordnung zwischen Quellen über die DHID (`de:14628:3370`).
+- Gemerkte Fahrten/Favoriten sollten die DHID speichern, damit ein Quellenwechsel sie nicht ungültig macht.
