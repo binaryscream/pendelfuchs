@@ -23,7 +23,10 @@ Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingung
 5. ✅ Live-Aktivität (Sperrbildschirm + Dynamic Island), Start per Knopf oder Kurzbefehle-Automation
 6. ✅ Widget „Abfahrten“ (klein/mittel/groß + Sperrbildschirm), Haltestelle frei wählbar, Antippen öffnet die App
 7. ✅ Ganz Deutschland über Transitous + Router für die Quellenwahl (VVO im VVO-Gebiet, sonst Transitous)
-8. Optional: Push-Server, damit Live-Aktivitäten auch im Hintergrund minutengenau aktualisiert werden
+8. Weitere Regionen mit eigenen, detaillierteren Daten (wie VVO): pro Verbund offizielle Schnittstelle
+   (EFA/TRIAS/HAFAS) und Erlaubnis klären, Provider ergänzen, Landkreise im Router zuordnen.
+   TripKit (MIT) dient als technische Vorlage. Grundabdeckung für ganz Deutschland kommt schon von Transitous.
+9. Optional: Push-Server, damit Live-Aktivitäten auch im Hintergrund minutengenau aktualisiert werden
 
 ### Hinweise zur Live-Aktivität
 
