@@ -225,11 +225,14 @@ enum TransitousAPI {
                 guard let scheduled else { return actual.map { TimePoint(scheduledTime: $0) } }
                 return TimePoint(scheduledTime: scheduled, realTime: realTime ? actual : nil)
             }
+            var coordinate: Coordinate?
+            if let lat, let lon { coordinate = Coordinate(latitude: lat, longitude: lon) }
             return TripStop(stopID: stopId ?? "", name: name, place: nil,
                             platform: TransitousAPI.platform(track ?? scheduledTrack),
                             arrival: point(scheduledArrival, arrival),
                             departure: point(scheduledDeparture, departure),
-                            isCancelled: cancelled ?? false)
+                            isCancelled: cancelled ?? false,
+                            coordinate: coordinate)
         }
     }
 
@@ -326,6 +329,17 @@ enum TransitousAPI {
         let tripShortName: String?
         let agencyName: String?
         let cancelled: Bool?
+        let legGeometry: Geometry?
+
+        struct Geometry: Decodable {
+            let points: String
+            let precision: Int?
+        }
+
+        var path: [Coordinate] {
+            guard let legGeometry else { return [] }
+            return Geo.decodePolyline(legGeometry.points, precision: legGeometry.precision ?? 6)
+        }
 
         var tripLeg: TripLeg? {
             let minutes = Int(((Double(duration ?? 0)) / 60).rounded())
@@ -345,7 +359,8 @@ enum TransitousAPI {
                     direction: headsign,
                     operatorName: agencyName,
                     stops: stops,
-                    durationMinutes: minutes
+                    durationMinutes: minutes,
+                    path: path
                 )
             }
         }

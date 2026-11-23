@@ -2,6 +2,9 @@
 
 Open-Source-Fahrplan-App für iOS 18+ (SwiftUI). Lizenz: GPL-3.0 (siehe `LICENSE`).
 
+Karte: [MapLibre](https://maplibre.org) (BSD-2-Clause) mit Kacheln von [OpenFreeMap](https://openfreemap.org)
+(© OpenMapTiles, Daten © OpenStreetMap-Mitwirkende).
+
 Fahrplandaten: [Transitous](https://transitous.org/sources/) (ganz Deutschland) und im Gebiet des
 Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingungen: `docs/DATENQUELLEN.md`.
 
@@ -26,7 +29,8 @@ Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingung
 8. Weitere Regionen mit eigenen, detaillierteren Daten (wie VVO): pro Verbund offizielle Schnittstelle
    (EFA/TRIAS/HAFAS) und Erlaubnis klären, Provider ergänzen, Landkreise im Router zuordnen.
    TripKit (MIT) dient als technische Vorlage. Grundabdeckung für ganz Deutschland kommt schon von Transitous.
-9. Optional: Push-Server, damit Live-Aktivitäten auch im Hintergrund minutengenau aktualisiert werden
+9. ✅ Fortschritt während der Fahrt und Karte mit Streckenverlauf und geschätzter Fahrzeugposition
+10. Optional: Push-Server, damit Live-Aktivitäten auch im Hintergrund minutengenau aktualisiert werden
 
 ### Hinweise zur Live-Aktivität
 

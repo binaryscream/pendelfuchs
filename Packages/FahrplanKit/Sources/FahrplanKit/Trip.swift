@@ -88,9 +88,12 @@ public struct TripLeg: Codable, Sendable, Hashable {
     public var stops: [TripStop]
     public var durationMinutes: Int?
     public var notes: [String]
+    /// Streckenverlauf für die Karte (leer, wenn die Quelle keinen liefert).
+    public var path: [Coordinate]
 
     public init(kind: Kind, mode: TransportMode? = nil, line: String? = nil, direction: String? = nil,
-                operatorName: String? = nil, stops: [TripStop] = [], durationMinutes: Int? = nil, notes: [String] = []) {
+                operatorName: String? = nil, stops: [TripStop] = [], durationMinutes: Int? = nil, notes: [String] = [],
+                path: [Coordinate] = []) {
         self.kind = kind
         self.mode = mode
         self.line = line
@@ -99,6 +102,12 @@ public struct TripLeg: Codable, Sendable, Hashable {
         self.stops = stops
         self.durationMinutes = durationMinutes
         self.notes = notes
+        self.path = path
+    }
+
+    /// Streckenverlauf, notfalls die Luftlinie über die Halte.
+    public var drawablePath: [Coordinate] {
+        path.count >= 2 ? path : stops.compactMap(\.coordinate)
     }
 
     public var departure: TimePoint? { stops.first?.departure ?? stops.first?.arrival }
@@ -115,9 +124,10 @@ public struct TripStop: Codable, Sendable, Hashable {
     public var arrival: TimePoint?
     public var departure: TimePoint?
     public var isCancelled: Bool
+    public var coordinate: Coordinate?
 
     public init(stopID: String, name: String, place: String?, platform: String?,
-                arrival: TimePoint?, departure: TimePoint?, isCancelled: Bool = false) {
+                arrival: TimePoint?, departure: TimePoint?, isCancelled: Bool = false, coordinate: Coordinate? = nil) {
         self.stopID = stopID
         self.name = name
         self.place = place
@@ -125,5 +135,9 @@ public struct TripStop: Codable, Sendable, Hashable {
         self.arrival = arrival
         self.departure = departure
         self.isCancelled = isCancelled
+        self.coordinate = coordinate
     }
+
+    /// Zeitpunkt, an dem das Fahrzeug den Halt verlässt (bzw. erreicht, beim letzten Halt).
+    public var passTime: Date? { (departure ?? arrival)?.expectedTime }
 }

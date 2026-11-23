@@ -67,18 +67,33 @@ struct TripsResponse: Decodable, StatusCarrying {
         let price: String?
         let fareZoneNames: String?
         let partialRoutes: [PartialRoute]
+        let mapData: [String]?
 
         enum CodingKeys: String, CodingKey {
             case interchanges = "Interchanges"
             case price = "Price"
             case fareZoneNames = "FareZoneNames"
             case partialRoutes = "PartialRoutes"
+            case mapData = "MapData"
         }
 
         var trip: Trip? {
             var legs: [TripLeg] = []
+            var pendingNote: String?
             for partial in partialRoutes {
-                guard let leg = partial.leg else { continue }
+                // „Gesicherter Anschluss“: kein eigenes Verkehrsmittel, sondern Hinweis zur nächsten Fahrt.
+                if partial.mot.type == "StayForConnection" {
+                    pendingNote = "Anschluss wird abgewartet"
+                    continue
+                }
+                guard var leg = partial.leg else { continue }
+                if leg.kind == .ride, let note = pendingNote {
+                    leg.notes.insert(note, at: 0)
+                    pendingNote = nil
+                }
+                if let index = partial.mapDataIndex, let entry = mapData?[safe: index] {
+                    leg.path = VVODecoding.path(fromMapData: entry)
+                }
                 // Aufeinanderfolgende Fußwege zusammenfassen.
                 if leg.kind == .walk, let last = legs.last, last.kind == .walk {
                     legs[legs.count - 1].durationMinutes = (last.durationMinutes ?? 0) + (leg.durationMinutes ?? 0)
@@ -104,12 +119,14 @@ struct TripsResponse: Decodable, StatusCarrying {
 
     struct PartialRoute: Decodable {
         let duration: Int?
+        let mapDataIndex: Int?
         let mot: Mot
         let infos: [String]?
         let regularStops: [RegularStop]?
 
         enum CodingKeys: String, CodingKey {
             case duration = "Duration"
+            case mapDataIndex = "MapDataIndex"
             case mot = "Mot"
             case infos = "Infos"
             case regularStops = "RegularStops"
@@ -166,6 +183,9 @@ struct TripsResponse: Decodable, StatusCarrying {
         let departureState: String?
         let arrivalState: String?
         let cancelReasons: [String]?
+        /// Achtung: trotz des Namens GK4-Hochwert bzw. -Rechtswert.
+        let latitude: Double?
+        let longitude: Double?
 
         struct Platform: Decodable {
             let name: String?
@@ -184,6 +204,8 @@ struct TripsResponse: Decodable, StatusCarrying {
             case departureState = "DepartureState"
             case arrivalState = "ArrivalState"
             case cancelReasons = "CancelReasons"
+            case latitude = "Latitude"
+            case longitude = "Longitude"
         }
 
         var tripStop: TripStop? {
@@ -199,8 +221,30 @@ struct TripsResponse: Decodable, StatusCarrying {
                 platform: platform?.name,
                 arrival: point(arrivalTime, arrivalRealTime),
                 departure: point(departureTime, departureRealTime),
-                isCancelled: cancelled
+                isCancelled: cancelled,
+                coordinate: VVODecoding.coordinate(northing: latitude, easting: longitude)
             )
         }
     }
+}
+
+
+extension VVODecoding {
+    /// GK4-Koordinate der VVO-API → WGS84 (0/fehlend → nil).
+    static func coordinate(northing: Double?, easting: Double?) -> Coordinate? {
+        guard let northing, let easting, northing > 0, easting > 0 else { return nil }
+        return GaussKrueger.toWGS84(.init(easting: easting, northing: northing))
+    }
+
+    /// `"Tram|5659228|4620896|5659216|4620911|…"` → Koordinaten (Hochwert/Rechtswert-Paare in GK4).
+    static func path(fromMapData entry: String) -> [Coordinate] {
+        let numbers = entry.split(separator: "|").dropFirst().compactMap { Double($0) }
+        return stride(from: 0, to: numbers.count - 1, by: 2).compactMap {
+            coordinate(northing: numbers[$0], easting: numbers[$0 + 1])
+        }
+    }
+}
+
+extension Array {
+    subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
 }

@@ -73,6 +73,12 @@ struct SettingsView: View {
                     Link(destination: DataSources.openStreetMapURL) {
                         LabeledContent("Kartendaten", value: "© OpenStreetMap-Mitwirkende")
                     }
+                    Link(destination: URL(string: "https://openfreemap.org")!) {
+                        LabeledContent("Kartenkacheln", value: "OpenFreeMap, © OpenMapTiles")
+                    }
+                    Link(destination: URL(string: "https://maplibre.org")!) {
+                        LabeledContent("Kartendarstellung", value: "MapLibre (BSD-Lizenz)")
+                    }
                     if useVVO {
                         LabeledContent("VVO-Gebiet", value: "Verkehrsverbund Oberelbe")
                     }

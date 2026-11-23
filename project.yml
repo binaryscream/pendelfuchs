@@ -10,6 +10,10 @@ options:
 packages:
   FahrplanKit:
     path: Packages/FahrplanKit
+  # Kartenansicht (Open Source, BSD-2-Clause). Kartendaten: OpenFreeMap / OpenStreetMap.
+  MapLibre:
+    url: https://github.com/maplibre/maplibre-gl-native-distribution
+    exactVersion: 6.31.0
 
 settings:
   base:
@@ -28,6 +32,7 @@ targets:
       - Shared
     dependencies:
       - package: FahrplanKit
+      - package: MapLibre
       - target: FahrplanXLWidgets
     info:
       path: App/Info.plist
