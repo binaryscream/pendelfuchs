@@ -16,6 +16,8 @@ settings:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
+    # Signier-Team. Wer das Projekt selbst baut, trägt hier sein eigenes Team ein.
+    DEVELOPMENT_TEAM: 6QR5T4RM6V
 
 targets:
   FahrplanXL:
