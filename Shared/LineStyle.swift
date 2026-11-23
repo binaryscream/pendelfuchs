@@ -35,6 +35,8 @@ extension TransportMode {
         case .regionalBus: Color(light: (0.45, 0.20, 0.55), dark: (0.58, 0.32, 0.68))
         case .suburbanRailway: Color(light: (0.00, 0.55, 0.30), dark: (0.05, 0.58, 0.34))
         case .train: Color(light: (0.25, 0.25, 0.30), dark: (0.46, 0.46, 0.53))
+        case .longDistance: Color(light: (0.62, 0.05, 0.12), dark: (0.80, 0.18, 0.25))
+        case .coach: Color(light: (0.35, 0.65, 0.10), dark: (0.42, 0.72, 0.18))
         case .ferry: Color(light: (0.00, 0.60, 0.75), dark: (0.05, 0.55, 0.70))
         case .cableway: Color(light: (0.55, 0.35, 0.15), dark: (0.65, 0.45, 0.25))
         case .onDemand: Color(light: (0.85, 0.50, 0.00), dark: (0.80, 0.48, 0.05))
@@ -56,7 +58,7 @@ extension Color {
 
 extension TransportMode {
     /// Schienenverkehr mit „Gleis“ statt „Steig“.
-    var usesTracks: Bool { self == .train || self == .suburbanRailway }
+    var usesTracks: Bool { self == .train || self == .suburbanRailway || self == .longDistance }
 
     /// „Gl. 1“ bzw. „Steig 4“.
     func platformLabel(_ platform: String) -> String {

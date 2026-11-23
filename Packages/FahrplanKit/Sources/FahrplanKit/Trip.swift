@@ -10,13 +10,16 @@ public struct TripQuery: Codable, Sendable, Hashable {
     public var time: Date
     /// `true`: `time` ist die gewünschte Ankunft, sonst die Abfahrt.
     public var isArrivalTime: Bool
+    public var options: TripOptions
 
-    public init(origin: Stop, destination: Stop, via: Stop? = nil, time: Date = .now, isArrivalTime: Bool = false) {
+    public init(origin: Stop, destination: Stop, via: Stop? = nil, time: Date = .now, isArrivalTime: Bool = false,
+                options: TripOptions = .standard) {
         self.origin = origin
         self.destination = destination
         self.via = via
         self.time = time
         self.isArrivalTime = isArrivalTime
+        self.options = options
     }
 }
 

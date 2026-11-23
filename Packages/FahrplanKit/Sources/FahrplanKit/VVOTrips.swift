@@ -15,8 +15,14 @@ extension VVOProvider {
             "shorttermchanges": true,
         ]
         if let via = query.via { body["Via"] = via.stopID }
+        let options = query.options
+        var settings: [String: any Sendable] = ["walkingSpeed": options.walkingSpeed.vvoValue]
+        if options.allowedModes != Set(ModeGroup.allCases) {
+            settings["mot"] = VVODecoding.mots(for: options.allowedModes)
+        }
+        body["standardSettings"] = settings
         let response: TripsResponse = try await post("tr/trips", body: body)
-        return response.trips
+        return response.trips.filter(options.allows)
     }
 }
 
@@ -26,6 +32,32 @@ extension VVODecoding {
         var style = Date.ISO8601FormatStyle(timeZone: TimeZone(identifier: "Europe/Berlin")!)
         style = style.year().month().day().time(includingFractionalSeconds: false).timeZone(separator: .colon)
         return date.formatted(style)
+    }
+
+    /// Verkehrsmittel inkl. Fernverkehrserkennung über den Linienname (VVO meldet ICE/IC nur als „Train“).
+    static func mode(_ mot: String?, line: String?) -> TransportMode {
+        let base = mode(mot)
+        if base == .train, let line, TransportMode.isLongDistanceName(line) { return .longDistance }
+        return base
+    }
+
+    /// VVO-Verkehrsmittel (`standardSettings.mot`) für die erlaubten Gruppen.
+    static func mots(for groups: Set<ModeGroup>) -> [String] {
+        var mots: [String] = []
+        if groups.contains(.tram) { mots.append("Tram") }
+        if groups.contains(.bus) { mots += ["CityBus", "IntercityBus", "PlusBus"] }
+        if groups.contains(.regionalRail) { mots.append("SuburbanRailway") }
+        // Regional- und Fernzüge laufen beim VVO beide unter „Train“; Fernzüge filtert die App danach heraus.
+        if groups.contains(.regionalRail) || groups.contains(.longDistance) { mots.append("Train") }
+        if groups.contains(.cableway) { mots.append("Cableway") }
+        if groups.contains(.ferry) { mots.append("Ferry") }
+        if groups.contains(.onDemand) { mots.append("HailedSharedTaxi") }
+        return mots
+    }
+
+    /// `/Date(1795470720000-0000)/`
+    static func dotNetDate(_ date: Date) -> String {
+        "/Date(\(Int64((date.timeIntervalSince1970 * 1000).rounded()))-0000)/"
     }
 
     static func mode(_ mot: String?) -> TransportMode {
@@ -137,8 +169,10 @@ struct TripsResponse: Decodable, StatusCarrying {
             let name: String?
             let direction: String?
             let transportationCompany: String?
+            let productName: String?
 
             enum CodingKeys: String, CodingKey {
+                case productName = "ProductName"
                 case type = "Type"
                 case name = "Name"
                 case direction = "Direction"
@@ -150,6 +184,13 @@ struct TripsResponse: Decodable, StatusCarrying {
             switch mot.type {
             case "Footpath":
                 return TripLeg(kind: .walk, durationMinutes: duration ?? 0)
+            case "Bus" where mot.productName == "Ersatzverkehr" || (mot.name ?? "").hasPrefix("SEV"):
+                // Schienenersatzverkehr: ein Bus, der eine Bahn ersetzt (VVO meldet nur „Bus“).
+                let stops = (regularStops ?? []).compactMap(\.tripStop)
+                guard stops.count >= 2 else { return nil }
+                return TripLeg(kind: .ride, mode: .regionalBus, line: mot.name, direction: mot.direction,
+                               operatorName: mot.transportationCompany, stops: stops, durationMinutes: duration,
+                               notes: ["Schienenersatzverkehr"] + (infos ?? []))
             case "MobilityStairsUp", "MobilityStairsDown", "MobilityEscalatorUp", "MobilityEscalatorDown",
                  "MobilityElevatorUp", "MobilityElevatorDown", "MobilityRampUp", "MobilityRampDown":
                 // Treppen-/Aufzugshinweise: als Fußweg ohne Dauer behandeln.
@@ -159,7 +200,7 @@ struct TripsResponse: Decodable, StatusCarrying {
                 guard stops.count >= 2 else { return nil }
                 return TripLeg(
                     kind: .ride,
-                    mode: VVODecoding.mode(mot.type),
+                    mode: VVODecoding.mode(mot.type, line: mot.name),
                     line: mot.name,
                     direction: mot.direction,
                     operatorName: mot.transportationCompany,
@@ -247,4 +288,64 @@ extension VVODecoding {
 
 extension Array {
     subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
+}
+
+
+/// Antwort von `/dm/trip`: alle Halte einer Fahrt mit Plan-/Echtzeit und Strecke.
+struct JourneyResponse: Decodable, StatusCarrying {
+    let status: VVOStatus
+    let stops: [JourneyStop]
+    let mapData: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case status = "Status"
+        case stops = "Stops"
+        case mapData = "MapData"
+    }
+
+    struct JourneyStop: Decodable {
+        let id: String?
+        let place: String?
+        let name: String
+        let latitude: Double?
+        let longitude: Double?
+        let platform: Platform?
+        let time: String?
+        let realTime: String?
+        let state: String?
+
+        struct Platform: Decodable {
+            let name: String?
+            enum CodingKeys: String, CodingKey { case name = "Name" }
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case id = "Id"
+            case place = "Place"
+            case name = "Name"
+            case latitude = "Latitude"
+            case longitude = "Longitude"
+            case platform = "Platform"
+            case time = "Time"
+            case realTime = "RealTime"
+            case state = "State"
+        }
+
+        var tripStop: TripStop? {
+            guard let scheduled = time.flatMap(VVODecoding.parseDate) else { return nil }
+            // Die API liefert nur eine Zeit je Halt – sie gilt für Ankunft und Abfahrt.
+            let point = TimePoint(scheduledTime: scheduled, realTime: realTime.flatMap(VVODecoding.parseDate))
+            // Im Fahrtverlauf steht der Ort bereits im Namen („Pirna Bahnhof“); leer heißt hier nicht „Dresden“.
+            return TripStop(stopID: id ?? "", name: name, place: place.flatMap { $0.isEmpty ? nil : $0 },
+                            platform: platform?.name, arrival: point, departure: point,
+                            isCancelled: state == "Cancelled",
+                            coordinate: VVODecoding.coordinate(northing: latitude, easting: longitude))
+        }
+    }
+
+    func leg(line: String, direction: String, mode: TransportMode) -> TripLeg {
+        TripLeg(kind: .ride, mode: mode, line: line, direction: direction,
+                stops: stops.compactMap(\.tripStop),
+                path: mapData?.first.map(VVODecoding.path(fromMapData:)) ?? [])
+    }
 }

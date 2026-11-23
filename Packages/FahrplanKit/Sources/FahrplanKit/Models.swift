@@ -64,7 +64,9 @@ public enum TransportMode: String, Codable, Sendable, Hashable {
     case regionalBus
     case suburbanRailway   // S-Bahn
     case subway            // U-Bahn
-    case train             // Regional-/Fernverkehr
+    case train             // Regionalzug (RE/RB)
+    case longDistance      // Fernzug (ICE/IC/EC/NJ …)
+    case coach             // Fernbus
     case cableway
     case ferry
     case onDemand          // Rufbus, Anrufsammeltaxi
@@ -77,7 +79,9 @@ public enum TransportMode: String, Codable, Sendable, Hashable {
         case .regionalBus: "Regionalbus"
         case .suburbanRailway: "S-Bahn"
         case .subway: "U-Bahn"
-        case .train: "Zug"
+        case .train: "Regionalzug"
+        case .longDistance: "Fernzug"
+        case .coach: "Fernbus"
         case .cableway: "Seilbahn"
         case .ferry: "Fähre"
         case .onDemand: "Rufbus"
@@ -114,10 +118,12 @@ public struct Departure: Codable, Sendable, Hashable, Identifiable {
     public var occupancy: Occupancy
     /// Datenquelle (für die Quellenangabe).
     public var source: ProviderID?
+    /// Kennung der Fahrt bei der Quelle – für den Fahrtverlauf.
+    public var tripID: String?
 
     public init(id: String, line: String, direction: String, platform: String?, mode: TransportMode,
                 scheduledTime: Date, realTime: Date?, state: DepartureState, occupancy: Occupancy,
-                source: ProviderID? = nil) {
+                source: ProviderID? = nil, tripID: String? = nil) {
         self.id = id
         self.line = line
         self.direction = direction
@@ -128,6 +134,7 @@ public struct Departure: Codable, Sendable, Hashable, Identifiable {
         self.state = state
         self.occupancy = occupancy
         self.source = source
+        self.tripID = tripID
     }
 
     /// Voraussichtliche Abfahrt (Echtzeit, sonst Plan).
@@ -144,5 +151,22 @@ public struct Departure: Codable, Sendable, Hashable, Identifiable {
     /// Minuten bis zur Abfahrt, abgerundet und nie negativ.
     public func minutesUntilDeparture(from now: Date = .now) -> Int {
         max(0, Int(expectedTime.timeIntervalSince(now) / 60))
+    }
+}
+
+
+extension TransportMode {
+    /// Mit dem Deutschlandticket nutzbar (Nahverkehr). Fernzüge und Fernbusse nicht.
+    public var isDeutschlandTicketValid: Bool {
+        switch self {
+        case .longDistance, .coach: false
+        default: true
+        }
+    }
+
+    /// Fernverkehr anhand der Linienbezeichnung erkennen („ICE 1650“, „IC 2048“, „EC 177“, „NJ 457“, „FLX 1234“).
+    public static func isLongDistanceName(_ line: String) -> Bool {
+        let prefix = line.uppercased().prefix { $0.isLetter }
+        return ["ICE", "IC", "EC", "EN", "NJ", "RJ", "RJX", "ECE", "TGV", "FLX", "ES", "WB"].contains(String(prefix))
     }
 }

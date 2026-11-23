@@ -18,6 +18,9 @@ public protocol TransitProvider: Sendable {
 
     /// Verbindungen von A nach B (optional über einen Zwischenhalt), nach Abfahrt sortiert.
     func trips(_ query: TripQuery) async throws -> [Trip]
+
+    /// Kompletter Fahrtverlauf einer Abfahrt (alle Halte, Echtzeit, Strecke).
+    func journey(of departure: Departure, at stop: Stop) async throws -> TripLeg
 }
 
 public enum TransitError: LocalizedError, Sendable {

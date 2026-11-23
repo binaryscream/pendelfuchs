@@ -67,8 +67,28 @@ public struct TransitousProvider: TransitProvider {
             "language": "de",
         ]
         if let via = query.via { params["via"] = via.stopID }
+        let options = query.options
+        if options.allowedModes != Set(ModeGroup.allCases) {
+            params["transitModes"] = TransitousAPI.transitModes(for: options.allowedModes).joined(separator: ",")
+        }
+        if let maxTransfers = options.maxTransfers { params["maxTransfers"] = String(maxTransfers) }
+        if options.walkingSpeed != .normal { params["pedestrianSpeed"] = String(options.walkingSpeed.metersPerSecond) }
+
         let response: TransitousAPI.PlanResponse = try await get("v6/plan", params)
-        return response.itineraries.compactMap(\.trip).sorted { $0.departure.expectedTime < $1.departure.expectedTime }
+        return response.itineraries.compactMap(\.trip)
+            .filter(options.allows)
+            .sorted { $0.departure.expectedTime < $1.departure.expectedTime }
+    }
+
+    public func journey(of departure: Departure, at stop: Stop) async throws -> TripLeg {
+        guard let tripID = departure.tripID else {
+            throw TransitError.service(message: "Für diese Fahrt ist kein Fahrtverlauf verfügbar.")
+        }
+        let itinerary: TransitousAPI.Itinerary = try await get("v6/trip", ["tripId": tripID, "language": "de"])
+        guard let leg = itinerary.legs.compactMap(\.tripLeg).first(where: { $0.kind == .ride }) else {
+            throw TransitError.service(message: "Der Fahrtverlauf ist leer.")
+        }
+        return leg
     }
 
     // MARK: HTTP
@@ -125,10 +145,11 @@ enum TransitousAPI {
         switch raw {
         case "TRAM", "CABLE_CAR": .tram
         case "BUS": .cityBus
-        case "COACH": .regionalBus
+        case "COACH": .coach
         case "SUBURBAN": .suburbanRailway
         case "SUBWAY", "METRO": .subway
-        case "RAIL", "REGIONAL_RAIL", "REGIONAL_FAST_RAIL", "LONG_DISTANCE", "HIGHSPEED_RAIL", "NIGHT_RAIL": .train
+        case "RAIL", "REGIONAL_RAIL", "REGIONAL_FAST_RAIL": .train
+        case "LONG_DISTANCE", "HIGHSPEED_RAIL", "NIGHT_RAIL": .longDistance
         case "FERRY": .ferry
         case "AERIAL_LIFT", "FUNICULAR": .cableway
         case "ODM", "FLEX": .onDemand
@@ -263,7 +284,7 @@ enum TransitousAPI {
                 : !hasRealTime ? .unknown
                 : delay >= 60 ? .delayed : .onTime
             let line = TransitousAPI.lineName(displayName: displayName, routeShortName: routeShortName,
-                                              tripShortName: tripShortName)
+                                              tripShortName: tripShortName, mode: mode)
             return Departure(
                 id: "\(tripId ?? line)@\(Int(scheduled.timeIntervalSince1970))",
                 line: line,
@@ -274,14 +295,39 @@ enum TransitousAPI {
                 realTime: actual,
                 state: state,
                 occupancy: .unknown,
-                source: .transitous
+                source: .transitous,
+                tripID: tripId
             )
         }
     }
 
-    /// Kurze Linienbezeichnung: „S1“, „RE50“, „ICE 1557“ (nicht die lange Routenbezeichnung).
-    static func lineName(displayName: String?, routeShortName: String?, tripShortName: String?) -> String {
-        for candidate in [routeShortName, displayName, tripShortName] {
+    /// MOTIS-Verkehrsmittel für die erlaubten Gruppen.
+    static func transitModes(for groups: Set<ModeGroup>) -> [String] {
+        var modes: [String] = []
+        for group in ModeGroup.allCases where groups.contains(group) {
+            switch group {
+            case .regionalRail: modes += ["SUBURBAN", "REGIONAL_RAIL", "REGIONAL_FAST_RAIL", "RAIL"]
+            case .longDistance: modes += ["LONG_DISTANCE", "HIGHSPEED_RAIL", "NIGHT_RAIL"]
+            case .subway: modes += ["SUBWAY", "METRO"]
+            case .tram: modes += ["TRAM", "CABLE_CAR"]
+            case .bus: modes += ["BUS"]
+            case .coach: modes += ["COACH"]
+            case .ferry: modes += ["FERRY"]
+            case .cableway: modes += ["AERIAL_LIFT", "FUNICULAR"]
+            case .onDemand: modes += ["ODM"]
+            }
+        }
+        return modes
+    }
+
+    /// Kurze Linienbezeichnung: „S1“, „RE50“, „ICE 1650“ (nicht die lange Routenbezeichnung).
+    /// Bei Fernzügen steht im Kurznamen oft nur die Liniennummer („50“) – dort den Anzeigenamen nehmen.
+    static func lineName(displayName: String?, routeShortName: String?, tripShortName: String?,
+                         mode: String? = nil) -> String {
+        let order = mode.map(TransitousAPI.mode) == .longDistance
+            ? [displayName, tripShortName, routeShortName]
+            : [routeShortName, displayName, tripShortName]
+        for candidate in order {
             if let value = candidate?.trimmingCharacters(in: .whitespaces), !value.isEmpty { return value }
         }
         return "?"
@@ -355,7 +401,7 @@ enum TransitousAPI {
                     kind: .ride,
                     mode: TransitousAPI.mode(mode),
                     line: TransitousAPI.lineName(displayName: displayName, routeShortName: routeShortName,
-                                                 tripShortName: tripShortName),
+                                                 tripShortName: tripShortName, mode: mode),
                     direction: headsign,
                     operatorName: agencyName,
                     stops: stops,

@@ -54,6 +54,9 @@ struct TripResultsView: View {
             if let via = initialQuery.via {
                 Text("über \(via.displayName)")
             }
+            if !initialQuery.options.isStandard {
+                Label(initialQuery.options.summary, systemImage: "slider.horizontal.3")
+            }
             Text("\(initialQuery.isArrivalTime ? "Ankunft" : "Abfahrt") \(initialQuery.time.formatted(.dateTime.weekday(.abbreviated).day().month().hour().minute()))")
         }
         .textCase(nil)

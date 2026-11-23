@@ -49,6 +49,20 @@ public struct VVOProvider: TransitProvider {
         return response.departures
     }
 
+    public func journey(of departure: Departure, at stop: Stop) async throws -> TripLeg {
+        guard let tripID = departure.tripID else {
+            throw TransitError.service(message: "Für diese Fahrt ist kein Fahrtverlauf verfügbar.")
+        }
+        let body: [String: any Sendable] = [
+            "tripid": tripID,
+            "stopid": stop.stopID,
+            "time": VVODecoding.dotNetDate(departure.scheduledTime),
+            "mapdata": true,
+        ]
+        let response: JourneyResponse = try await post("dm/trip", body: body)
+        return response.leg(line: departure.line, direction: departure.direction, mode: departure.mode)
+    }
+
     // MARK: HTTP
 
     func post<T: Decodable & StatusCarrying>(_ path: String, body: [String: any Sendable]) async throws -> T {
@@ -209,12 +223,13 @@ struct DepartureMonitorResponse: Decodable, StatusCarrying {
                 line: lineName,
                 direction: direction,
                 platform: platform?.name,
-                mode: VVODecoding.mode(mot),
+                mode: VVODecoding.mode(mot, line: lineName),
                 scheduledTime: scheduled,
                 realTime: real,
                 state: Self.state(state, hasRealTime: real != nil),
                 occupancy: Self.occupancy(occupancy),
-                source: .vvo
+                source: .vvo,
+                tripID: id
             )
         }
 

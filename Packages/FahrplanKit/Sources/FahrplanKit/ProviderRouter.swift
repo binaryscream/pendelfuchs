@@ -120,4 +120,16 @@ public struct ProviderRouter: TransitProvider {
         if let via = query.via { transitousQuery.via = try await asTransitousStop(via) }
         return try await transitous.trips(transitousQuery)
     }
+
+    public func journey(of departure: Departure, at stop: Stop) async throws -> TripLeg {
+        switch departure.source {
+        case .vvo:
+            guard let vvo, let vvoStop = asVVOStop(stop) else {
+                throw TransitError.service(message: "VVO-Daten sind ausgeschaltet.")
+            }
+            return try await vvo.journey(of: departure, at: vvoStop)
+        default:
+            return try await transitous.journey(of: departure, at: asTransitousStop(stop))
+        }
+    }
 }

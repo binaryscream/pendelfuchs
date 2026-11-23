@@ -303,7 +303,8 @@ extension TransportMode {
         switch self {
         case .tram: "tram.fill"
         case .cityBus, .regionalBus, .onDemand: "bus.fill"
-        case .suburbanRailway, .train: "train.side.front.car"
+        case .suburbanRailway, .train, .longDistance: "train.side.front.car"
+        case .coach: "bus.doubledecker.fill"
         case .subway: "tram.tunnel.fill"
         case .ferry: "ferry.fill"
         case .cableway: "cablecar.fill"

@@ -19,7 +19,7 @@ struct HomeView: View {
     @State private var nearby: [Stop] = []
     @State private var nearbyError: String?
     @State private var showSettings = false
-    @State private var path: [Stop] = []
+    @State private var path = NavigationPath()
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -33,6 +33,7 @@ struct HomeView: View {
             }
             .navigationTitle("Fahrplan XL")
             .navigationDestination(for: Stop.self) { StopDeparturesView(stop: $0) }
+            .navigationDestination(for: DepartureRoute.self) { DepartureJourneyView(departure: $0.departure, stop: $0.stop) }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: "Haltestelle suchen")
             .task(id: query) { await search() }
@@ -50,7 +51,7 @@ struct HomeView: View {
         }
         .onChange(of: openStop, initial: true) {
             guard let stop = openStop else { return }
-            path = [stop]
+            path = NavigationPath([stop])
             openStop = nil
         }
     }

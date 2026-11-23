@@ -29,10 +29,14 @@ struct StopDeparturesView: View {
             } else {
                 Section {
                     ForEach(departures) { departure in
-                        // Countdown jede Viertelminute neu berechnen, ohne neu zu laden.
-                        TimelineView(.periodic(from: .now, by: 15)) { context in
-                            DepartureRow(departure: departure, now: context.date)
+                        // Antippen öffnet den Fahrtverlauf.
+                        NavigationLink(value: DepartureRoute(departure: departure, stop: stop)) {
+                            // Countdown jede Viertelminute neu berechnen, ohne neu zu laden.
+                            TimelineView(.periodic(from: .now, by: 15)) { context in
+                                DepartureRow(departure: departure, now: context.date)
+                            }
                         }
+                        .disabled(departure.tripID == nil)
                     }
                 } footer: {
                     if let lastUpdate {

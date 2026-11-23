@@ -8,6 +8,9 @@ struct TripSearchView: View {
     // Start/Ziel bleiben über App-Neustarts erhalten.
     @AppStorage("tripSearch.origin") private var originData = Data()
     @AppStorage("tripSearch.destination") private var destinationData = Data()
+    /// Sucheinstellungen (Deutschlandticket, Umstiege, Gehgeschwindigkeit, Verkehrsmittel) – bleiben gespeichert.
+    @AppStorage("tripSearch.options") private var optionsData = Data()
+    @State private var showOptions = false
 
     @State private var via: Stop?
     @State private var showVia = false
@@ -89,6 +92,25 @@ struct TripSearchView: View {
                 }
 
                 Section {
+                    Button {
+                        showOptions = true
+                    } label: {
+                        HStack {
+                            Label("Optionen", systemImage: "slider.horizontal.3")
+                            Spacer()
+                            Text(options.summary)
+                                .font(.subheadline)
+                                .foregroundStyle(options.isStandard ? Color.secondary : Color.accentColor)
+                                .multilineTextAlignment(.trailing)
+                                .lineLimit(2)
+                            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Section {
                     Button(action: search) {
                         Text("Verbindungen suchen")
                             .font(.headline)
@@ -108,6 +130,9 @@ struct TripSearchView: View {
                 case .results(let query): TripResultsView(initialQuery: query)
                 case .detail(let trip, let query): TripDetailView(trip: trip, query: query)
                 }
+            }
+            .sheet(isPresented: $showOptions) {
+                TripOptionsSheet(options: Binding(get: { options }, set: { optionsData = Self.encodeOptions($0) }))
             }
             .sheet(item: $picking) { field in
                 StopPickerSheet(title: field.title) { stop in
@@ -133,8 +158,17 @@ struct TripSearchView: View {
         let query = TripQuery(origin: origin, destination: destination,
                               via: showVia ? via : nil,
                               time: timeIsNow ? .now : time,
-                              isArrivalTime: isArrival)
+                              isArrivalTime: isArrival,
+                              options: options)
         path = [.results(query)]
+    }
+
+    private var options: TripOptions {
+        (try? JSONDecoder().decode(TripOptions.self, from: optionsData)) ?? .standard
+    }
+
+    private static func encodeOptions(_ options: TripOptions) -> Data {
+        (try? JSONEncoder().encode(options)) ?? Data()
     }
 
     private static func decode(_ data: Data) -> Stop? {

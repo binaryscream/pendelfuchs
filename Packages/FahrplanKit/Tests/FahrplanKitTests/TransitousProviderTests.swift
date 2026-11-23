@@ -47,7 +47,9 @@ private func fixture(_ name: String) throws -> Data {
 
         // Fehlender Kurzname → Anzeigename
         #expect(deps.contains { $0.line == "EuroNight 40457" })
-        #expect(deps.contains { $0.mode == .regionalBus }, "Fernbus")
+        #expect(deps.contains { $0.mode == .coach }, "Fernbus")
+        #expect(deps.contains { $0.mode == .longDistance }, "Nachtzug/Fernzug")
+        #expect(deps.allSatisfy { $0.tripID != nil })
 
         let nightTrain = try #require(deps.first { $0.line == "NJ 457" })
         #expect(!nightTrain.hasRealTime)
@@ -82,7 +84,8 @@ private func fixture(_ name: String) throws -> Data {
         #expect(TransitousAPI.split(name: "Mühlbach (b Pirna) Bahnhof", place: "Pirna") == ("Mühlbach (b Pirna) Bahnhof", "Pirna"))
         #expect(TransitousAPI.parseDate("2026-11-23T21:10:00Z") == Date(timeIntervalSince1970: 1_795_468_200))
         #expect(TransitousAPI.parseDate("2026-11-23T21:10:00.500Z") != nil)
-        #expect(TransitousAPI.mode("HIGHSPEED_RAIL") == .train)
+        #expect(TransitousAPI.mode("HIGHSPEED_RAIL") == .longDistance)
+        #expect(TransitousAPI.mode("REGIONAL_RAIL") == .train)
         #expect(TransitousAPI.mode("SUBWAY") == .subway)
     }
 }
