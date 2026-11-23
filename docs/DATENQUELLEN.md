@@ -102,6 +102,26 @@ Bekannte IDs: Dresden Hbf `33000028`, Pirna Bahnhof `33003370`.
   „streng genommen Erlaubnis nötig“, häufige Sperren → **nicht für die veröffentlichte App**.
 - `v6.db.transport.rest`: Domain löst nicht auf, eingestellt.
 
+## Vergleich: ÖPNV Navigator (iOS) / TripKit
+
+Die iOS-App „ÖPNV Navigator“ (Alexander Albers) ist **nicht** quelloffen; offen ist nur ihre Datenbibliothek
+**TripKit** (github.com/alexander-albers/tripkit, **MIT-Lizenz**, aktiv gepflegt, Swift-Port von
+`public-transport-enabler` aus Öffi). Geprüft am 23.11.2026:
+
+- **Ansatz:** dieselben Schnittstellen, die die offiziellen Apps der Verkehrsunternehmen nutzen –
+  rund 50 Anbieter (EFA, HAFAS, OJP, TRIAS …), überwiegend inoffiziell.
+- **DB:** DB-Navigator-Schnittstelle `https://app.services-bahn.de/mob/` (Vendo/Movas), also derselbe Weg
+  wie db-vendo-client.
+- **VVO:** EFA-Schnittstelle `https://efa.vvo-online.de/std3/` (nicht unsere WebAPI).
+- **Schlüssel:** Für viele Anbieter nötig (HAFAS-„aid“, Prüfsummen-Salt, Zertifikate). Im Repo nur leere
+  Vorlage; laut README soll man sie beim Anbieter anfragen „oder dieselben wie die offiziellen Apps verwenden“.
+- **Erlaubnis:** Keine Aussage im README zu Nutzungsbedingungen oder Vereinbarungen mit den Verbünden.
+
+**Bewertung für Fahrplan XL:** Technisch ein gutes Nachschlagewerk (MIT, Swift, mit GPL-3.0 vereinbar),
+rechtlich aber dasselbe Risiko wie db-vendo-client – inoffizielle Schnittstellen, teils mit Schlüsseln aus
+fremden Apps. Für eine veröffentlichte App nicht als Grundlage geeignet; Transitous bleibt die Hauptquelle.
+Sinnvoll als Vorlage, falls ein Verbund uns ausdrücklich erlaubt, seine EFA-/TRIAS-Schnittstelle zu nutzen.
+
 ## Architektur-Idee
 
 Gemeinsames Protokoll `TransitProvider` (Haltestellensuche, Abfahrten, Verbindungen).
