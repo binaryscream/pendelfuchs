@@ -27,13 +27,13 @@ struct SavedTripEntity: AppEntity {
 struct SavedTripEntityQuery: EntityQuery {
     @MainActor
     func entities(for identifiers: [UUID]) async throws -> [SavedTripEntity] {
-        let store = SavedTripsStore()
+        let store = SavedTripsStore(defaults: AppGroup.defaults)
         return identifiers.compactMap { store.trip(id: $0) }.map(SavedTripEntity.init)
     }
 
     @MainActor
     func suggestedEntities() async throws -> [SavedTripEntity] {
-        let store = SavedTripsStore()
+        let store = SavedTripsStore(defaults: AppGroup.defaults)
         return (store.regular() + store.bookmarked).map(SavedTripEntity.init)
     }
 }
@@ -54,7 +54,7 @@ struct StartTripActivityIntent: LiveActivityIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let store = SavedTripsStore()
+        let store = SavedTripsStore(defaults: AppGroup.defaults)
         let saved: SavedTrip
         if let trip {
             guard let found = store.trip(id: trip.id) else {

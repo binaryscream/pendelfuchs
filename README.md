@@ -18,7 +18,7 @@ Open-Source-Fahrplan-App für iOS 18+ (SwiftUI). Lizenz: GPL-3.0 (siehe `LICENSE
 3. ✅ Fahrten merken und als regelmäßige Fahrt an gewählten Wochentagen (Mo–So) speichern, mit Live-Status
 4. ✅ Dark Mode (System/Hell/Dunkel wählbar)
 5. ✅ Live-Aktivität (Sperrbildschirm + Dynamic Island), Start per Knopf oder Kurzbefehle-Automation
-6. Widget
+6. ✅ Widget „Abfahrten“ (klein/mittel/groß + Sperrbildschirm), Haltestelle frei wählbar, Antippen öffnet die App
 7. DB-Anbindung + Router für die Quellenwahl
 8. Optional: Push-Server, damit Live-Aktivitäten auch im Hintergrund minutengenau aktualisiert werden
 
@@ -52,6 +52,6 @@ FAHRPLAN_LIVE_TESTS=1 swift test    # zusätzlich gegen die echte VVO-API
 
 - `App/` – die iOS-App (SwiftUI)
 - `Shared/` – Code, den App und Widget-Erweiterung gemeinsam nutzen (Linienfarben, Live-Aktivitäts-Attribute)
-- `Widgets/` – Widget-Erweiterung (Live-Aktivität)
+- `Widgets/` – Widget-Erweiterung (Abfahrten-Widget, Live-Aktivität); Daten teilt sie mit der App über die App Group `group.de.fahrplanxl.app`
 - `Packages/FahrplanKit/` – gemeinsame Logik: Datenmodelle, Datenquellen, Favoriten (später auch von Widgets genutzt)
 - `project.yml` – Projektbeschreibung für XcodeGen (das `.xcodeproj` wird daraus erzeugt)

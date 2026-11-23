@@ -5,6 +5,9 @@ import SwiftUI
 
 /// Startseite: Favoriten, Haltestellen in der Nähe und Suche.
 struct HomeView: View {
+    /// Von außen (Widget-Deep-Link) zu öffnende Haltestelle.
+    @Binding var openStop: Stop?
+
     @Environment(FavoritesStore.self) private var favorites
     @Environment(LocationProvider.self) private var location
     @Environment(\.transit) private var transit
@@ -16,9 +19,10 @@ struct HomeView: View {
     @State private var nearby: [Stop] = []
     @State private var nearbyError: String?
     @State private var showSettings = false
+    @State private var path: [Stop] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 if query.isEmpty {
                     favoritesSection
@@ -43,6 +47,11 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $showSettings) { SettingsView() }
+        }
+        .onChange(of: openStop, initial: true) {
+            guard let stop = openStop else { return }
+            path = [stop]
+            openStop = nil
         }
     }
 

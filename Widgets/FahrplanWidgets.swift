@@ -7,6 +7,7 @@ import WidgetKit
 @main
 struct FahrplanWidgets: WidgetBundle {
     var body: some Widget {
+        DeparturesWidget()
         TripLiveActivity()
     }
 }

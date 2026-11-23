@@ -30,6 +30,10 @@ targets:
     info:
       path: App/Info.plist
       properties:
+        CFBundleURLTypes:
+          - CFBundleURLName: de.fahrplanxl.app
+            CFBundleURLSchemes:
+              - fahrplanxl
         NSSupportsLiveActivities: true
         UIBackgroundModes:
           - fetch
@@ -44,6 +48,11 @@ targets:
           - UIInterfaceOrientationPortrait
         NSLocationWhenInUseUsageDescription: Fahrplan XL zeigt dir Haltestellen in deiner Nähe. Dein Standort wird nur zur Haltestellensuche an den Fahrplandienst übertragen.
         ITSAppUsesNonExemptEncryption: false
+    entitlements:
+      path: App/FahrplanXL.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.de.fahrplanxl.app
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: de.fahrplanxl.app
@@ -67,6 +76,11 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Widgets/FahrplanXLWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.de.fahrplanxl.app
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: de.fahrplanxl.app.widgets
