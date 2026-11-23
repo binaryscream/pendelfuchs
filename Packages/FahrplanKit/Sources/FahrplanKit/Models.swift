@@ -6,6 +6,16 @@ import Foundation
 public enum ProviderID: String, Codable, Sendable, Hashable, CaseIterable {
     case vvo
     case db
+    case transitous
+
+    /// Name für die Quellenangabe in der App.
+    public var displayName: String {
+        switch self {
+        case .vvo: "VVO"
+        case .db: "Deutsche Bahn"
+        case .transitous: "Transitous"
+        }
+    }
 }
 
 /// WGS84-Koordinate (unabhängig von CoreLocation, damit auch Widgets/Tests sie nutzen können).
@@ -53,6 +63,7 @@ public enum TransportMode: String, Codable, Sendable, Hashable {
     case cityBus
     case regionalBus
     case suburbanRailway   // S-Bahn
+    case subway            // U-Bahn
     case train             // Regional-/Fernverkehr
     case cableway
     case ferry
@@ -65,6 +76,7 @@ public enum TransportMode: String, Codable, Sendable, Hashable {
         case .cityBus: "Stadtbus"
         case .regionalBus: "Regionalbus"
         case .suburbanRailway: "S-Bahn"
+        case .subway: "U-Bahn"
         case .train: "Zug"
         case .cableway: "Seilbahn"
         case .ferry: "Fähre"
@@ -100,9 +112,12 @@ public struct Departure: Codable, Sendable, Hashable, Identifiable {
     public var realTime: Date?
     public var state: DepartureState
     public var occupancy: Occupancy
+    /// Datenquelle (für die Quellenangabe).
+    public var source: ProviderID?
 
     public init(id: String, line: String, direction: String, platform: String?, mode: TransportMode,
-                scheduledTime: Date, realTime: Date?, state: DepartureState, occupancy: Occupancy) {
+                scheduledTime: Date, realTime: Date?, state: DepartureState, occupancy: Occupancy,
+                source: ProviderID? = nil) {
         self.id = id
         self.line = line
         self.direction = direction
@@ -112,6 +127,7 @@ public struct Departure: Codable, Sendable, Hashable, Identifiable {
         self.realTime = realTime
         self.state = state
         self.occupancy = occupancy
+        self.source = source
     }
 
     /// Voraussichtliche Abfahrt (Echtzeit, sonst Plan).

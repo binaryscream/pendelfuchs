@@ -2,6 +2,9 @@
 
 Open-Source-Fahrplan-App für iOS 18+ (SwiftUI). Lizenz: GPL-3.0 (siehe `LICENSE`).
 
+Fahrplandaten: [Transitous](https://transitous.org/sources/) (ganz Deutschland) und im Gebiet des
+Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingungen: `docs/DATENQUELLEN.md`.
+
 ## Ziele
 
 - **Abfahrtsmonitor** für den aktuellen Standort oder Favoriten-Haltestellen
@@ -19,7 +22,7 @@ Open-Source-Fahrplan-App für iOS 18+ (SwiftUI). Lizenz: GPL-3.0 (siehe `LICENSE
 4. ✅ Dark Mode (System/Hell/Dunkel wählbar)
 5. ✅ Live-Aktivität (Sperrbildschirm + Dynamic Island), Start per Knopf oder Kurzbefehle-Automation
 6. ✅ Widget „Abfahrten“ (klein/mittel/groß + Sperrbildschirm), Haltestelle frei wählbar, Antippen öffnet die App
-7. DB-Anbindung + Router für die Quellenwahl
+7. ✅ Ganz Deutschland über Transitous + Router für die Quellenwahl (VVO im VVO-Gebiet, sonst Transitous)
 8. Optional: Push-Server, damit Live-Aktivitäten auch im Hintergrund minutengenau aktualisiert werden
 
 ### Hinweise zur Live-Aktivität

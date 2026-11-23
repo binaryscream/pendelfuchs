@@ -213,7 +213,8 @@ struct DepartureMonitorResponse: Decodable, StatusCarrying {
                 scheduledTime: scheduled,
                 realTime: real,
                 state: Self.state(state, hasRealTime: real != nil),
-                occupancy: Self.occupancy(occupancy)
+                occupancy: Self.occupancy(occupancy),
+                source: .vvo
             )
         }
 

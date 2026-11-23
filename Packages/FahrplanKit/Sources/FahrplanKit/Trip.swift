@@ -28,12 +28,16 @@ public struct Trip: Codable, Sendable, Hashable, Identifiable {
     public var price: String?
     /// Tarifzonen, z. B. „TZ Pirna (70), TZ Dresden (10)“.
     public var fareZones: String?
+    /// Datenquelle (für die Quellenangabe).
+    public var source: ProviderID?
 
-    public init(legs: [TripLeg], interchanges: Int, price: String? = nil, fareZones: String? = nil) {
+    public init(legs: [TripLeg], interchanges: Int, price: String? = nil, fareZones: String? = nil,
+                source: ProviderID? = nil) {
         self.legs = legs
         self.interchanges = interchanges
         self.price = price
         self.fareZones = fareZones
+        self.source = source
     }
 
     /// Stabil über mehrere Suchen hinweg (für „Früher/Später“-Zusammenführung).

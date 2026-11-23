@@ -47,7 +47,7 @@ struct StopEntityQuery: EntityStringQuery {
 
     /// Mit Suchtext: alle Haltestellen der Datenquelle.
     func entities(matching string: String) async throws -> [StopEntity] {
-        try await VVOProvider().searchStops(query: string).compactMap(StopEntity.init)
+        try await DataSources.router().searchStops(query: string).compactMap(StopEntity.init)
     }
 }
 
@@ -100,7 +100,7 @@ struct DeparturesProvider: AppIntentTimelineProvider {
         }
 
         do {
-            let departures = try await VVOProvider().departures(at: stop, limit: 20)
+            let departures = try await DataSources.router().departures(at: stop, limit: 20)
             // Ein Eintrag pro Minute: bereits abgefahrene Verbindungen fallen heraus.
             let now = Date.now
             let start = Calendar.current.dateInterval(of: .minute, for: now)?.start ?? now

@@ -81,6 +81,12 @@ struct TripDetailView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
+            if let source = trip.source {
+                Text("Daten: \(source.displayName)")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+
             if let price = trip.price {
                 HStack(alignment: .firstTextBaseline) {
                     Image(systemName: "ticket")

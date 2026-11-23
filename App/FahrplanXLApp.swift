@@ -10,6 +10,7 @@ struct FahrplanXLApp: App {
     @State private var location = LocationProvider()
     @State private var savedTrips: SavedTripsStore
     @AppStorage(AppearanceSetting.storageKey) private var appearance: AppearanceSetting = .system
+    @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab = AppTab.departures
     @State private var openStop: Stop?
@@ -38,10 +39,11 @@ struct FahrplanXLApp: App {
                 .environment(favorites)
                 .environment(savedTrips)
                 .environment(location)
-                .environment(\.transit, VVOProvider())
+                .environment(\.transit, DataSources.router(useVVO: useVVO))
                 .preferredColorScheme(appearance.colorScheme)
                 // Widgets zeigen standardmäßig den ersten Favoriten – nach Änderungen neu laden.
                 .onChange(of: favorites.stops) { WidgetCenter.shared.reloadAllTimelines() }
+                .onChange(of: useVVO) { WidgetCenter.shared.reloadAllTimelines() }
                 // Live-Aktivitäten aktuell halten, solange die App offen ist (jede Minute).
                 .task(id: scenePhase) {
                     guard scenePhase == .active else { return }
@@ -63,6 +65,6 @@ enum AppTab: Hashable {
 }
 
 extension EnvironmentValues {
-    /// Aktive Datenquelle. Wird später durch den `ProviderRouter` ersetzt.
-    @Entry var transit: any TransitProvider = VVOProvider()
+    /// Aktive Datenquelle (wählt je Anfrage zwischen Transitous und VVO).
+    @Entry var transit: any TransitProvider = ProviderRouter()
 }

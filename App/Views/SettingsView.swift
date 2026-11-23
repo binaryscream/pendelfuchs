@@ -38,6 +38,7 @@ enum AppearanceSetting: String, CaseIterable, Identifiable {
 
 struct SettingsView: View {
     @AppStorage(AppearanceSetting.storageKey) private var appearance: AppearanceSetting = .system
+    @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -57,9 +58,32 @@ struct SettingsView: View {
                     Text("„System“ folgt der Einstellung deines iPhones und wechselt z. B. abends automatisch in den Dunkelmodus.")
                 }
 
+                Section {
+                    Toggle("VVO-Daten im VVO-Gebiet", isOn: $useVVO)
+                } header: {
+                    Text("Datenquellen")
+                } footer: {
+                    Text("Fahrplandaten für ganz Deutschland kommen von Transitous. Im Gebiet des Verkehrsverbunds Oberelbe (Dresden, Meißen, Pirna, Bautzen …) kann die App zusätzlich die Daten des VVO nutzen – mit Fahrpreisen und Auslastung.")
+                }
+
+                Section {
+                    Link(destination: DataSources.transitousSourcesURL) {
+                        LabeledContent("Transitous", value: "Quellen und Lizenzen")
+                    }
+                    Link(destination: DataSources.openStreetMapURL) {
+                        LabeledContent("Kartendaten", value: "© OpenStreetMap-Mitwirkende")
+                    }
+                    if useVVO {
+                        LabeledContent("VVO-Gebiet", value: "Verkehrsverbund Oberelbe")
+                    }
+                } header: {
+                    Text("Quellenangaben")
+                } footer: {
+                    Text("Fahrplandaten u. a. von DELFI e. V. (opendata-oepnv.de, CC BY 4.0), bereitgestellt über Transitous.")
+                }
+
                 Section("Über") {
                     LabeledContent("Version", value: Bundle.main.versionString)
-                    LabeledContent("Daten", value: "VVO / DVB")
                     LabeledContent("Lizenz", value: "GPL-3.0")
                 }
             }

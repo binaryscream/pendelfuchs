@@ -17,7 +17,8 @@ final class TripActivityManager {
 
     static let refreshTaskID = "de.fahrplanxl.app.refresh"
 
-    private let transit: any TransitProvider = VVOProvider()
+    /// Bei jedem Aufruf neu, damit die Einstellung „VVO-Daten nutzen“ sofort greift.
+    private var transit: any TransitProvider { DataSources.router() }
 
     enum StartError: LocalizedError {
         case disabled

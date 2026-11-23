@@ -96,7 +96,8 @@ struct TripsResponse: Decodable, StatusCarrying {
                 legs: legs,
                 interchanges: interchanges ?? max(0, rides - 1),
                 price: price.flatMap { $0.isEmpty ? nil : "\($0) €" },
-                fareZones: fareZoneNames.flatMap { $0.isEmpty ? nil : $0 }
+                fareZones: fareZoneNames.flatMap { $0.isEmpty ? nil : $0 },
+                source: .vvo
             )
         }
     }

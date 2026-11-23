@@ -36,7 +36,7 @@ struct StopDeparturesView: View {
                     }
                 } footer: {
                     if let lastUpdate {
-                        Text("Stand \(lastUpdate.formatted(date: .omitted, time: .shortened)) · Daten: VVO")
+                        Text("Stand \(lastUpdate.formatted(date: .omitted, time: .shortened)) · Daten: \(departures.first?.source?.displayName ?? "–")")
                     }
                 }
             }
