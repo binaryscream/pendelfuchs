@@ -1,0 +1,74 @@
+# Xcode-Projekt wird aus dieser Datei erzeugt:  xcodegen generate
+name: FahrplanXL
+options:
+  bundleIdPrefix: de.fahrplanxl
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  developmentLanguage: de
+
+packages:
+  FahrplanKit:
+    path: Packages/FahrplanKit
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  FahrplanXL:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Shared
+    dependencies:
+      - package: FahrplanKit
+      - target: FahrplanXLWidgets
+    info:
+      path: App/Info.plist
+      properties:
+        NSSupportsLiveActivities: true
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - de.fahrplanxl.app.refresh
+        CFBundleDisplayName: Fahrplan XL
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: de
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSLocationWhenInUseUsageDescription: Fahrplan XL zeigt dir Haltestellen in deiner Nähe. Dein Standort wird nur zur Haltestellensuche an den Fahrplandienst übertragen.
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.fahrplanxl.app
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+
+  # Widget-Erweiterung: Live-Aktivität (Sperrbildschirm, Dynamic Island), später Home-Screen-Widgets
+  FahrplanXLWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Widgets
+      - Shared
+    dependencies:
+      - package: FahrplanKit
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: Fahrplan XL
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.fahrplanxl.app.widgets
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic

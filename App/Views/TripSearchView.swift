@@ -1,0 +1,273 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+import FahrplanKit
+import SwiftUI
+
+/// Verbindungssuche: Von – Nach – (optionaler Zwischenhalt) – Datum – Uhrzeit.
+struct TripSearchView: View {
+    // Start/Ziel bleiben über App-Neustarts erhalten.
+    @AppStorage("tripSearch.origin") private var originData = Data()
+    @AppStorage("tripSearch.destination") private var destinationData = Data()
+
+    @State private var via: Stop?
+    @State private var showVia = false
+    @State private var time = Date.now
+    /// Solange der Nutzer die Zeit nicht angefasst hat, wird beim Suchen „jetzt“ verwendet.
+    @State private var timeIsNow = true
+    @State private var isArrival = false
+    @State private var picking: Field?
+    @State private var path: [TripRoute] = []
+
+    private enum Field: String, Identifiable {
+        case origin, destination, via
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .origin: "Von"
+            case .destination: "Nach"
+            case .via: "Zwischenhalt"
+            }
+        }
+    }
+
+    private var origin: Stop? { Self.decode(originData) }
+    private var destination: Stop? { Self.decode(destinationData) }
+
+    var body: some View {
+        NavigationStack(path: $path) {
+            Form {
+                Section {
+                    StopField(label: "Von", stop: origin) { picking = .origin }
+                    if showVia {
+                        HStack {
+                            StopField(label: "Über", stop: via) { picking = .via }
+                            Button {
+                                withAnimation { showVia = false; via = nil }
+                            } label: {
+                                Image(systemName: "minus.circle.fill").foregroundStyle(.red)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Zwischenhalt entfernen")
+                        }
+                    }
+                    StopField(label: "Nach", stop: destination) { picking = .destination }
+                } footer: {
+                    HStack {
+                        if !showVia {
+                            Button("Zwischenhalt", systemImage: "plus") {
+                                withAnimation { showVia = true }
+                            }
+                        }
+                        Spacer()
+                        Button("Tauschen", systemImage: "arrow.up.arrow.down") {
+                            swap(&originData, &destinationData)
+                        }
+                        .disabled(origin == nil && destination == nil)
+                    }
+                    .font(.footnote)
+                    .padding(.top, 4)
+                }
+
+                Section {
+                    Picker("Zeit gilt für", selection: $isArrival) {
+                        Text("Abfahrt").tag(false)
+                        Text("Ankunft").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowSeparator(.hidden)
+
+                    DatePicker("Datum", selection: timeBinding, displayedComponents: .date)
+                    DatePicker("Uhrzeit", selection: timeBinding, displayedComponents: .hourAndMinute)
+                } footer: {
+                    if !timeIsNow {
+                        Button("Auf jetzt zurücksetzen") {
+                            time = .now
+                            timeIsNow = true
+                        }
+                        .font(.footnote)
+                    }
+                }
+
+                Section {
+                    Button(action: search) {
+                        Text("Verbindungen suchen")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(origin == nil || destination == nil)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                }
+            }
+            .navigationTitle("Verbindungen")
+            // Ein einziges Navigationsziel an der Wurzel – gemischte Ziele setzen den Stack sonst zurück.
+            .navigationDestination(for: TripRoute.self) { route in
+                switch route {
+                case .results(let query): TripResultsView(initialQuery: query)
+                case .detail(let trip, let query): TripDetailView(trip: trip, query: query)
+                }
+            }
+            .sheet(item: $picking) { field in
+                StopPickerSheet(title: field.title) { stop in
+                    switch field {
+                    case .origin: originData = Self.encode(stop)
+                    case .destination: destinationData = Self.encode(stop)
+                    case .via: via = stop
+                    }
+                }
+            }
+        }
+    }
+
+    private var timeBinding: Binding<Date> {
+        Binding(
+            get: { timeIsNow ? .now : time },
+            set: { time = $0; timeIsNow = false }
+        )
+    }
+
+    private func search() {
+        guard let origin, let destination else { return }
+        let query = TripQuery(origin: origin, destination: destination,
+                              via: showVia ? via : nil,
+                              time: timeIsNow ? .now : time,
+                              isArrivalTime: isArrival)
+        path = [.results(query)]
+    }
+
+    private static func decode(_ data: Data) -> Stop? {
+        data.isEmpty ? nil : try? JSONDecoder().decode(Stop.self, from: data)
+    }
+
+    private static func encode(_ stop: Stop) -> Data {
+        var clean = stop
+        clean.distance = nil
+        return (try? JSONEncoder().encode(clean)) ?? Data()
+    }
+}
+
+/// Navigationsziele im Verbindungs-Tab.
+enum TripRoute: Hashable {
+    case results(TripQuery)
+    case detail(Trip, TripQuery)
+}
+
+/// Eine Zeile „Von: Pirna, Bahnhof“, die beim Antippen die Haltestellenauswahl öffnet.
+private struct StopField: View {
+    let label: String
+    let stop: Stop?
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Text(label)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, alignment: .leading)
+                if let stop {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(stop.name).foregroundStyle(.primary)
+                        if let place = stop.place {
+                            Text(place).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                } else {
+                    Text("Haltestelle wählen").foregroundStyle(.tertiary)
+                }
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(label): \(stop?.displayName ?? "keine Haltestelle")")
+    }
+}
+
+/// Auswahl einer Haltestelle: Suche, Favoriten und Haltestellen in der Nähe.
+struct StopPickerSheet: View {
+    let title: String
+    let onSelect: (Stop) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(FavoritesStore.self) private var favorites
+    @Environment(LocationProvider.self) private var location
+    @Environment(\.transit) private var transit
+
+    @State private var query = ""
+    @State private var results: [Stop] = []
+    @State private var message: String?
+    @State private var nearby: [Stop] = []
+    @State private var searchActive = true
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if query.isEmpty {
+                    if !favorites.stops.isEmpty {
+                        Section("Favoriten") {
+                            ForEach(favorites.stops) { row($0) }
+                        }
+                    }
+                    Section("In der Nähe") {
+                        if nearby.isEmpty {
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                Text("Standort wird ermittelt …").foregroundStyle(.secondary)
+                            }
+                        } else {
+                            ForEach(nearby.prefix(5)) { row($0) }
+                        }
+                    }
+                } else if let message {
+                    Text(message).foregroundStyle(.secondary)
+                } else {
+                    ForEach(results) { row($0) }
+                }
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $query, isPresented: $searchActive,
+                        placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: "Haltestelle suchen")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Abbrechen") { dismiss() }
+                }
+            }
+            .task(id: query) { await search() }
+            .task { await loadNearby() }
+        }
+    }
+
+    private func row(_ stop: Stop) -> some View {
+        Button {
+            onSelect(stop)
+            dismiss()
+        } label: {
+            StopRow(stop: stop).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func search() async {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { results = []; message = nil; return }
+        try? await Task.sleep(for: .milliseconds(300))
+        guard !Task.isCancelled else { return }
+        do {
+            results = try await transit.searchStops(query: q)
+            message = results.isEmpty ? "Keine Haltestelle gefunden." : nil
+        } catch is CancellationError {
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+
+    private func loadNearby() async {
+        if location.coordinate == nil { await location.refresh() }
+        guard let coordinate = location.coordinate else { return }
+        nearby = (try? await transit.nearbyStops(around: coordinate)) ?? []
+    }
+}

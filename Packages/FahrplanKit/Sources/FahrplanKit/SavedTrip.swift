@@ -1,0 +1,193 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+import Foundation
+
+/// Wochentag in deutscher Reihenfolge (Montag zuerst). Rohwert = `Calendar`-Wochentag (Sonntag = 1).
+public enum Weekday: Int, Codable, Sendable, Hashable, CaseIterable, Identifiable, Comparable {
+    case monday = 2, tuesday = 3, wednesday = 4, thursday = 5, friday = 6, saturday = 7, sunday = 1
+
+    public var id: Int { rawValue }
+
+    public static let workdays: Set<Weekday> = [.monday, .tuesday, .wednesday, .thursday, .friday]
+    public static let weekend: Set<Weekday> = [.saturday, .sunday]
+    public static let everyDay: Set<Weekday> = Set(allCases)
+
+    public init(date: Date, calendar: Calendar = .current) {
+        self = Weekday(rawValue: calendar.component(.weekday, from: date))!
+    }
+
+    /// Position in der Woche, Montag = 0.
+    public var index: Int { Weekday.allCases.firstIndex(of: self)! }
+
+    public var shortName: String {
+        switch self {
+        case .monday: "Mo"
+        case .tuesday: "Di"
+        case .wednesday: "Mi"
+        case .thursday: "Do"
+        case .friday: "Fr"
+        case .saturday: "Sa"
+        case .sunday: "So"
+        }
+    }
+
+    public var fullName: String {
+        switch self {
+        case .monday: "Montag"
+        case .tuesday: "Dienstag"
+        case .wednesday: "Mittwoch"
+        case .thursday: "Donnerstag"
+        case .friday: "Freitag"
+        case .saturday: "Samstag"
+        case .sunday: "Sonntag"
+        }
+    }
+
+    public static func < (lhs: Weekday, rhs: Weekday) -> Bool { lhs.index < rhs.index }
+}
+
+extension Set where Element == Weekday {
+    /// Kurzbeschreibung, z. B. „Mo–Fr“, „Täglich“, „Sa, So“, „Mo, Mi–Fr“.
+    public var summary: String {
+        if isEmpty { return "Nicht regelmäßig" }
+        if self == Weekday.everyDay { return "Täglich" }
+        if self == Weekday.workdays { return "Mo–Fr" }
+        if self == Weekday.weekend { return "Wochenende" }
+
+        // Aufeinanderfolgende Tage zu Bereichen zusammenfassen (ab drei Tagen).
+        var parts: [String] = []
+        var run: [Weekday] = []
+        func flush() {
+            guard let first = run.first, let last = run.last else { return }
+            if run.count >= 3 {
+                parts.append("\(first.shortName)–\(last.shortName)")
+            } else {
+                parts.append(contentsOf: run.map(\.shortName))
+            }
+            run = []
+        }
+        for day in Weekday.allCases {
+            if contains(day) { run.append(day) } else { flush() }
+        }
+        flush()
+        return parts.joined(separator: ", ")
+    }
+}
+
+/// Uhrzeit ohne Datum.
+public struct TimeOfDay: Codable, Sendable, Hashable, Comparable {
+    public var hour: Int
+    public var minute: Int
+
+    public init(hour: Int, minute: Int) {
+        self.hour = hour
+        self.minute = minute
+    }
+
+    public init(date: Date, calendar: Calendar = .current) {
+        let c = calendar.dateComponents([.hour, .minute], from: date)
+        self.init(hour: c.hour ?? 0, minute: c.minute ?? 0)
+    }
+
+    public var minutesSinceMidnight: Int { hour * 60 + minute }
+
+    /// Diese Uhrzeit am Tag von `day`.
+    public func date(on day: Date, calendar: Calendar = .current) -> Date? {
+        calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day)
+    }
+
+    /// Kürzester Abstand in Minuten (über Mitternacht hinweg).
+    public func minutesApart(from other: TimeOfDay) -> Int {
+        let d = abs(minutesSinceMidnight - other.minutesSinceMidnight)
+        return min(d, 24 * 60 - d)
+    }
+
+    public var formatted: String { String(format: "%02d:%02d", hour, minute) }
+
+    public static func < (lhs: TimeOfDay, rhs: TimeOfDay) -> Bool { lhs.minutesSinceMidnight < rhs.minutesSinceMidnight }
+}
+
+/// Eine gemerkte Verbindung – optional regelmäßig an bestimmten Wochentagen.
+public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
+    public var id: UUID
+    /// Eigener Name, z. B. „Zur Arbeit“.
+    public var name: String?
+    public var origin: Stop
+    public var destination: Stop
+    public var via: Stop?
+    /// Geplante Abfahrt der gemerkten Verbindung.
+    public var departure: TimeOfDay
+    public var arrival: TimeOfDay?
+    /// Linienfolge, z. B. `["S1", "7"]` – zum Wiederfinden der Verbindung.
+    public var lines: [String]
+    public var modes: [TransportMode]
+    /// Leer = nur gemerkt, sonst regelmäßige Fahrt.
+    public var weekdays: Set<Weekday>
+    public var createdAt: Date
+
+    public init(trip: Trip, query: TripQuery, weekdays: Set<Weekday> = [], calendar: Calendar = .current) {
+        func clean(_ stop: Stop) -> Stop { var s = stop; s.distance = nil; return s }
+        id = UUID()
+        name = nil
+        origin = clean(query.origin)
+        destination = clean(query.destination)
+        via = query.via.map(clean)
+        departure = TimeOfDay(date: trip.departure.scheduledTime, calendar: calendar)
+        arrival = TimeOfDay(date: trip.arrival.scheduledTime, calendar: calendar)
+        lines = trip.rides.map { $0.line ?? "?" }
+        modes = trip.rides.map { $0.mode ?? .other }
+        self.weekdays = weekdays
+        createdAt = .now
+    }
+
+    public var isRegular: Bool { !weekdays.isEmpty }
+
+    public var title: String {
+        if let name, !name.trimmingCharacters(in: .whitespaces).isEmpty { return name }
+        return "\(origin.name) → \(destination.name)"
+    }
+
+    /// Ist das genau diese Verbindung (gleiche Strecke, Abfahrt und Linien)?
+    public func isSame(as trip: Trip, query: TripQuery, calendar: Calendar = .current) -> Bool {
+        origin.id == query.origin.id && destination.id == query.destination.id && via?.id == query.via?.id
+            && departure == TimeOfDay(date: trip.departure.scheduledTime, calendar: calendar)
+            && lines == trip.rides.map { $0.line ?? "?" }
+    }
+
+    /// Nächster Termin der regelmäßigen Fahrt. Eine gerade abgefahrene Fahrt zählt noch
+    /// `grace` lang als aktuell, damit man sie unterwegs weiter sieht.
+    public func nextOccurrence(after now: Date = .now, grace: TimeInterval = 15 * 60,
+                               calendar: Calendar = .current) -> Date? {
+        guard isRegular else { return nil }
+        let today = calendar.startOfDay(for: now)
+        for offset in 0...7 {
+            guard let day = calendar.date(byAdding: .day, value: offset, to: today),
+                  weekdays.contains(Weekday(date: day, calendar: calendar)),
+                  let candidate = departure.date(on: day, calendar: calendar)
+            else { continue }
+            if candidate >= now.addingTimeInterval(-grace) { return candidate }
+        }
+        return nil
+    }
+
+    /// Suchanfrage, um die Verbindung an einem bestimmten Tag live abzufragen.
+    public func query(on day: Date, calendar: Calendar = .current) -> TripQuery {
+        let time = departure.date(on: day, calendar: calendar) ?? day
+        return TripQuery(origin: origin, destination: destination, via: via, time: time, isArrivalTime: false)
+    }
+
+    /// Findet die gemerkte Verbindung in frischen Suchergebnissen wieder.
+    /// Erst exakt (gleiche Linien, ±2 min), sonst die nächstgelegene mit gleicher erster Linie (±10 min),
+    /// damit kleine Fahrplanänderungen nicht gleich zum Verlust führen.
+    public func bestMatch(in trips: [Trip], calendar: Calendar = .current) -> Trip? {
+        func minutes(_ trip: Trip) -> Int {
+            TimeOfDay(date: trip.departure.scheduledTime, calendar: calendar).minutesApart(from: departure)
+        }
+        if let exact = trips.first(where: { $0.rides.map { $0.line ?? "?" } == lines && minutes($0) <= 2 }) {
+            return exact
+        }
+        return trips
+            .filter { $0.rides.first?.line == lines.first && minutes($0) <= 10 }
+            .min { minutes($0) < minutes($1) }
+    }
+}
