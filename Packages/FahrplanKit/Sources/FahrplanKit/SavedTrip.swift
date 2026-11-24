@@ -124,6 +124,14 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
     /// Leer = nur gemerkt, sonst regelmäßige Fahrt.
     public var weekdays: Set<Weekday>
     public var createdAt: Date
+    /// Verpass-Assistent: bei Ausfall oder verpasstem Anschluss automatisch die nächste Verbindung nehmen.
+    /// Optional gespeichert, damit ältere Daten lesbar bleiben; `nil` = eingeschaltet.
+    public var rerouteAssistant: Bool?
+
+    public var usesRerouteAssistant: Bool {
+        get { rerouteAssistant ?? true }
+        set { rerouteAssistant = newValue }
+    }
 
     public init(trip: Trip, query: TripQuery, weekdays: Set<Weekday> = [], calendar: Calendar = .current) {
         func clean(_ stop: Stop) -> Stop { var s = stop; s.distance = nil; return s }
@@ -190,7 +198,7 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
     /// (man sitzt ja schon im Bus), sonst die nächste Abfahrt, solange man noch nicht losgefahren ist.
     public func resolve(in trips: [Trip], now: Date = .now, calendar: Calendar = .current) -> Resolved? {
         guard let match = bestMatch(in: trips, calendar: calendar) else { return nil }
-        guard let problem = match.disruption else { return Resolved(trip: match, note: nil) }
+        guard let problem = match.disruption, usesRerouteAssistant else { return Resolved(trip: match, note: nil) }
 
         let usable = trips.filter { $0.disruption == nil }
         let first = match.rides.first

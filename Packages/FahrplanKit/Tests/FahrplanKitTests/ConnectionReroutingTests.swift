@@ -85,3 +85,27 @@ private let target = Stop(provider: .vvo, stopID: "2", name: "Ziel", place: "Dre
         #expect(resolved.note == nil)
     }
 }
+
+@Suite struct RerouteAssistantSwitchTests {
+    @Test func switchedOffKeepsTheBrokenTrip() throws {
+        let dep = Date(timeIntervalSince1970: 1_800_000_000)
+        func leg(_ line: String, _ a: Double, _ b: Double, late: Double = 0) -> TripLeg {
+            TripLeg(kind: .ride, mode: .cityBus, line: line, stops: [
+                TripStop(stopID: "a", name: "A", place: nil, platform: nil, arrival: nil,
+                         departure: TimePoint(scheduledTime: dep.addingTimeInterval(a * 60))),
+                TripStop(stopID: "b", name: "B", place: nil, platform: nil,
+                         arrival: TimePoint(scheduledTime: dep.addingTimeInterval(b * 60),
+                                            realTime: late == 0 ? nil : dep.addingTimeInterval((b + late) * 60)),
+                         departure: nil),
+            ])
+        }
+        let broken = Trip(legs: [leg("86", 0, 15, late: 8), leg("S2", 20, 40)], interchanges: 1)
+        let next = Trip(legs: [leg("86", 0, 15, late: 8), leg("S2", 30, 50)], interchanges: 1)
+        var saved = SavedTrip(trip: Trip(legs: [leg("86", 0, 15), leg("S2", 20, 40)], interchanges: 1),
+                              query: TripQuery(origin: Stop(provider: .vvo, stopID: "1", name: "A"),
+                                               destination: Stop(provider: .vvo, stopID: "2", name: "B"), time: dep))
+        #expect(saved.resolve(in: [broken, next], now: dep)?.note != nil)
+        saved.usesRerouteAssistant = false
+        #expect(saved.resolve(in: [broken, next], now: dep)?.note == nil)
+    }
+}

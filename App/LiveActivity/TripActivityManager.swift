@@ -91,7 +91,9 @@ final class TripActivityManager {
         let now = Date.now
         for activity in activities where activity.activityState == .active {
             let current = activity.content.state
-            let saved = activity.attributes.saved
+            // Aktuelle Einstellungen der gemerkten Fahrt (z. B. Verpass-Assistent), falls sie noch gespeichert ist.
+            let saved = SavedTripsStore(defaults: AppGroup.defaults).trip(id: activity.attributes.saved.id)
+                ?? activity.attributes.saved
 
             // 10 Minuten nach Ankunft beenden, noch eine Weile auf dem Sperrbildschirm stehen lassen.
             if now > current.arrival.expectedTime.addingTimeInterval(10 * 60) {

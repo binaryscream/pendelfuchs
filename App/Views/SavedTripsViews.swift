@@ -276,6 +276,14 @@ struct SavedTripSettingsSections: View {
                      : "Wähle die Tage, an denen du diese Fahrt nimmst.")
             }
 
+            Section {
+                Toggle(isOn: binding(saved, \.usesRerouteAssistant)) {
+                    Label("Verpass-Assistent", systemImage: "arrow.triangle.branch")
+                }
+            } footer: {
+                Text("Fällt die Fahrt aus oder ist der Anschluss laut Echtzeit nicht mehr zu schaffen, nehmen Live-Aktivität und Übersicht automatisch die nächste passende Verbindung.")
+            }
+
             Section("Name (optional)") {
                 TextField("z. B. Zur Arbeit", text: Binding(
                     get: { saved.name ?? "" },
