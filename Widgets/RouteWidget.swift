@@ -217,9 +217,9 @@ struct RouteWidgetView: View {
 
     private var maxRows: Int {
         switch family {
-        case .systemLarge: 6
+        case .systemLarge: 5
         case .accessoryRectangular: 2
-        default: 3
+        default: 2
         }
     }
 
@@ -233,7 +233,7 @@ struct RouteWidgetView: View {
         if family == .accessoryRectangular {
             lockScreen
         } else {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 5) {
                 header
                 switch entry.content {
                 case .message(let text):
@@ -261,7 +261,7 @@ struct RouteWidgetView: View {
                 .font(.subheadline.weight(.semibold))
                 .minimumScaleFactor(0.8)
 
-                if let turn = entry.turnTime {
+                if let turn = entry.turnTime, family == .systemLarge {
                     Text(entry.reversed ? "Rückweg · ab \(turn.formatted) automatisch" : "Hinweg · Rückweg ab \(turn.formatted)")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -272,7 +272,7 @@ struct RouteWidgetView: View {
                 Button(intent: swap) {
                     Image(systemName: "arrow.left.arrow.right")
                         .font(.footnote.weight(.bold))
-                        .frame(width: 34, height: 34)
+                        .frame(width: 30, height: 30)
                         .background(Color(.secondarySystemFill), in: Circle())
                 }
                 .buttonStyle(.plain)
@@ -316,31 +316,82 @@ private struct RouteTripRow: View {
     let trip: Trip
 
     var body: some View {
-        HStack(spacing: 6) {
-            DelayedTimeText(scheduled: trip.departure.scheduledTime, actual: trip.departure.realTime)
-                .font(.subheadline.weight(.semibold))
-            Image(systemName: "arrow.right").font(.caption2).foregroundStyle(.secondary)
-            DelayedTimeText(scheduled: trip.arrival.scheduledTime, actual: trip.arrival.realTime)
-                .font(.subheadline)
-            Spacer(minLength: 2)
-
-            let rides = trip.rides
-            ForEach(Array(rides.prefix(2).enumerated()), id: \.offset) { _, ride in
-                LineBadge(line: ride.line ?? "?", mode: ride.mode ?? .other, compact: true)
-            }
-            if rides.count > 2 {
-                Text("+\(rides.count - 2)").font(.caption2).foregroundStyle(.secondary)
+        VStack(spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                DelayedTimeText(scheduled: trip.departure.scheduledTime, actual: trip.departure.realTime)
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                Spacer(minLength: 4)
+                if trip.disruption != nil {
+                    Image(systemName: "exclamationmark.triangle.fill").font(.caption).foregroundStyle(.red)
+                }
+                DelayedTimeText(scheduled: trip.arrival.scheduledTime, actual: trip.arrival.realTime)
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
             }
 
-            Text(duration)
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(minWidth: 34, alignment: .trailing)
+            RouteBar(trip: trip)
+
+            HStack(spacing: 5) {
+                if let platform = trip.rides.first?.stops.first?.platform, !platform.isEmpty {
+                    Text("Gl. \(platform)")
+                }
+                if trip.interchanges > 0 {
+                    Text("\(trip.interchanges)×").foregroundStyle(.tertiary)
+                }
+                Spacer(minLength: 4)
+                let rides = trip.rides
+                ForEach(Array(rides.prefix(3).enumerated()), id: \.offset) { _, ride in
+                    LineBadge(line: ride.line ?? "?", mode: ride.mode ?? .other, compact: true)
+                        .scaleEffect(0.85, anchor: .trailing)
+                        .frame(height: 19)
+                }
+                Text(duration).monospacedDigit()
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Color(.secondarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var duration: String {
         let minutes = Int((trip.duration / 60).rounded())
-        return minutes < 60 ? "\(minutes)′" : "\(minutes / 60):\(String(format: "%02d", minutes % 60))"
+        return minutes < 60 ? "\(minutes) min" : "\(minutes / 60):\(String(format: "%02d", minutes % 60)) h"
+    }
+}
+
+/// Reiseverlauf als Balken: jede Fahrt in der Farbe ihres Verkehrsmittels, Umstiege als blasse Lücke,
+/// Längen im Verhältnis zur Fahrzeit.
+private struct RouteBar: View {
+    let trip: Trip
+
+    private struct Segment { let weight: Double; let color: Color? }
+
+    private var segments: [Segment] {
+        var result: [Segment] = []
+        var cursor = trip.departure.expectedTime
+        for ride in trip.rides {
+            guard let start = ride.departure?.expectedTime, let end = ride.arrival?.expectedTime, end > start else { continue }
+            if start > cursor { result.append(Segment(weight: start.timeIntervalSince(cursor), color: nil)) }
+            result.append(Segment(weight: end.timeIntervalSince(start), color: (ride.mode ?? .other).color))
+            cursor = end
+        }
+        return result.isEmpty ? [Segment(weight: 1, color: .gray)] : result
+    }
+
+    var body: some View {
+        let parts = segments
+        let total = parts.reduce(0) { $0 + $1.weight }
+        GeometryReader { proxy in
+            let gaps = CGFloat(parts.count - 1) * 2
+            HStack(spacing: 2) {
+                ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
+                    Capsule()
+                        .fill(part.color ?? Color.secondary.opacity(0.35))
+                        .frame(width: max(4, (proxy.size.width - gaps) * part.weight / total))
+                }
+            }
+        }
+        .frame(height: 5)
     }
 }
