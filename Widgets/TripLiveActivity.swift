@@ -46,13 +46,12 @@ struct TripLiveActivity: Widget {
                     LineBadge(line: ride.line, mode: ride.mode, compact: true)
                 }
             } compactTrailing: {
-                CountdownText(target: info.target)
-                    .font(.caption.weight(.semibold))
-                    .frame(maxWidth: 48)
+                // Kreis, der sich bis zum Ziel der aktuellen Phase (Abfahrt bzw. Ankunft) schließt.
+                PhaseRing(info: info)
+                    .frame(width: 22, height: 22)
             } minimal: {
-                Text(info.ride?.line ?? "–")
-                    .font(.caption2.weight(.bold))
-                    .minimumScaleFactor(0.5)
+                PhaseRing(info: info)
+                    .frame(width: 22, height: 22)
             }
             .keylineTint(info.ride?.mode.color ?? .accentColor)
         }
@@ -171,6 +170,32 @@ private struct TimeLabel: View {
     }
 }
 
+/// Ring, der sich selbstständig bis zum Ziel der aktuellen Phase schließt (Dynamic Island). In der Mitte das
+/// Verkehrsmittel; fehlt ein Ziel (angekommen), ist der Ring voll mit Haken.
+private struct PhaseRing: View {
+    let info: PhaseInfo
+
+    var body: some View {
+        let tint = info.ride?.mode.color ?? Color.accentColor
+        if let range = info.ringRange, range.upperBound > .now {
+            ProgressView(timerInterval: range, countsDown: false) {
+                EmptyView()
+            } currentValueLabel: {
+                EmptyView()
+            }
+            .progressViewStyle(.circular)
+            .tint(tint)
+            .overlay {
+                Image(systemName: info.isRiding ? "tram.fill" : "clock.fill")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(tint)
+            }
+        } else {
+            Image(systemName: "checkmark.circle.fill").font(.system(size: 20)).foregroundStyle(tint)
+        }
+    }
+}
+
 /// Selbstständig weiterlaufender Countdown.
 /// Über zwei Minuten „18 Min.“ (eine Uhr wie „17:57“ würde man für eine Uhrzeit halten),
 /// in den letzten zwei Minuten sekundengenau „1:59“.
@@ -207,11 +232,33 @@ private struct PhaseInfo {
     let headline: String
     let subline: String
     let countdownLabel: String
+    /// Zeitraum, über den sich der Ring der Dynamic Island schließt.
+    let ringRange: ClosedRange<Date>?
+    let isRiding: Bool
 
     init(state: TripActivityState, now: Date) {
         let style = StopNameStyle.current
         ride = state.focusRide(at: now)
         target = state.countdownTarget(at: now)
+
+        switch state.phase(at: now) {
+        case .riding(let index):
+            let r = state.rides[index]
+            ringRange = r.departure.expectedTime...max(r.arrival.expectedTime, r.departure.expectedTime.addingTimeInterval(60))
+            isRiding = true
+        case .waiting, .transfer:
+            if let target {
+                // Die letzten 15 Minuten vor der Abfahrt (höchstens seit der letzten Aktualisierung).
+                let start = max(state.updatedAt, target.addingTimeInterval(-15 * 60))
+                ringRange = min(start, target.addingTimeInterval(-60))...target
+            } else {
+                ringRange = nil
+            }
+            isRiding = false
+        case .arrived:
+            ringRange = nil
+            isRiding = false
+        }
 
         guard let ride else {
             headline = "Keine Daten"; subline = ""; countdownLabel = ""
