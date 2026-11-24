@@ -200,20 +200,39 @@ struct TimelineToggleRow: View {
     }
 }
 
+/// Ob die Zwischenhalte in den Fahrtdetails aufgeklappt sind (Einstellung).
+enum StopListExpansion: String, CaseIterable, Identifiable {
+    case collapsed, whileRiding, expanded
+
+    static let storageKey = "display.stopListExpansion"
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .collapsed: "Zugeklappt"
+        case .whileRiding: "Während der Fahrt aufgeklappt"
+        case .expanded: "Immer aufgeklappt"
+        }
+    }
+}
+
 /// Alle Halte einer Fahrt als Zeitleiste (Zwischenhalte aufklappbar).
 struct RideTimeline: View {
     let leg: TripLeg
     let now: Date
-    /// Haltestelle, die hervorgehoben wird (Abfahrtsmonitor).
+    /// Haltestelle, die hervorgehoben wird (Abfahrtsmonitor) – dann immer aufgeklappt.
     var highlightedStopIndex: Int?
     @State private var expanded: Bool?
+    @AppStorage(StopListExpansion.storageKey) private var expansion = StopListExpansion.collapsed
 
     var body: some View {
         let progress = leg.progress(at: now)
         let mode = leg.mode ?? .other
         let count = leg.stops.count
-        // Während der Fahrt und mit hervorgehobenem Halt automatisch aufgeklappt.
-        let isExpanded = expanded ?? (highlightedStopIndex != nil || { if case .underway = progress { true } else { false } }())
+        // Vorgabe aus den Einstellungen; mit hervorgehobenem Halt („Hier“) immer aufgeklappt. Antippen überstimmt beides.
+        let riding = { if case .underway = progress { true } else { false } }()
+        let automatic = highlightedStopIndex != nil || expansion == .expanded || (expansion == .whileRiding && riding)
+        let isExpanded = expanded ?? automatic
 
         ForEach(Array(leg.stops.enumerated()), id: \.offset) { index, stop in
             let isEnd = index == 0 || index == count - 1

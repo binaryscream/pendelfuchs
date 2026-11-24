@@ -43,26 +43,32 @@ struct TripSearchView: View {
         NavigationStack(path: $path) {
             Form {
                 Section {
-                    StopField(label: "Von", stop: origin) { picking = .origin }
-                        .listRowSeparator(.hidden, edges: .bottom)
-
-                    // Zwischen Start und Ziel: links „Zwischenhalt“, rechts Tauschen.
-                    connectorRow
-
-                    if showVia {
-                        HStack {
-                            StopField(label: "Über", stop: via) { picking = .via }
-                            Button {
-                                withAnimation { showVia = false; via = nil }
-                            } label: {
-                                Image(systemName: "minus.circle.fill").foregroundStyle(.red)
+                    VStack(spacing: 0) {
+                        StopField(label: "Von", stop: origin) { picking = .origin }
+                            .padding(.vertical, 14)
+                        // Auf der Linie zwischen Start und Ziel: Zwischenhalt und Tauschen, nur als Symbole.
+                        lineWithButtons
+                        if showVia {
+                            HStack {
+                                StopField(label: "Über", stop: via) { picking = .via }
+                                Button {
+                                    withAnimation { showVia = false; via = nil }
+                                } label: {
+                                    Image(systemName: "minus.circle.fill").foregroundStyle(.red)
+                                }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel("Zwischenhalt entfernen")
+                                // Unter der Stelle, wo vorher „+“ war – nicht direkt am Tausch-Knopf.
+                                .frame(width: 32)
+                                .padding(.trailing, 42)
                             }
-                            .buttonStyle(.borderless)
-                            .accessibilityLabel("Zwischenhalt entfernen")
+                            .padding(.vertical, 14)
+                            separatorLine
                         }
+                        StopField(label: "Nach", stop: destination) { picking = .destination }
+                            .padding(.vertical, 14)
                     }
-
-                    StopField(label: "Nach", stop: destination) { picking = .destination }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 16))
                 }
 
                 Section {
@@ -147,37 +153,44 @@ struct TripSearchView: View {
         }
     }
 
-    /// Schmale Zeile zwischen „Von“ und „Nach“ (bündig mit den Haltestellennamen).
-    private var connectorRow: some View {
-        HStack {
-            if !showVia {
-                Button {
-                    withAnimation { showVia = true }
-                } label: {
-                    Label("Zwischenhalt", systemImage: "plus")
-                        .font(.footnote.weight(.medium))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+    /// Trennlinie (bündig mit den Haltestellennamen).
+    private var separatorLine: some View {
+        Rectangle()
+            .fill(Color(.separator))
+            .frame(height: 1 / 3)
+            .padding(.leading, 56)
+    }
+
+    /// Trennlinie zwischen „Von“ und dem Rest, rechts darauf die runden Knöpfe.
+    private var lineWithButtons: some View {
+        separatorLine
+            .overlay(alignment: .trailing) {
+                HStack(spacing: 10) {
+                    if !showVia {
+                        circleButton("plus", label: "Zwischenhalt hinzufügen") {
+                            withAnimation { showVia = true }
+                        }
+                    }
+                    circleButton("arrow.up.arrow.down", label: "Start und Ziel tauschen") {
+                        swap(&originData, &destinationData)
+                    }
+                    .disabled(origin == nil && destination == nil)
                 }
-                .buttonStyle(.borderless)
             }
-            Spacer(minLength: 0)
-            Button {
-                swap(&originData, &destinationData)
-            } label: {
-                Image(systemName: "arrow.up.arrow.down")
-                    .font(.footnote.weight(.bold))
-                    .frame(width: 32, height: 32)
-                    .background(Color(.secondarySystemFill), in: Circle())
-            }
-            .buttonStyle(.borderless)
-            .disabled(origin == nil && destination == nil)
-            .accessibilityLabel("Start und Ziel tauschen")
+            .zIndex(1)
+    }
+
+    private func circleButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.footnote.weight(.bold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 32, height: 32)
+                .background(Color(.secondarySystemGroupedBackground), in: Circle())
+                .overlay(Circle().stroke(Color(.separator), lineWidth: 1))
         }
-        .padding(.leading, 56)   // Breite der Beschriftung „Von“ + Abstand
-        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-        .listRowSeparator(.hidden)
+        .buttonStyle(.borderless)
+        .accessibilityLabel(label)
     }
 
     private var timeBinding: Binding<Date> {
@@ -249,7 +262,8 @@ private struct StopField: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.borderless)
+        .foregroundStyle(.primary)
         .accessibilityLabel("\(label): \(stop?.label(style) ?? "keine Haltestelle")")
     }
 }

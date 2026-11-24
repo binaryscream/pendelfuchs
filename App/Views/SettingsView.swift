@@ -42,6 +42,7 @@ struct SettingsView: View {
     @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
     @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var delayDisplay = DelayDisplay.badge
     @AppStorage(StopNameStyle.storageKey, store: AppGroup.defaults) private var stopNameStyle = StopNameStyle.withPlace
+    @AppStorage(StopListExpansion.storageKey) private var stopListExpansion = StopListExpansion.collapsed
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -95,6 +96,18 @@ struct SettingsView: View {
                     Text("Verspätungen anzeigen")
                 } footer: {
                     Text("Gilt in der ganzen App, im Widget und in der Live-Aktivität. Die Minuten bis zur Abfahrt enthalten die Verspätung immer schon.")
+                }
+
+                Section {
+                    Picker("Zwischenhalte", selection: $stopListExpansion) {
+                        ForEach(StopListExpansion.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                } header: {
+                    Text("Zwischenhalte in den Fahrtdetails")
+                } footer: {
+                    Text("Antippen von „… Zwischenhalte“ klappt sie jederzeit auf oder zu. Im Fahrtverlauf aus dem Abfahrtsmonitor sind sie immer offen, damit deine Haltestelle zu sehen ist.")
                 }
 
                 Section {
