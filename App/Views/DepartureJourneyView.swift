@@ -95,10 +95,6 @@ struct DepartureJourneyView: View {
             if loaded.line == nil { loaded.line = departure.line }
             if loaded.direction == nil { loaded.direction = departure.direction }
             if loaded.mode == nil { loaded.mode = departure.mode }
-            // Züge: Auslastung von der DB ergänzen (bleibt beim alten Stand, wenn die DB nichts liefert).
-            if loaded.boardingOccupancy == nil, DBOccupancyProvider.supports(loaded) {
-                loaded = await DBOccupancyProvider().enrich(loaded)
-            }
             leg = loaded
             errorMessage = nil
         } catch is CancellationError {

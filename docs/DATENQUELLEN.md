@@ -159,17 +159,11 @@ Ein `ProviderRouter` wählt je nach Region und Verfügbarkeit die Quelle:
   Empfängern ab, Nutzungsbedingungen noch nicht geprüft.
 - **VVO-Störungsmeldungen** (`POST /rc`): Baustellen und Störungen je Linie (Antwort > 200 kB).
 
-## Wagenreihung (Deutsche Bahn, inoffiziell)
+## Wagenreihung und DB-Auslastung (vorerst entfernt)
 
-- `https://www.bahn.de/web/api/reisebegleitung/wagenreihung/vehicle-sequence` mit `administrationId=80`,
-  `category` (S/RB/RE/IC/ICE – die Schnittstelle ist tolerant), `date` (Tag in Europe/Berlin), `evaNumber`,
-  `number` (Zugnummer) und `time` (Plan-Abfahrt, ISO 8601 UTC). 404 = keine Wagenreihung.
-- Die EVA-Nummer des Einstiegs holt `reiseloesung/orte/nearby?lat=&long=&radius=1000` (erste 7-stellige
-  Nummer mit „80“ und Zug-Produkten).
-- Die Zugnummer kommt von VVO (`Mot.TrainNumber`) bzw. Transitous (`tripShortName`).
-- curl wird von bahn.de geblockt (`OPS_BLOCKED`), URLSession (iOS/macOS) funktioniert.
-- **Rechtlich:** keine Erlaubnis der DB, Nutzung wie bei db-vendo auf eigenes Risiko; vor einer Veröffentlichung
-  klären oder durch einen Link nach außen ersetzen. In der App als „inoffiziell, ohne Gewähr“ gekennzeichnet.
-- Auslastung: VVO (`Occupancy` je Halt in `/tr/trips`, `/dm`, `/dm/trip`); für Züge zusätzlich DB über
-  `reiseloesung/abfahrten?ortExtId=&datum=&zeit=` (Ortszeit) → Fahrt per Linie + Plan-Abfahrt → `reiseloesung/fahrt?journeyId=`
-  (`auslastungsmeldungen`, KLASSE_2, Stufe 1–4). Nachts gibt es oft keine Prognose. Zuordnung der Halte über normalisierte Namen.
+Beides war über die inoffizielle Web-Schnittstelle von bahn.de eingebaut (Commits `d869bb9`, `340b9cf`) und wurde
+wieder entfernt, bis es eine offizielle Anbindung an die DB gibt. Der Code liegt in der Git-Historie:
+EVA per `reiseloesung/orte/nearby`, Wagenreihung per `reisebegleitung/wagenreihung/vehicle-sequence`,
+Auslastung per `reiseloesung/abfahrten` → `reiseloesung/fahrt` (`auslastungsmeldungen`).
+
+Auslastung kommt weiter vom VVO (`Occupancy` je Halt in `/tr/trips`, `/dm`, `/dm/trip`).
