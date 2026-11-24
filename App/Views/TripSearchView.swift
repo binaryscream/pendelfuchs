@@ -47,7 +47,8 @@ struct TripSearchView: View {
                 Section {
                     VStack(spacing: 0) {
                         StopField(label: "Von", stop: origin) { picking = .origin }
-                            .padding(.vertical, 14)
+                            .padding(.top, 14)
+                            .padding(.bottom, 4)
                         // Auf der Linie zwischen Start und Ziel: Zwischenhalt und Tauschen, nur als Symbole.
                         lineWithButtons
                         if showVia {
@@ -68,7 +69,8 @@ struct TripSearchView: View {
                             separatorLine
                         }
                         StopField(label: "Nach", stop: destination) { picking = .destination }
-                            .padding(.vertical, 14)
+                            .padding(.top, showVia ? 14 : 4)
+                            .padding(.bottom, 14)
                     }
                     .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 16))
                 }
@@ -187,6 +189,9 @@ struct TripSearchView: View {
                     .disabled(origin == nil && destination == nil)
                 }
             }
+            // Eigene Höhe für die Knöpfe: Die Linie liegt in der Mitte, die Namen darüber und darunter
+            // laufen nie unter die Knöpfe – auch nicht bei langen, zweizeiligen Namen.
+            .frame(height: 40)
             .zIndex(1)
     }
 
