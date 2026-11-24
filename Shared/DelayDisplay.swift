@@ -43,6 +43,8 @@ struct DelayedTimeText: View {
     let scheduled: Date
     /// Echtzeit-Prognose; `nil`, wenn keine vorliegt.
     var actual: Date?
+    /// Geplante und tatsächliche Zeit nebeneinander statt untereinander (für Widgets mit festem Platz).
+    var inline = false
 
     @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var style = DelayDisplay.badge
 
@@ -69,12 +71,23 @@ struct DelayedTimeText: View {
                 case .actual:
                     time(actual ?? scheduled).foregroundStyle(delayColor)
                 case .both:
-                    VStack(alignment: .leading, spacing: 0) {
-                        time(scheduled)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .strikethrough(true, color: .secondary)
-                        time(actual ?? scheduled).foregroundStyle(delayColor)
+                    if inline {
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            time(scheduled)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .strikethrough(true, color: .secondary)
+                            time(actual ?? scheduled).foregroundStyle(delayColor)
+                        }
+                        .lineLimit(1)
+                    } else {
+                        VStack(alignment: .leading, spacing: 0) {
+                            time(scheduled)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .strikethrough(true, color: .secondary)
+                            time(actual ?? scheduled).foregroundStyle(delayColor)
+                        }
                     }
                 }
             }

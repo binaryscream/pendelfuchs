@@ -341,13 +341,13 @@ private struct RouteTripRow: View {
         VStack(spacing: 4) {
             Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                DelayedTimeText(scheduled: trip.departure.scheduledTime, actual: trip.departure.realTime)
+                DelayedTimeText(scheduled: trip.departure.scheduledTime, actual: trip.departure.realTime, inline: true)
                     .font(.system(.subheadline, design: .rounded).weight(.bold))
                 Spacer(minLength: 4)
                 if trip.disruption != nil {
                     Image(systemName: "exclamationmark.triangle.fill").font(.caption).foregroundStyle(.red)
                 }
-                DelayedTimeText(scheduled: trip.arrival.scheduledTime, actual: trip.arrival.realTime)
+                DelayedTimeText(scheduled: trip.arrival.scheduledTime, actual: trip.arrival.realTime, inline: true)
                     .font(.system(.subheadline, design: .rounded).weight(.bold))
             }
 
