@@ -158,13 +158,14 @@ struct HomeView: View {
 
 struct StopRow: View {
     let stop: Stop
+    @Environment(\.stopNameStyle) private var style
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(stop.name).font(.body)
-                if let place = stop.place {
-                    Text(place).font(.caption).foregroundStyle(.secondary)
+                Text(stop.label(style)).font(.body)
+                if let second = stop.secondaryLine(style) {
+                    Text(second).font(.caption).foregroundStyle(.secondary)
                 }
             }
             Spacer()

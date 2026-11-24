@@ -105,6 +105,7 @@ struct RailView: View {
 
 /// Ein Halt in der Zeitleiste.
 struct TimelineStopRow: View {
+    @Environment(\.stopNameStyle) private var style
     let stop: TripStop
     let time: TimePoint?
     let mode: TransportMode
@@ -130,7 +131,7 @@ struct TimelineStopRow: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 6) {
-                    Text(stop.name)
+                    Text(stop.label(style))
                         .font(emphasized || badge != nil ? .body.weight(.semibold) : .subheadline)
                         .strikethrough(stop.isCancelled)
                     if let badge {
@@ -142,8 +143,8 @@ struct TimelineStopRow: View {
                             .background(mode.color, in: Capsule())
                     }
                 }
-                if emphasized || showPlace, let place = stop.place {
-                    Text(place).font(.caption).foregroundStyle(.secondary)
+                if emphasized || showPlace, let second = stop.secondaryLine(style) {
+                    Text(second).font(.caption).foregroundStyle(.secondary)
                 }
             }
             Spacer(minLength: 4)
@@ -270,6 +271,7 @@ extension View {
 
 /// „Nächster Halt: Hauptbahnhof · in 3 min“ mit Fortschrittsbalken bis dorthin.
 struct NextStopRow: View {
+    @Environment(\.stopNameStyle) private var style
     let next: TripStop
     let fraction: Double
     let mode: TransportMode
@@ -279,7 +281,7 @@ struct NextStopRow: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "location.fill").foregroundStyle(mode.color)
-                Text("Nächster Halt: \(next.name)").font(.subheadline.weight(.semibold)).lineLimit(1)
+                Text("Nächster Halt: \(next.label(style))").font(.subheadline.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 4)
                 if let time = (next.arrival ?? next.departure)?.expectedTime {
                     Text(minutesUntil(time, now: now)).font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)

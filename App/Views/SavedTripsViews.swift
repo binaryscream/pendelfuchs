@@ -71,6 +71,7 @@ struct MyTripsView: View {
 
 /// Zeile mit Uhrzeit, Strecke, Linien, Wochentagen und – für die nächsten Stunden – Live-Status.
 struct SavedTripRow: View {
+    @Environment(\.stopNameStyle) private var style
     let saved: SavedTrip
     let now: Date
 
@@ -85,7 +86,7 @@ struct SavedTripRow: View {
                 .font(.title2.weight(.semibold).monospacedDigit())
 
             VStack(alignment: .leading, spacing: 5) {
-                Text(saved.title).font(.body.weight(.medium)).lineLimit(2)
+                Text(saved.title(style: style)).font(.body.weight(.medium)).lineLimit(2)
                 HStack(spacing: 4) {
                     ForEach(Array(zip(saved.lines, saved.modes).enumerated()), id: \.offset) { index, pair in
                         if index > 0 {
@@ -123,6 +124,7 @@ struct SavedTripRow: View {
 // MARK: - Detailansicht einer gemerkten Fahrt
 
 struct SavedTripDetailView: View {
+    @Environment(\.stopNameStyle) private var style
     let id: UUID
 
     @Environment(SavedTripsStore.self) private var store
@@ -136,10 +138,10 @@ struct SavedTripDetailView: View {
             Form {
                 Section {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(saved.origin.displayName) → \(saved.destination.displayName)")
+                        Text("\(saved.origin.label(style)) → \(saved.destination.label(style))")
                             .font(.headline)
                         if let via = saved.via {
-                            Text("über \(via.displayName)").font(.subheadline).foregroundStyle(.secondary)
+                            Text("über \(via.label(style))").font(.subheadline).foregroundStyle(.secondary)
                         }
                         Text("Ab \(saved.departure.formatted)\(saved.arrival.map { " · an \($0.formatted)" } ?? "") · \(saved.lines.joined(separator: " › "))")
                             .font(.subheadline)
@@ -178,7 +180,7 @@ struct SavedTripDetailView: View {
                 }
 
             }
-            .navigationTitle(saved.title)
+            .navigationTitle(saved.title(style: style))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 Button("Einstellungen", systemImage: "slider.horizontal.3") { showSettings = true }
@@ -195,6 +197,7 @@ struct SavedTripDetailView: View {
 
 /// Blatt, das direkt nach dem Merken erscheint.
 struct SavedTripSheet: View {
+    @Environment(\.stopNameStyle) private var style
     let id: UUID
     /// `true` direkt nach dem Merken, `false` beim späteren Öffnen der Einstellungen.
     var isNew = true
@@ -209,7 +212,7 @@ struct SavedTripSheet: View {
                     Section {
                         Label {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("\(saved.departure.formatted) · \(saved.origin.name) → \(saved.destination.name)")
+                                Text("\(saved.departure.formatted) · \(saved.origin.label(style)) → \(saved.destination.label(style))")
                                 Text(saved.lines.joined(separator: " › ")).font(.caption).foregroundStyle(.secondary)
                             }
                         } icon: {

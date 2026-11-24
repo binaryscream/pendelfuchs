@@ -11,6 +11,7 @@ struct FahrplanXLApp: App {
     @State private var savedTrips: SavedTripsStore
     @AppStorage(AppearanceSetting.storageKey) private var appearance: AppearanceSetting = .system
     @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
+    @AppStorage(StopNameStyle.storageKey, store: AppGroup.defaults) private var stopNameStyle = StopNameStyle.withPlace
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab = AppTab.departures
     @State private var openStop: Stop?
@@ -50,6 +51,8 @@ struct FahrplanXLApp: App {
                 // Widgets zeigen standardmäßig den ersten Favoriten – nach Änderungen neu laden.
                 .onChange(of: favorites.stops) { WidgetCenter.shared.reloadAllTimelines() }
                 .onChange(of: useVVO) { WidgetCenter.shared.reloadAllTimelines() }
+                .environment(\.stopNameStyle, stopNameStyle)
+                .onChange(of: stopNameStyle) { WidgetCenter.shared.reloadAllTimelines() }
                 // Live-Aktivitäten aktuell halten, solange die App offen ist (jede Minute).
                 .task(id: scenePhase) {
                     guard scenePhase == .active else { return }

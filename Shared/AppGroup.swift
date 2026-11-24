@@ -8,7 +8,9 @@ enum AppGroup {
     static let id = "group.de.fahrplanxl.app"
 
     /// Fällt auf `.standard` zurück, falls die App Group (z. B. ohne Signatur) nicht verfügbar ist.
-    static var defaults: UserDefaults { UserDefaults(suiteName: id) ?? .standard }
+    /// Ein gemeinsames Objekt für die ganze Anwendung: Mit je einem neuen `UserDefaults` pro Zugriff bemerkt
+    /// SwiftUI (`@AppStorage`) Änderungen aus anderen Ansichten nicht sofort. `UserDefaults` ist thread-sicher.
+    nonisolated(unsafe) static let defaults: UserDefaults = UserDefaults(suiteName: id) ?? .standard
 
     /// Schlüssel, die früher in `UserDefaults.standard` lagen.
     private static let migratedKeys = ["favoriteStops.v1", "savedTrips.v1"]

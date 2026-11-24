@@ -8,6 +8,7 @@ struct TripResultsView: View {
     let initialQuery: TripQuery
 
     @Environment(\.transit) private var transit
+    @Environment(\.stopNameStyle) private var style
 
     @State private var trips: [Trip] = []
     @State private var isLoading = true
@@ -42,7 +43,7 @@ struct TripResultsView: View {
             }
         }
         .overlay { if isLoading && trips.isEmpty { ProgressView() } }
-        .navigationTitle("\(initialQuery.origin.name) → \(initialQuery.destination.name)")
+        .navigationTitle("\(initialQuery.origin.label(style)) → \(initialQuery.destination.label(style))")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await load(initialQuery, replace: true) }
         .task { await load(initialQuery, replace: true) }
@@ -50,9 +51,9 @@ struct TripResultsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("\(initialQuery.origin.displayName) → \(initialQuery.destination.displayName)")
+            Text("\(initialQuery.origin.label(style)) → \(initialQuery.destination.label(style))")
             if let via = initialQuery.via {
-                Text("über \(via.displayName)")
+                Text("über \(via.label(style))")
             }
             if !initialQuery.options.isStandard {
                 Label(initialQuery.options.summary, systemImage: "slider.horizontal.3")

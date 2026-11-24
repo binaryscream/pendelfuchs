@@ -15,7 +15,7 @@ struct SavedTripEntity: AppEntity {
 
     init(_ saved: SavedTrip) {
         id = saved.id
-        title = saved.title
+        title = saved.title(style: .current)
         subtitle = "\(saved.departure.formatted) · \(saved.lines.joined(separator: " › ")) · \(saved.weekdays.summary)"
     }
 
@@ -72,7 +72,7 @@ struct StartTripActivityIntent: LiveActivityIntent {
         }
 
         try await TripActivityManager.shared.start(saved)
-        return .result(dialog: "Live-Aktivität für „\(saved.title)“ gestartet.")
+        return .result(dialog: "Live-Aktivität für „\(saved.title(style: .current))“ gestartet.")
     }
 }
 

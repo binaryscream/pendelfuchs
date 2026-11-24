@@ -142,9 +142,11 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
 
     public var isRegular: Bool { !weekdays.isEmpty }
 
-    public var title: String {
+    public var title: String { title(style: .withPlace) }
+
+    public func title(style: StopNameStyle) -> String {
         if let name, !name.trimmingCharacters(in: .whitespaces).isEmpty { return name }
-        return "\(origin.name) → \(destination.name)"
+        return "\(origin.label(style)) → \(destination.label(style))"
     }
 
     /// Ist das genau diese Verbindung (gleiche Strecke, Abfahrt und Linien)?

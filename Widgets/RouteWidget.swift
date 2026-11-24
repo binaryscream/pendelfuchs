@@ -211,6 +211,7 @@ struct RouteWidget: Widget {
 // MARK: - Darstellung
 
 struct RouteWidgetView: View {
+    @AppStorage(StopNameStyle.storageKey, store: AppGroup.defaults) private var style = StopNameStyle.withPlace
     let entry: RouteEntry
     @Environment(\.widgetFamily) private var family
 
@@ -280,10 +281,12 @@ struct RouteWidgetView: View {
         }
     }
 
-    /// Haltestellenname; bei gleichen Namen („Bahnhof“ → „Bahnhof“) mit Ort.
+    /// Haltestellenname in der gewählten Darstellung; bei „Nur Name“ und gleichen Namen
+    /// („Bahnhof“ → „Bahnhof“) trotzdem mit Ort, sonst wären Start und Ziel nicht zu unterscheiden.
     private func label(_ stop: Stop?, other: Stop?) -> String {
         guard let stop else { return "…" }
-        return stop.name == other?.name ? stop.displayName : stop.name
+        if style == .nameOnly, stop.name == other?.name { return stop.label(.withPlace) }
+        return stop.label(style)
     }
 
     /// Sperrbildschirm: einfarbig, Strecke und die nächsten zwei Verbindungen.

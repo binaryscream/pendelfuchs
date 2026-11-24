@@ -65,7 +65,8 @@ private func trip(_ lines: [String], at dep: Date) -> Trip {
         #expect(s.departure == TimeOfDay(hour: 6, minute: 30))
         #expect(s.lines == ["S1", "7"])
         #expect(s.origin.distance == nil, "Entfernung aus der Umkreissuche darf nicht mitgespeichert werden")
-        #expect(s.title == "Bahnhof → Postplatz")
+        #expect(s.title == "Pirna Bahnhof → Dresden Postplatz")
+        #expect(s.title(style: .nameOnly) == "Bahnhof → Postplatz")
         #expect(s.isRegular)
     }
 

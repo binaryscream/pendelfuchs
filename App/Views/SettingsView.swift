@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import FahrplanKit
 import SwiftUI
 
 /// Erscheinungsbild der App, unabhängig von der Systemeinstellung wählbar.
@@ -40,6 +41,7 @@ struct SettingsView: View {
     @AppStorage(AppearanceSetting.storageKey) private var appearance: AppearanceSetting = .system
     @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
     @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var delayDisplay = DelayDisplay.badge
+    @AppStorage(StopNameStyle.storageKey, store: AppGroup.defaults) private var stopNameStyle = StopNameStyle.withPlace
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -57,6 +59,24 @@ struct SettingsView: View {
                     Text("Erscheinungsbild")
                 } footer: {
                     Text("„System“ folgt der Einstellung deines iPhones und wechselt z. B. abends automatisch in den Dunkelmodus.")
+                }
+
+                Section {
+                    Picker("Haltestellennamen", selection: $stopNameStyle) {
+                        ForEach(StopNameStyle.allCases) { option in
+                            VStack(alignment: .leading) {
+                                Text(option.title)
+                                Text(option.example).font(.caption).foregroundStyle(.secondary)
+                            }
+                            .tag(option)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                } header: {
+                    Text("Haltestellennamen anzeigen")
+                } footer: {
+                    Text("„Mit Ort“ setzt den Ort davor, damit „Hbf“ und „Bahnhof“ eindeutig sind. Gilt in der ganzen App, im Widget und in der Live-Aktivität.")
                 }
 
                 Section {

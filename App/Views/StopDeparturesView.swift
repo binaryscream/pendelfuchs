@@ -11,6 +11,7 @@ struct StopDeparturesView: View {
     @Environment(FavoritesStore.self) private var favorites
     @Environment(\.transit) private var transit
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.stopNameStyle) private var style
 
     @State private var departures: [Departure] = []
     @State private var errorMessage: String?
@@ -72,7 +73,7 @@ struct StopDeparturesView: View {
             }
         }
         .overlay { if isLoading && departures.isEmpty { ProgressView() } }
-        .navigationTitle(stop.name)
+        .navigationTitle(stop.label(style))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             Button {

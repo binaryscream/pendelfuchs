@@ -225,6 +225,7 @@ private struct StopField: View {
     let label: String
     let stop: Stop?
     let action: () -> Void
+    @Environment(\.stopNameStyle) private var style
 
     var body: some View {
         Button(action: action) {
@@ -234,9 +235,9 @@ private struct StopField: View {
                     .frame(width: 44, alignment: .leading)
                 if let stop {
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(stop.name).foregroundStyle(.primary)
-                        if let place = stop.place {
-                            Text(place).font(.caption).foregroundStyle(.secondary)
+                        Text(stop.label(style)).foregroundStyle(.primary)
+                        if let second = stop.secondaryLine(style) {
+                            Text(second).font(.caption).foregroundStyle(.secondary)
                         }
                     }
                 } else {
@@ -247,7 +248,7 @@ private struct StopField: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(label): \(stop?.displayName ?? "keine Haltestelle")")
+        .accessibilityLabel("\(label): \(stop?.label(style) ?? "keine Haltestelle")")
     }
 }
 

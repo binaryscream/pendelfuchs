@@ -10,12 +10,22 @@ public struct TripActivityState: Codable, Hashable, Sendable {
         public var mode: TransportMode
         public var direction: String?
         public var fromName: String
+        public var fromPlace: String?
         public var fromPlatform: String?
         public var toName: String
+        public var toPlace: String?
         public var toPlatform: String?
         public var departure: TimePoint
         public var arrival: TimePoint
         public var isCancelled: Bool
+
+        public func fromLabel(_ style: StopNameStyle) -> String {
+            StopNameStyle.label(name: fromName, place: fromPlace, style: style)
+        }
+
+        public func toLabel(_ style: StopNameStyle) -> String {
+            StopNameStyle.label(name: toName, place: toPlace, style: style)
+        }
     }
 
     /// Was gerade dran ist – wird beim Anzeigen aus der aktuellen Uhrzeit berechnet.
@@ -42,8 +52,8 @@ public struct TripActivityState: Codable, Hashable, Sendable {
             guard let first = leg.stops.first, let last = leg.stops.last,
                   let dep = leg.departure, let arr = leg.arrival else { return nil }
             return Ride(line: leg.line ?? "?", mode: leg.mode ?? .other, direction: leg.direction,
-                        fromName: first.name, fromPlatform: first.platform,
-                        toName: last.name, toPlatform: last.platform,
+                        fromName: first.name, fromPlace: first.place, fromPlatform: first.platform,
+                        toName: last.name, toPlace: last.place, toPlatform: last.platform,
                         departure: dep, arrival: arr, isCancelled: leg.isCancelled)
         }
         self.init(rides: rides, updatedAt: updatedAt)

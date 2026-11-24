@@ -62,6 +62,7 @@ struct TripLiveActivity: Widget {
 // MARK: - Sperrbildschirm
 
 private struct LockScreenView: View {
+    private let style = StopNameStyle.current
     let saved: SavedTrip
     let state: TripActivityState
     let isStale: Bool
@@ -70,7 +71,7 @@ private struct LockScreenView: View {
         let info = PhaseInfo(state: state, now: .now)
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Label(saved.title, systemImage: "tram.fill")
+                Label(saved.title(style: style), systemImage: "tram.fill")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -208,6 +209,7 @@ private struct PhaseInfo {
     let countdownLabel: String
 
     init(state: TripActivityState, now: Date) {
+        let style = StopNameStyle.current
         ride = state.focusRide(at: now)
         target = state.countdownTarget(at: now)
 
@@ -227,20 +229,20 @@ private struct PhaseInfo {
 
         switch state.phase(at: now) {
         case .waiting:
-            headline = "\(ride.fromName)\(platform)"
+            headline = "\(ride.fromLabel(style))\(platform)"
             subline = direction
             countdownLabel = "bis Abfahrt"
         case .transfer:
             headline = "Umstieg in \(ride.line)"
-            subline = "\(ride.fromName)\(platform)"
+            subline = "\(ride.fromLabel(style))\(platform)"
             countdownLabel = "bis Abfahrt"
         case .riding:
-            headline = "Bis \(ride.toName)"
+            headline = "Bis \(ride.toLabel(style))"
             subline = direction
             countdownLabel = "bis Ausstieg"
         case .arrived:
             headline = "Angekommen"
-            subline = ride.toName
+            subline = ride.toLabel(style)
             countdownLabel = ""
         }
     }
