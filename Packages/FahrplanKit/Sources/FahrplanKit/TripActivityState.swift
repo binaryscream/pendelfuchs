@@ -41,13 +41,16 @@ public struct TripActivityState: Codable, Hashable, Sendable {
 
     public var rides: [Ride]
     public var updatedAt: Date
+    /// Hinweis, wenn die gemerkte Fahrt ersetzt wurde (z. B. „Anschluss S2 verpasst – nächste Verbindung“).
+    public var note: String?
 
-    public init(rides: [Ride], updatedAt: Date = .now) {
+    public init(rides: [Ride], updatedAt: Date = .now, note: String? = nil) {
         self.rides = rides
         self.updatedAt = updatedAt
+        self.note = note
     }
 
-    public init(trip: Trip, updatedAt: Date = .now) {
+    public init(trip: Trip, updatedAt: Date = .now, note: String? = nil) {
         let rides: [Ride] = trip.rides.prefix(5).compactMap { leg in
             guard let first = leg.stops.first, let last = leg.stops.last,
                   let dep = leg.departure, let arr = leg.arrival else { return nil }
@@ -56,7 +59,7 @@ public struct TripActivityState: Codable, Hashable, Sendable {
                         toName: last.name, toPlace: last.place, toPlatform: last.platform,
                         departure: dep, arrival: arr, isCancelled: leg.isCancelled)
         }
-        self.init(rides: rides, updatedAt: updatedAt)
+        self.init(rides: rides, updatedAt: updatedAt, note: note)
     }
 
     public var departure: TimePoint { rides.first?.departure ?? TimePoint(scheduledTime: updatedAt) }

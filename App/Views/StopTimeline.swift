@@ -309,6 +309,8 @@ struct TripStatusView: View {
             "Einstieg entfällt: \(stop.label(style))"
         case .alightingCancelled(_, let stop):
             "Ausstieg entfällt: \(stop.label(style))"
+        case .connectionMissed(let line, let stop):
+            "Anschluss \(line ?? "") verpasst in \(stop.label(style))"
         }
     }
 

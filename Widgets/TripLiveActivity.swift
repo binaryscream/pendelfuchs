@@ -33,7 +33,8 @@ struct TripLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.center) {
                     VStack(spacing: 1) {
                         Text(info.headline).font(.headline).lineLimit(1)
-                        Text(info.subline).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        Text(context.state.note ?? info.subline).font(.caption)
+                            .foregroundStyle(context.state.note == nil ? Color.secondary : Color.orange).lineLimit(1)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -103,6 +104,14 @@ private struct LockScreenView: View {
                         .lineLimit(1)
                 }
                 .frame(width: 112, alignment: .trailing)
+            }
+
+            if let note = state.note {
+                Label(note, systemImage: "arrow.triangle.branch")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
 
             TripProgress(state: state)

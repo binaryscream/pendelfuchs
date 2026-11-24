@@ -167,6 +167,13 @@ struct SavedTripDetailView: View {
                             NavigationLink(value: MyTripsRoute.detail(trip, saved.query(on: upcoming))) {
                                 TripRow(trip: trip, now: .now)
                             }
+                        case .rerouted(let trip, let note):
+                            Label(note, systemImage: "arrow.triangle.branch")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.orange)
+                            NavigationLink(value: MyTripsRoute.detail(trip, saved.query(on: upcoming))) {
+                                TripRow(trip: trip, now: .now)
+                            }
                         case .notFound:
                             Text("Diese Verbindung wurde zur gewohnten Zeit nicht gefunden – vielleicht hat sich der Fahrplan geändert.")
                                 .foregroundStyle(.secondary)
@@ -177,7 +184,7 @@ struct SavedTripDetailView: View {
                     .task(id: upcoming) { live = await LiveState.load(saved, on: upcoming, using: transit) }
 
                     Section {
-                        LiveActivityButton(saved: saved, knownTrip: { if case .found(let t) = live { t } else { nil } }())
+                        LiveActivityButton(saved: saved, knownTrip: { switch live { case .found(let t), .rerouted(let t, _): t; default: nil } }())
                     } footer: {
                         LiveActivityAutomationHint(saved: saved)
                     }
@@ -332,6 +339,8 @@ enum LiveState: Equatable {
     case idle
     case loading
     case found(Trip)
+    /// Gemerkte Fahrt nicht fahrbar – stattdessen diese Verbindung (mit Hinweis).
+    case rerouted(Trip, String)
     case notFound
     case failed(String)
 
@@ -339,7 +348,9 @@ enum LiveState: Equatable {
     static func load(_ saved: SavedTrip, on day: Date, using transit: any TransitProvider) async -> LiveState {
         do {
             let trips = try await transit.trips(saved.query(on: day))
-            return saved.bestMatch(in: trips).map(LiveState.found) ?? .notFound
+            guard let resolved = saved.resolve(in: trips) else { return .notFound }
+            if let note = resolved.note { return .rerouted(resolved.trip, note) }
+            return .found(resolved.trip)
         } catch {
             return .failed(error.localizedDescription)
         }
@@ -360,6 +371,8 @@ private struct LiveBadge: View {
             } else if trip.departure.realTime != nil {
                 badge("pünktlich", .green)
             }
+        case .rerouted:
+            badge("Umgeplant", .orange)
         case .notFound:
             Image(systemName: "questionmark.circle").foregroundStyle(.secondary)
                 .accessibilityLabel("Verbindung nicht gefunden")

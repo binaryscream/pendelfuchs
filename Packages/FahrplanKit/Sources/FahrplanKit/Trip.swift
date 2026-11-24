@@ -71,6 +71,13 @@ public struct Trip: Codable, Sendable, Hashable, Identifiable {
             if let first = ride.stops.first, first.isCancelled { return .boardingCancelled(line: ride.line, stop: first) }
             if let last = ride.stops.last, last.isCancelled { return .alightingCancelled(line: ride.line, stop: last) }
         }
+        // Anschluss verpasst: Die erste Fahrt kommt laut Echtzeit erst an, wenn die nächste schon abgefahren ist.
+        for (arriving, next) in zip(rides, rides.dropFirst()) {
+            if let arrival = arriving.arrival, let departure = next.departure, let stop = next.stops.first,
+               arrival.expectedTime > departure.expectedTime {
+                return .connectionMissed(line: next.line, stop: stop)
+            }
+        }
         return nil
     }
 }
@@ -168,4 +175,15 @@ public enum TripDisruption: Equatable, Hashable, Sendable {
     case rideCancelled(line: String?)
     case boardingCancelled(line: String?, stop: TripStop)
     case alightingCancelled(line: String?, stop: TripStop)
+    /// Umstieg nicht mehr zu schaffen (Verspätung der ersten Fahrt).
+    case connectionMissed(line: String?, stop: TripStop)
+
+    /// Kurzer Hinweis, wenn die Verbindung deshalb durch eine andere ersetzt wurde.
+    public var rerouteNote: String {
+        switch self {
+        case .rideCancelled(let line): "\(line ?? "Fahrt") fällt aus – nächste Verbindung"
+        case .boardingCancelled, .alightingCancelled: "Halt entfällt – neue Verbindung"
+        case .connectionMissed(let line, _): "Anschluss \(line ?? "") verpasst – nächste Verbindung"
+        }
+    }
 }

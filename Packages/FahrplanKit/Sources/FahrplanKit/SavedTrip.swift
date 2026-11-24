@@ -178,6 +178,37 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
         return TripQuery(origin: origin, destination: destination, via: via, time: time, isArrivalTime: false)
     }
 
+    /// Ergebnis von `resolve`: die Verbindung, die man jetzt nehmen sollte, und ein Hinweis, falls sie die
+    /// gemerkte ersetzt (Ausfall, verpasster Anschluss).
+    public struct Resolved: Sendable {
+        public var trip: Trip
+        public var note: String?
+    }
+
+    /// Wie `bestMatch`, aber mit Ersatz: Ist die gemerkte Verbindung nicht fahrbar (Fahrt fällt aus, Halt entfällt,
+    /// Anschluss verpasst), wird die nächste fahrbare genommen – bevorzugt mit derselben ersten Fahrt
+    /// (man sitzt ja schon im Bus), sonst die nächste Abfahrt, solange man noch nicht losgefahren ist.
+    public func resolve(in trips: [Trip], now: Date = .now, calendar: Calendar = .current) -> Resolved? {
+        guard let match = bestMatch(in: trips, calendar: calendar) else { return nil }
+        guard let problem = match.disruption else { return Resolved(trip: match, note: nil) }
+
+        let usable = trips.filter { $0.disruption == nil }
+        let first = match.rides.first
+        let started = (first?.departure?.expectedTime ?? .distantFuture) <= now
+
+        var replacement = usable
+            .filter { $0.rides.first?.line == first?.line
+                && $0.rides.first?.departure?.scheduledTime == first?.departure?.scheduledTime }
+            .min { $0.arrival.expectedTime < $1.arrival.expectedTime }
+        if replacement == nil, !started {
+            replacement = usable
+                .filter { $0.departure.expectedTime > match.departure.expectedTime }
+                .min { $0.departure.expectedTime < $1.departure.expectedTime }
+        }
+        guard let replacement else { return Resolved(trip: match, note: nil) }
+        return Resolved(trip: replacement, note: problem.rerouteNote)
+    }
+
     /// Findet die gemerkte Verbindung in frischen Suchergebnissen wieder.
     /// Erst exakt (gleiche Linien, ±2 min), sonst die nächstgelegene mit gleicher erster Linie (±10 min),
     /// damit kleine Fahrplanänderungen nicht gleich zum Verlust führen.

@@ -51,14 +51,17 @@ final class TripActivityManager {
     func start(_ saved: SavedTrip, knownTrip: Trip? = nil) async throws {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { throw StartError.disabled }
 
-        let trip: Trip
-        if let knownTrip {
+        var trip: Trip
+        var note: String?
+        if let knownTrip, knownTrip.disruption == nil {
             trip = knownTrip
         } else {
+            // Nicht fahrbar oder unbekannt: frisch laden und notfalls die nächste Verbindung nehmen.
             guard let day = saved.upcomingDate() else { throw StartError.noUpcomingTrip }
             let found = try await transit.trips(saved.query(on: day))
-            guard let match = saved.bestMatch(in: found) else { throw StartError.notFound }
-            trip = match
+            guard let resolved = saved.resolve(in: found) else { throw StartError.notFound }
+            trip = resolved.trip
+            note = resolved.note
         }
 
         // Pro Fahrt nur eine Aktivität.
@@ -68,7 +71,7 @@ final class TripActivityManager {
 
         guard trip.disruption == nil else { throw StartError.cancelled }
 
-        let state = TripActivityState(trip: trip)
+        let state = TripActivityState(trip: trip, note: note)
         _ = try Activity.request(
             attributes: TripActivityAttributes(saved: saved),
             content: content(for: state),
@@ -98,8 +101,8 @@ final class TripActivityManager {
 
             do {
                 let trips = try await transit.trips(saved.query(on: current.departure.scheduledTime))
-                guard let match = saved.bestMatch(in: trips) else { continue }
-                await activity.update(content(for: TripActivityState(trip: match)))
+                guard let resolved = saved.resolve(in: trips) else { continue }
+                await activity.update(content(for: TripActivityState(trip: resolved.trip, note: resolved.note)))
             } catch {
                 // Netzwerkfehler: alte Daten bleiben stehen, die Aktivität zeigt „Stand …“, sobald sie veraltet.
             }
