@@ -86,7 +86,11 @@ struct SavedTripRow: View {
                 .font(.title2.weight(.semibold).monospacedDigit())
 
             VStack(alignment: .leading, spacing: 5) {
-                Text(saved.title(style: style)).font(.body.weight(.medium)).lineLimit(2)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(saved.title(style: style)).font(.body.weight(.medium)).lineLimit(2)
+                    Spacer(minLength: 0)
+                    LiveBadge(state: live)
+                }
                 HStack(spacing: 4) {
                     ForEach(Array(zip(saved.lines, saved.modes).enumerated()), id: \.offset) { index, pair in
                         if index > 0 {
@@ -107,10 +111,10 @@ struct SavedTripRow: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .labelStyle(.titleAndIcon)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
             }
-
-            Spacer(minLength: 0)
-            LiveBadge(state: live)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 2)
         // Live-Status nur für Fahrten in den nächsten 12 Stunden abfragen.
