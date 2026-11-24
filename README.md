@@ -31,7 +31,8 @@ Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingung
    TripKit (MIT) dient als technische Vorlage. Grundabdeckung für ganz Deutschland kommt schon von Transitous.
 9. ✅ Fortschritt während der Fahrt und Karte mit Streckenverlauf und geschätzter Fahrzeugposition
 10. ✅ Zeitleiste mit Punkten, Fahrtverlauf aus dem Abfahrtsmonitor, Suchoptionen (Deutschlandticket, Umstiege, Gehgeschwindigkeit, Verkehrsmittel)
-11. Optional: Push-Server, damit Live-Aktivitäten auch im Hintergrund minutengenau aktualisiert werden
+11. ✅ Verspätungsanzeige wählbar, Früher/Später im Abfahrtsmonitor, Strecken-Widget mit Rückweg und Tausch-Knopf, flüssigere Animationen
+12. Optional: Push-Server, damit Live-Aktivitäten auch im Hintergrund minutengenau aktualisiert werden
 
 ### Hinweise zur Live-Aktivität
 

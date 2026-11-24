@@ -86,6 +86,8 @@ struct RailView: View {
             }
         }
         .frame(width: 28)
+        // Zwischen den Sekundenschritten gleiten statt springen (Fahrzeug und gefüllte Strecke).
+        .animation(.linear(duration: 1), value: state)
     }
 
     private func segment(from start: CGFloat, to end: CGFloat, filled: Double, x: CGFloat) -> some View {
@@ -284,6 +286,7 @@ struct NextStopRow: View {
                 }
             }
             ProgressView(value: fraction).tint(mode.color)
+                .animation(.linear(duration: 1), value: fraction)
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
@@ -306,6 +309,7 @@ struct TripStatusView: View {
             VStack(alignment: .leading, spacing: 4) {
                 ProgressView(value: progress)
                     .tint(trip.rides.first?.mode?.color ?? .accentColor)
+                    .animation(.linear(duration: 1), value: progress)
                 Text("Unterwegs · noch \(remaining(until: arrival, now: now)) bis zur Ankunft")
                     .font(.caption)
                     .foregroundStyle(.secondary)

@@ -80,17 +80,19 @@ public struct ProviderRouter: TransitProvider {
         }
     }
 
-    public func departures(at stop: Stop, limit: Int) async throws -> [Departure] {
-        if let vvo, let vvoStop = asVVOStop(stop) {
+    public func departures(at stop: Stop, limit: Int, from: Date?) async throws -> [Departure] {
+        // VVO kennt keine Abfahrten in der Vergangenheit – dafür Transitous.
+        let isPast = from.map { $0 < Date.now.addingTimeInterval(-60) } ?? false
+        if let vvo, !isPast, let vvoStop = asVVOStop(stop) {
             do {
-                return try await vvo.departures(at: vvoStop, limit: limit)
+                return try await vvo.departures(at: vvoStop, limit: limit, from: from)
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
                 // weiter mit Transitous
             }
         }
-        return try await transitous.departures(at: asTransitousStop(stop), limit: limit)
+        return try await transitous.departures(at: asTransitousStop(stop), limit: limit, from: from)
     }
 
     public func trips(_ query: TripQuery) async throws -> [Trip] {

@@ -38,6 +38,25 @@ enum DeepLink {
         return components.url
     }
 
+    /// Strecke für die Verbindungssuche: `fahrplanxl://route?o=<Start>&d=<Ziel>`.
+    static func url(forRoute from: Stop, _ to: Stop) -> URL? {
+        guard let origin = StopToken.encode(from), let destination = StopToken.encode(to) else { return nil }
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = "route"
+        components.queryItems = [URLQueryItem(name: "o", value: origin), URLQueryItem(name: "d", value: destination)]
+        return components.url
+    }
+
+    static func route(from url: URL) -> (from: Stop, to: Stop)? {
+        guard url.scheme == scheme, url.host == "route",
+              let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+              let o = items.first(where: { $0.name == "o" })?.value.flatMap(StopToken.decode),
+              let d = items.first(where: { $0.name == "d" })?.value.flatMap(StopToken.decode)
+        else { return nil }
+        return (o, d)
+    }
+
     static func stop(from url: URL) -> Stop? {
         guard url.scheme == scheme, url.host == "stop",
               let token = URLComponents(url: url, resolvingAgainstBaseURL: false)?

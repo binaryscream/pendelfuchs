@@ -64,11 +64,13 @@ struct VVOTripsLiveTests {
     let neustadt = Stop(provider: .vvo, stopID: "33000016", name: "Bahnhof Neustadt", place: "Dresden")
 
     @Test func findsTrips() async throws {
+        await LiveThrottle.shared.wait()
         let trips = try await provider.trips(TripQuery(origin: pirna, destination: pirnaischerPlatz))
         #expect(!trips.isEmpty)
     }
 
     @Test func viaIsRespected() async throws {
+        await LiveThrottle.shared.wait()
         let trips = try await provider.trips(TripQuery(origin: pirna, destination: pirnaischerPlatz, via: neustadt))
         #expect(!trips.isEmpty)
         for trip in trips {
@@ -78,6 +80,7 @@ struct VVOTripsLiveTests {
     }
 
     @Test func arrivalTimeIsRespected() async throws {
+        await LiveThrottle.shared.wait()
         let target = Date.now.addingTimeInterval(3 * 3600)
         let trips = try await provider.trips(TripQuery(origin: pirna, destination: pirnaischerPlatz,
                                                        time: target, isArrivalTime: true))

@@ -145,17 +145,26 @@ private struct TripProgress: View {
 }
 
 private struct TimeLabel: View {
+    @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var style = DelayDisplay.badge
     let prefix: String
     let point: TimePoint
 
     var body: some View {
+        let delay = point.delayMinutes ?? 0
         HStack(spacing: 3) {
-            Text("\(prefix) \(point.scheduledTime.formatted(date: .omitted, time: .shortened))")
-                .monospacedDigit()
-            if let delay = point.delayMinutes, delay != 0 {
-                Text(delay > 0 ? "+\(delay)" : "\(delay)")
-                    .fontWeight(.semibold)
+            if style == .actual, delay != 0 {
+                // Tatsächliche Zeit, Verspätung eingerechnet
+                Text("\(prefix) \(point.expectedTime.formatted(date: .omitted, time: .shortened))")
+                    .monospacedDigit()
                     .foregroundStyle(delay >= 3 ? .red : .orange)
+            } else {
+                Text("\(prefix) \(point.scheduledTime.formatted(date: .omitted, time: .shortened))")
+                    .monospacedDigit()
+                if delay != 0 {
+                    Text(delay > 0 ? "+\(delay)" : "\(delay)")
+                        .fontWeight(.semibold)
+                        .foregroundStyle(delay >= 3 ? .red : .orange)
+                }
             }
         }
     }

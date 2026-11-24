@@ -83,17 +83,20 @@ struct VVOLiveTests {
     let provider = VVOProvider()
 
     @Test func searchFindsPirna() async throws {
+        await LiveThrottle.shared.wait()
         let stops = try await provider.searchStops(query: "Pirna Bahnhof")
         #expect(stops.contains { $0.stopID == "33003370" })
     }
 
     @Test func nearbyFromWGS84FindsPirnaBahnhof() async throws {
+        await LiveThrottle.shared.wait()
         // Bahnhofsvorplatz Pirna
         let stops = try await provider.nearbyStops(around: Coordinate(latitude: 50.9624, longitude: 13.9290))
         #expect(stops.prefix(3).contains { $0.stopID == "33003370" })
     }
 
     @Test func departuresArrive() async throws {
+        await LiveThrottle.shared.wait()
         let hbf = Stop(provider: .vvo, stopID: "33000028", name: "Hauptbahnhof")
         let deps = try await provider.departures(at: hbf, limit: 10)
         #expect(!deps.isEmpty)

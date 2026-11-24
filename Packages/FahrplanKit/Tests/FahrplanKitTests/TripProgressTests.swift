@@ -111,6 +111,23 @@ private func fixture(_ name: String) throws -> Data {
         #expect(trip.rides[1].notes.first == "Anschluss wird abgewartet")
     }
 
+    @Test func replacementBusIsKeptAsBusWithNote() throws {
+        let json = """
+        {"Status":{"Code":"Ok"},"Routes":[{"Interchanges":0,"PartialRoutes":[
+          {"Duration":2,"Mot":{"Type":"Footpath","Name":"Fussweg"}},
+          {"Mot":{"Type":"Bus","Name":"SEV S1","ProductName":"Ersatzverkehr","Direction":"Dresden Hbf"},"RegularStops":[
+            {"Name":"ZOB / Bahnhof","DataId":"1","DepartureTime":"/Date(1795500000000-0000)/"},
+            {"Name":"Pechhütte","DataId":"2","ArrivalTime":"/Date(1795500600000-0000)/","DepartureTime":"/Date(1795500660000-0000)/"},
+            {"Name":"Dobritz","DataId":"3","ArrivalTime":"/Date(1795501200000-0000)/"}]}]}]}
+        """
+        let trip = try #require(try VVODecoding.decode(TripsResponse.self, from: Data(json.utf8)).trips.first)
+        let ride = try #require(trip.rides.first)
+        #expect(ride.line == "SEV S1")
+        #expect(ride.mode == .regionalBus)
+        #expect(ride.notes.contains("Schienenersatzverkehr"))
+        #expect(TripOptions(deutschlandTicketOnly: true).allows(trip), "SEV muss beim Deutschlandticket erscheinen")
+    }
+
     @Test func mapDataParsing() {
         let path = VVODecoding.path(fromMapData: "Tram|5657517|4621643|5659228|4620896")
         #expect(path.count == 2)

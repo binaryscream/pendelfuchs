@@ -174,20 +174,12 @@ struct TripRow: View {
     }
 }
 
-/// „06:23 +3“ – Planzeit mit farbiger Verspätung.
+/// Zeit mit Verspätung in der Darstellung aus den Einstellungen („06:23 +3“, „06:26“ oder Plan/Ist untereinander).
 struct TimePointText: View {
     let point: TimePoint
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 3) {
-            Text(point.scheduledTime, format: .dateTime.hour().minute())
-                .monospacedDigit()
-            if let delay = point.delayMinutes, delay != 0 {
-                Text(delay > 0 ? "+\(delay)" : "\(delay)")
-                    .font(.caption.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(delay >= 3 ? .red : .orange)
-            }
-        }
+        DelayedTimeText(scheduled: point.scheduledTime, actual: point.realTime)
     }
 }
 

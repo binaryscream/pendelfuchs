@@ -51,10 +51,10 @@ public struct TransitousProvider: TransitProvider {
             .sorted { ($0.distance ?? .max) < ($1.distance ?? .max) }
     }
 
-    public func departures(at stop: Stop, limit: Int = 20) async throws -> [Departure] {
-        let response: TransitousAPI.StopTimesResponse = try await get("v6/stoptimes", [
-            "stopId": stop.stopID, "n": String(limit), "language": "de",
-        ])
+    public func departures(at stop: Stop, limit: Int, from: Date?) async throws -> [Departure] {
+        var params = ["stopId": stop.stopID, "n": String(limit), "language": "de"]
+        if let from { params["time"] = TransitousAPI.requestTime(from) }
+        let response: TransitousAPI.StopTimesResponse = try await get("v6/stoptimes", params)
         return response.stopTimes.compactMap(\.departure).sorted { $0.expectedTime < $1.expectedTime }
     }
 

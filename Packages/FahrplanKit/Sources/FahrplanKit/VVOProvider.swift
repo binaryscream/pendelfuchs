@@ -38,13 +38,15 @@ public struct VVOProvider: TransitProvider {
         return response.stops.sorted { ($0.distance ?? .max) < ($1.distance ?? .max) }
     }
 
-    public func departures(at stop: Stop, limit: Int = 20) async throws -> [Departure] {
-        let body: [String: any Sendable] = [
+    public func departures(at stop: Stop, limit: Int, from: Date?) async throws -> [Departure] {
+        var body: [String: any Sendable] = [
             "stopid": stop.stopID,
             "limit": limit,
             "shorttermchanges": true,
             "mentzonly": false,
         ]
+        // Die API kennt keine Abfahrten in der Vergangenheit (sie springt auf „jetzt“).
+        if let from, from > .now { body["time"] = VVODecoding.requestTime(from) }
         let response: DepartureMonitorResponse = try await post("dm", body: body)
         return response.departures
     }
@@ -53,14 +55,33 @@ public struct VVOProvider: TransitProvider {
         guard let tripID = departure.tripID else {
             throw TransitError.service(message: "Für diese Fahrt ist kein Fahrtverlauf verfügbar.")
         }
-        let body: [String: any Sendable] = [
-            "tripid": tripID,
-            "stopid": stop.stopID,
-            "time": VVODecoding.dotNetDate(departure.scheduledTime),
-            "mapdata": true,
-        ]
-        let response: JourneyResponse = try await post("dm/trip", body: body)
-        return response.leg(line: departure.line, direction: departure.direction, mode: departure.mode)
+        if departure.state == .cancelled {
+            throw TransitError.service(message: "Diese Fahrt fällt aus – für ausgefallene Fahrten gibt es keinen Fahrtverlauf.")
+        }
+
+        // `/dm/trip` wählt die Fahrt über die ECHTZEIT aus (die `tripid` gilt für alle Fahrten der Linie) und kann
+        // still eine andere Fahrt liefern, etwa eine verspätete Vorgängerfahrt. Deshalb zuerst mit der erwarteten
+        // Zeit fragen und das Ergebnis über die Plan-Abfahrt am eigenen Halt prüfen.
+        var times = [departure.expectedTime]
+        if departure.scheduledTime != departure.expectedTime { times.append(departure.scheduledTime) }
+
+        var lastLeg: TripLeg?
+        for time in times {
+            let body: [String: any Sendable] = [
+                "tripid": tripID,
+                "stopid": stop.stopID,
+                "time": VVODecoding.dotNetDate(time),
+                "mapdata": true,
+            ]
+            let response: JourneyResponse = try await post("dm/trip", body: body)
+            let leg = response.leg(line: departure.line, direction: departure.direction, mode: departure.mode)
+            lastLeg = leg
+            guard let atStop = leg.stops.first(where: { $0.stopID == stop.stopID }) else { return leg }  // nicht prüfbar
+            let scheduled = (atStop.departure ?? atStop.arrival)?.scheduledTime
+            if let scheduled, abs(scheduled.timeIntervalSince(departure.scheduledTime)) < 60 { return leg }
+        }
+        guard lastLeg != nil else { throw TransitError.service(message: "Der Fahrtverlauf ist leer.") }
+        throw TransitError.service(message: "Der Fahrtverlauf dieser Fahrt konnte nicht eindeutig bestimmt werden.")
     }
 
     // MARK: HTTP

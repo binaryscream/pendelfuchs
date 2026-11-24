@@ -132,3 +132,29 @@ Ein `ProviderRouter` wählt je nach Region und Verfügbarkeit die Quelle:
   per Schalter abschaltbar.
 - Zuordnung zwischen Quellen über die DHID (`de:14628:3370`).
 - Gemerkte Fahrten/Favoriten sollten die DHID speichern, damit ein Quellenwechsel sie nicht ungültig macht.
+
+## Eigenheiten der VVO-WebAPI (Stand 24.11.2026, selbst geprüft)
+
+- **`/dm/trip` kann eine andere Fahrt liefern als die angetippte Abfahrt.** Die API wählt die Fahrt über die
+  *Echtzeit* aus (die `tripid` gilt für alle Fahrten einer Linie). Beispiel: eine S1 mit +8 min zeigte im Verlauf
+  die 11 Minuten frühere Fahrt mit +12 min. Abhilfe in der App: zuerst mit der erwarteten Zeit fragen, die
+  Plan-Abfahrt am eigenen Halt prüfen und sonst mit der Planzeit wiederholen; ist die Fahrt nicht eindeutig, gibt
+  es eine Fehlermeldung statt falscher Daten. Ausgefallene Fahrten haben keinen Verlauf.
+- **`/dm` kennt keine Abfahrten in der Vergangenheit** (ältere `time` springt auf „jetzt“). „Früher“ im
+  Abfahrtsmonitor nutzt deshalb Transitous.
+- **`standardSettings.mot` filtert den Schienenersatzverkehr (SEV) weg** – er gehört zu keinem Wert. Mit
+  `mot = [CityBus]` o. Ä. fehlen SEV-Fahrten komplett. Deshalb filtert die App Fernverkehr lokal und sendet bei
+  Deutschlandticket **kein** `mot`; nur bei abgewählten Nahverkehrsmitteln wird zusätzlich ohne Filter gefragt.
+- `maxChanges` kennt nur `None`, `One`, `Two`, `Unlimited` (drei Umstiege nicht).
+- `/tr/trips`: die API liefert auch Fahrten mit „gesichertem Anschluss“ (`StayForConnection`) und
+  Schienenersatzverkehr als `Bus` mit `ProductName: "Ersatzverkehr"`.
+
+## Weitere Quellen (Tipps)
+
+- **oepnv.dresden.lol** (Community-Doku von kiliankoe, Quellcode: github.com/kiliankoe/vvo, Lizenz nicht angegeben):
+  beschreibt WebAPI, TRIAS (`efa.vvo-online.de/std3/trias`), OJP, EFA-JSON, GTFS/GTFS-RT und SIRI. Kein eigener
+  Server, nur Dokumentation.
+- **TLMS** (`wss://socket.tlm.solutions`): ehrenamtlicher Live-Feed mit Fahrzeugpositionen und Verspätungen aus
+  R09-Funktelegrammen (Dresden). Kandidat für echte Fahrzeugpositionen statt der geschätzten – Abdeckung hängt von
+  Empfängern ab, Nutzungsbedingungen noch nicht geprüft.
+- **VVO-Störungsmeldungen** (`POST /rc`): Baustellen und Störungen je Linie (Antwort > 200 kB).

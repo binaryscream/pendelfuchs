@@ -54,13 +54,36 @@ private func trip(_ modes: [TransportMode], transfers: Int? = nil) -> Trip {
         #expect(options.summary == "Deutschlandticket · max. 1 Umstieg · Langsam gehen · ohne Bus")
     }
 
-    @Test func providerParameters() {
+    @Test func providerParameters() throws {
         let dt = TripOptions(deutschlandTicketOnly: true).allowedModes
         let modes = TransitousAPI.transitModes(for: dt)
         #expect(modes.contains("REGIONAL_RAIL") && modes.contains("TRAM") && modes.contains("BUS"))
         #expect(!modes.contains("HIGHSPEED_RAIL") && !modes.contains("COACH"))
-        let mots = VVODecoding.mots(for: TripOptions(excludedModes: [.bus]).allowedModes)
+        let mots = try #require(VVODecoding.mots(for: TripOptions(excludedModes: [.bus]).allowedModes))
         #expect(mots.contains("Tram") && mots.contains("Train") && !mots.contains("CityBus"))
+    }
+
+    @Test func deutschlandTicketDoesNotFilterOnVVOSide() {
+        // Sonst fiele der Schienenersatzverkehr (SEV) weg: er gehört zu keinem `mot`-Wert.
+        #expect(VVODecoding.mots(for: TripOptions(deutschlandTicketOnly: true).allowedModes) == nil)
+        #expect(VVODecoding.mots(for: TripOptions().allowedModes) == nil)
+        #expect(VVODecoding.mots(for: TripOptions(excludedModes: [.longDistance, .coach]).allowedModes) == nil)
+        #expect(VVODecoding.mots(for: TripOptions(excludedModes: [.tram]).allowedModes) != nil)
+    }
+
+    @Test func rejectsFlexibleLongDistanceTripsButKeepsReplacementBus() {
+        let options = TripOptions(deutschlandTicketOnly: true)
+        let sev = Trip(legs: [TripLeg(kind: .ride, mode: .regionalBus, line: "SEV S1", stops: [], notes: ["Schienenersatzverkehr"])],
+                       interchanges: 0)
+        #expect(options.allows(sev))
+    }
+
+    @Test func maxChangesParameter() {
+        #expect(VVODecoding.maxChanges(0) == "None")
+        #expect(VVODecoding.maxChanges(1) == "One")
+        #expect(VVODecoding.maxChanges(2) == "Two")
+        #expect(VVODecoding.maxChanges(3) == "Unlimited")
+        #expect(VVODecoding.maxChanges(nil) == "Unlimited")
     }
 
     @Test func longDistanceNames() {
@@ -93,6 +116,7 @@ private func trip(_ modes: [TransportMode], transfers: Int? = nil) -> Trip {
 @Suite(.enabled(if: ProcessInfo.processInfo.environment["FAHRPLAN_LIVE_TESTS"] == "1"))
 struct JourneyLiveTests {
     @Test func journeyFromBothSources() async throws {
+        await LiveThrottle.shared.wait()
         let hbfVVO = Stop(provider: .vvo, stopID: "33000028", name: "Hauptbahnhof", place: "Dresden")
         let vvo = VVOProvider()
         let vvoDeparture = try #require(try await vvo.departures(at: hbfVVO, limit: 3).first)
@@ -108,6 +132,7 @@ struct JourneyLiveTests {
     }
 
     @Test func deutschlandTicketFilterLive() async throws {
+        await LiveThrottle.shared.wait()
         let transitous = TransitousProvider()
         let dresden = Stop(provider: .transitous, stopID: "de-DELFI_de:14612:28", name: "Hauptbahnhof")
         let leipzig = try #require(try await transitous.searchStops(query: "Leipzig Hbf").first)

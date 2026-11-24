@@ -5,6 +5,9 @@ import SwiftUI
 
 /// Verbindungssuche: Von – Nach – (optionaler Zwischenhalt) – Datum – Uhrzeit.
 struct TripSearchView: View {
+    /// Von außen (Strecken-Widget) zu öffnende Verbindungssuche.
+    @Binding var openRoute: TripQuery?
+
     // Start/Ziel bleiben über App-Neustarts erhalten.
     @AppStorage("tripSearch.origin") private var originData = Data()
     @AppStorage("tripSearch.destination") private var destinationData = Data()
@@ -41,6 +44,10 @@ struct TripSearchView: View {
             Form {
                 Section {
                     StopField(label: "Von", stop: origin) { picking = .origin }
+
+                    // Zwischen Start und Ziel: links „Zwischenhalt“, rechts Tauschen.
+                    connectorRow
+
                     if showVia {
                         HStack {
                             StopField(label: "Über", stop: via) { picking = .via }
@@ -49,26 +56,12 @@ struct TripSearchView: View {
                             } label: {
                                 Image(systemName: "minus.circle.fill").foregroundStyle(.red)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.borderless)
                             .accessibilityLabel("Zwischenhalt entfernen")
                         }
                     }
+
                     StopField(label: "Nach", stop: destination) { picking = .destination }
-                } footer: {
-                    HStack {
-                        if !showVia {
-                            Button("Zwischenhalt", systemImage: "plus") {
-                                withAnimation { showVia = true }
-                            }
-                        }
-                        Spacer()
-                        Button("Tauschen", systemImage: "arrow.up.arrow.down") {
-                            swap(&originData, &destinationData)
-                        }
-                        .disabled(origin == nil && destination == nil)
-                    }
-                    .font(.footnote)
-                    .padding(.top, 4)
                 }
 
                 Section {
@@ -124,6 +117,13 @@ struct TripSearchView: View {
                 }
             }
             .navigationTitle("Verbindungen")
+            .onChange(of: openRoute, initial: true) { _, query in
+                guard let query else { return }
+                originData = Self.encode(query.origin)
+                destinationData = Self.encode(query.destination)
+                path = [.results(query)]
+                openRoute = nil
+            }
             // Ein einziges Navigationsziel an der Wurzel – gemischte Ziele setzen den Stack sonst zurück.
             .navigationDestination(for: TripRoute.self) { route in
                 switch route {
@@ -144,6 +144,38 @@ struct TripSearchView: View {
                 }
             }
         }
+    }
+
+    /// Schmale Zeile zwischen „Von“ und „Nach“ (bündig mit den Haltestellennamen).
+    private var connectorRow: some View {
+        HStack {
+            if !showVia {
+                Button {
+                    withAnimation { showVia = true }
+                } label: {
+                    Label("Zwischenhalt", systemImage: "plus")
+                        .font(.footnote.weight(.medium))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+                }
+                .buttonStyle(.borderless)
+            }
+            Spacer(minLength: 0)
+            Button {
+                swap(&originData, &destinationData)
+            } label: {
+                Image(systemName: "arrow.up.arrow.down")
+                    .font(.footnote.weight(.bold))
+                    .frame(width: 32, height: 32)
+                    .background(Color(.secondarySystemFill), in: Circle())
+            }
+            .buttonStyle(.borderless)
+            .disabled(origin == nil && destination == nil)
+            .accessibilityLabel("Start und Ziel tauschen")
+        }
+        .padding(.leading, 56)   // Breite der Beschriftung „Von“ + Abstand
+        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
     }
 
     private var timeBinding: Binding<Date> {

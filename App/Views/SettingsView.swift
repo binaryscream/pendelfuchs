@@ -39,6 +39,7 @@ enum AppearanceSetting: String, CaseIterable, Identifiable {
 struct SettingsView: View {
     @AppStorage(AppearanceSetting.storageKey) private var appearance: AppearanceSetting = .system
     @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
+    @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var delayDisplay = DelayDisplay.badge
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -56,6 +57,24 @@ struct SettingsView: View {
                     Text("Erscheinungsbild")
                 } footer: {
                     Text("„System“ folgt der Einstellung deines iPhones und wechselt z. B. abends automatisch in den Dunkelmodus.")
+                }
+
+                Section {
+                    Picker("Verspätungen", selection: $delayDisplay) {
+                        ForEach(DelayDisplay.allCases) { option in
+                            VStack(alignment: .leading) {
+                                Text(option.title)
+                                Text(option.example).font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                            }
+                            .tag(option)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                } header: {
+                    Text("Verspätungen anzeigen")
+                } footer: {
+                    Text("Gilt in der ganzen App, im Widget und in der Live-Aktivität. Die Minuten bis zur Abfahrt enthalten die Verspätung immer schon.")
                 }
 
                 Section {

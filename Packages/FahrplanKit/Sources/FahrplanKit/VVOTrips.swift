@@ -16,13 +16,35 @@ extension VVOProvider {
         ]
         if let via = query.via { body["Via"] = via.stopID }
         let options = query.options
-        var settings: [String: any Sendable] = ["walkingSpeed": options.walkingSpeed.vvoValue]
-        if options.allowedModes != Set(ModeGroup.allCases) {
-            settings["mot"] = VVODecoding.mots(for: options.allowedModes)
+        let settings: [String: any Sendable] = [
+            "walkingSpeed": options.walkingSpeed.vvoValue,
+            "maxChanges": VVODecoding.maxChanges(options.maxTransfers),
+        ]
+
+        func fetch(_ settings: [String: any Sendable]) async throws -> [Trip] {
+            var body = body
+            body["standardSettings"] = settings
+            let response: TripsResponse = try await post("tr/trips", body: body)
+            return response.trips
         }
-        body["standardSettings"] = settings
-        let response: TripsResponse = try await post("tr/trips", body: body)
-        return response.trips.filter(options.allows)
+
+        var found: [Trip]
+        if let mots = VVODecoding.mots(for: options.allowedModes) {
+            var filtered = settings
+            filtered["mot"] = mots
+            found = try await fetch(filtered)
+            // Schienenersatzverkehr (SEV) gehört zu keinem Verkehrsmittel-Filter der API und fiele sonst weg.
+            // Deshalb zusätzlich ohne Filter fragen und lokal filtern.
+            if options.allowedModes.contains(.bus) {
+                let known = Set(found.map(\.id))
+                found += try await fetch(settings).filter { !known.contains($0.id) }
+            }
+        } else {
+            // Nichts, was die API selbst filtern könnte (z. B. nur „ohne Fernverkehr“): lokal filtern – so bleibt
+            // auch der SEV erhalten.
+            found = try await fetch(settings)
+        }
+        return found.filter(options.allows).sorted { $0.departure.expectedTime < $1.departure.expectedTime }
     }
 }
 
@@ -42,10 +64,15 @@ extension VVODecoding {
     }
 
     /// VVO-Verkehrsmittel (`standardSettings.mot`) für die erlaubten Gruppen.
-    static func mots(for groups: Set<ModeGroup>) -> [String] {
+    /// `nil`, wenn die API nichts filtern muss: Fernzug und Fernbus kennt sie nicht als eigenes Verkehrsmittel
+    /// (Fernzüge laufen unter „Train“) – das erledigt der lokale Filter.
+    static func mots(for groups: Set<ModeGroup>) -> [String]? {
+        let vvoGroups = Set(ModeGroup.allCases).subtracting([.longDistance, .coach])
+        if vvoGroups.isSubset(of: groups) { return nil }
+
         var mots: [String] = []
         if groups.contains(.tram) { mots.append("Tram") }
-        if groups.contains(.bus) { mots += ["CityBus", "IntercityBus", "PlusBus"] }
+        if groups.contains(.bus) { mots += ["CityBus", "IntercityBus"] }
         if groups.contains(.regionalRail) { mots.append("SuburbanRailway") }
         // Regional- und Fernzüge laufen beim VVO beide unter „Train“; Fernzüge filtert die App danach heraus.
         if groups.contains(.regionalRail) || groups.contains(.longDistance) { mots.append("Train") }
@@ -53,6 +80,16 @@ extension VVODecoding {
         if groups.contains(.ferry) { mots.append("Ferry") }
         if groups.contains(.onDemand) { mots.append("HailedSharedTaxi") }
         return mots
+    }
+
+    /// `standardSettings.maxChanges`: „None“, „One“, „Two“ oder „Unlimited“ (drei Umstiege kennt die API nicht).
+    static func maxChanges(_ transfers: Int?) -> String {
+        switch transfers {
+        case 0: "None"
+        case 1: "One"
+        case 2: "Two"
+        default: "Unlimited"
+        }
     }
 
     /// `/Date(1795470720000-0000)/`

@@ -226,6 +226,7 @@ struct DeparturesWidgetView: View {
 }
 
 private struct WidgetDepartureRow: View {
+    @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var style = DelayDisplay.badge
     let departure: Departure
     let now: Date
     let compact: Bool
@@ -240,7 +241,7 @@ private struct WidgetDepartureRow: View {
                 .lineLimit(1)
                 .strikethrough(departure.state == .cancelled)
             Spacer(minLength: 2)
-            if !compact, let delay = departure.delayMinutes, delay > 0 {
+            if !compact, style != .actual, let delay = departure.delayMinutes, delay > 0 {
                 Text("+\(delay)")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(delay >= 3 ? .red : .orange)

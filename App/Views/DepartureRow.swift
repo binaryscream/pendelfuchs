@@ -26,27 +26,27 @@ struct DepartureRow: View {
             countdown
         }
         .padding(.vertical, 2)
+        .opacity(departed ? 0.45 : 1)
         .accessibilityElement(children: .combine)
     }
+
+    /// Schon abgefahren (mit etwas Toleranz, damit „jetzt“ nicht sofort ausgegraut wird).
+    private var departed: Bool { departure.expectedTime < now.addingTimeInterval(-45) }
 
     @ViewBuilder private var details: some View {
         HStack(spacing: 6) {
             if cancelled {
                 Text("Fällt aus").foregroundStyle(.red).fontWeight(.semibold)
             } else {
-                Text(departure.scheduledTime, format: .dateTime.hour().minute())
-                if let delay = departure.delayMinutes, delay != 0 {
-                    Text(delay > 0 ? "+\(delay)" : "\(delay)")
-                        .foregroundStyle(delay >= 3 ? .red : .orange)
-                        .fontWeight(.semibold)
-                } else if !departure.hasRealTime {
+                DelayedTimeText(scheduled: departure.scheduledTime, actual: departure.realTime)
+                if !departure.hasRealTime {
                     Image(systemName: "antenna.radiowaves.left.and.right.slash")
                         .accessibilityLabel("Keine Echtzeitdaten")
                 }
             }
             if let platform = departure.platform, !platform.isEmpty {
                 Text("·")
-                Text(departure.mode == .train || departure.mode == .suburbanRailway ? "Gl. \(platform)" : "Steig \(platform)")
+                Text(departure.mode.platformLabel(platform))
             }
         }
         .font(.caption)
@@ -59,6 +59,8 @@ struct DepartureRow: View {
         Group {
             if cancelled {
                 Text("–")
+            } else if departed {
+                Text(departure.expectedTime, format: .dateTime.hour().minute())
             } else if minutes == 0 {
                 Text("jetzt")
             } else if minutes < 60 {

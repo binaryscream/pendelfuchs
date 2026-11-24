@@ -14,7 +14,7 @@ struct TripMapView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            TimelineView(.periodic(from: .now, by: 10)) { context in
+            TimelineView(.periodic(from: .now, by: 1)) { context in
                 TripMapRepresentable(trip: trip, now: context.date, dark: colorScheme == .dark)
                     .ignoresSafeArea()
             }
@@ -226,7 +226,11 @@ private struct TripMapRepresentable: UIViewRepresentable {
             for (index, leg) in trip.legs.enumerated() where leg.kind == .ride {
                 if let position = leg.estimatedPosition(at: now) {
                     if let existing = vehicles[index] {
-                        existing.coordinate = position.clCoordinate
+                        // Ein Schritt pro Sekunde, linear über eine Sekunde ausgeführt → gleichmäßige Fahrt statt Sprünge.
+                        UIView.animate(withDuration: 1, delay: 0,
+                                       options: [.curveLinear, .allowUserInteraction, .beginFromCurrentState]) {
+                            existing.coordinate = position.clCoordinate
+                        }
                     } else {
                         let annotation = VehicleAnnotation(leg: leg)
                         annotation.coordinate = position.clCoordinate

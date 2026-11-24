@@ -14,6 +14,7 @@ struct TripDetailView: View {
     /// Für die Live-Aktivität einer nicht gemerkten Fahrt – einmal erzeugt, damit die ID stabil bleibt.
     @State private var adHoc: SavedTrip
     @State private var showMap = false
+    @State private var sheetIsNew = true
 
     init(trip: Trip, query: TripQuery) {
         self.trip = trip
@@ -28,21 +29,38 @@ struct TripDetailView: View {
                 if trip.rides.contains(where: { !$0.drawablePath.isEmpty }) {
                     Button("Karte", systemImage: "map") { showMap = true }
                 }
-                Button {
-                    // Neu merken – oder die bereits gemerkte Fahrt bearbeiten (Wochentage, Name, Löschen).
-                    editing = saved ?? savedTrips.add(trip, query: query)
-                } label: {
-                    Image(systemName: saved == nil ? "star" : "star.fill")
+                if let saved {
+                    // Schon gemerkt: Einstellungen (Wochentage, Name) liegen hinter einem Menü.
+                    Menu {
+                        Button("Einstellungen", systemImage: "slider.horizontal.3") {
+                            sheetIsNew = false
+                            editing = saved
+                        }
+                        Button("Nicht mehr merken", systemImage: "star.slash", role: .destructive) {
+                            savedTrips.remove(id: saved.id)
+                        }
+                    } label: {
+                        Image(systemName: "star.fill")
+                    }
+                    .accessibilityLabel("Gemerkte Fahrt")
+                } else {
+                    // Erstes Antippen: merken und direkt die Wochentage anbieten.
+                    Button {
+                        sheetIsNew = true
+                        editing = savedTrips.add(trip, query: query)
+                    } label: {
+                        Image(systemName: "star")
+                    }
+                    .accessibilityLabel("Fahrt merken")
                 }
-                .accessibilityLabel(saved == nil ? "Fahrt merken" : "Gemerkte Fahrt bearbeiten")
             }
-            .sheet(item: $editing) { SavedTripSheet(id: $0.id) }
+            .sheet(item: $editing) { SavedTripSheet(id: $0.id, isNew: sheetIsNew) }
             .fullScreenCover(isPresented: $showMap) { TripMapView(trip: trip) }
     }
 
     private var content: some View {
-        // Fortschritt alle 20 Sekunden neu berechnen.
-        TimelineView(.periodic(from: .now, by: 20)) { context in
+        // Fortschritt jede Sekunde neu berechnen; die Anzeige gleitet dazwischen (siehe `.animation` an Leiste/Balken).
+        TimelineView(.periodic(from: .now, by: 1)) { context in
             list(now: context.date)
         }
         .navigationTitle(trip.departure.scheduledTime.formatted(.dateTime.weekday(.wide).day().month()))

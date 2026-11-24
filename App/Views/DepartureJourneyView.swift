@@ -24,7 +24,7 @@ struct DepartureJourneyView: View {
     var body: some View {
         Group {
             if let leg {
-                TimelineView(.periodic(from: .now, by: 20)) { context in
+                TimelineView(.periodic(from: .now, by: 1)) { context in
                     content(leg: leg, now: context.date)
                 }
             } else if let errorMessage {

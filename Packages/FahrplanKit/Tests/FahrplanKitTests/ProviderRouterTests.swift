@@ -36,18 +36,21 @@ struct ProviderRouterLiveTests {
     let postplatz = Stop(provider: .transitous, stopID: "de-DELFI_de:14612:37:1:1", name: "Postplatz", place: "Dresden")
 
     @Test func usesVVOInsideVVOArea() async throws {
+        await LiveThrottle.shared.wait()
         let trips = try await ProviderRouter().trips(TripQuery(origin: pirna, destination: postplatz))
         #expect(trips.first?.source == .vvo)
         #expect(trips.first?.price != nil)
     }
 
     @Test func usesTransitousWhenVVODisabled() async throws {
+        await LiveThrottle.shared.wait()
         let router = ProviderRouter(vvo: nil)
         #expect(try await router.trips(TripQuery(origin: pirna, destination: postplatz)).first?.source == .transitous)
         #expect(try await router.departures(at: pirna, limit: 5).first?.source == .transitous)
     }
 
     @Test func oldVVOFavoritesWorkWithoutVVO() async throws {
+        await LiveThrottle.shared.wait()
         let vvoStop = Stop(provider: .vvo, stopID: "33003370", name: "Bahnhof", place: "Pirna")
         let deps = try await ProviderRouter(vvo: nil).departures(at: vvoStop, limit: 5)
         #expect(!deps.isEmpty)
@@ -55,6 +58,7 @@ struct ProviderRouterLiveTests {
     }
 
     @Test func leavesVVOAreaViaTransitous() async throws {
+        await LiveThrottle.shared.wait()
         let router = ProviderRouter()
         let leipzig = try #require(try await router.searchStops(query: "Leipzig Hbf").first)
         let trips = try await router.trips(TripQuery(origin: pirna, destination: leipzig))

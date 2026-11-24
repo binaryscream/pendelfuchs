@@ -129,6 +129,7 @@ struct SavedTripDetailView: View {
     @Environment(\.transit) private var transit
     @Environment(\.dismiss) private var dismiss
     @State private var live: LiveState = .idle
+    @State private var showSettings = false
 
     var body: some View {
         if let saved = store.trip(id: id) {
@@ -143,6 +144,11 @@ struct SavedTripDetailView: View {
                         Text("Ab \(saved.departure.formatted)\(saved.arrival.map { " · an \($0.formatted)" } ?? "") · \(saved.lines.joined(separator: " › "))")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                        if saved.isRegular {
+                            Label(saved.weekdays.summary, systemImage: "repeat")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 
@@ -171,17 +177,14 @@ struct SavedTripDetailView: View {
                     }
                 }
 
-                SavedTripSettingsSections(id: id)
-
-                Section {
-                    Button("Fahrt löschen", role: .destructive) {
-                        store.remove(id: id)
-                        dismiss()
-                    }
-                }
             }
             .navigationTitle(saved.title)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                Button("Einstellungen", systemImage: "slider.horizontal.3") { showSettings = true }
+            }
+            .sheet(isPresented: $showSettings) { SavedTripSheet(id: id, isNew: false) }
+            .onChange(of: store.trip(id: id) == nil) { _, removed in if removed { dismiss() } }
         } else {
             ContentUnavailableView("Fahrt gelöscht", systemImage: "trash")
         }
@@ -193,6 +196,8 @@ struct SavedTripDetailView: View {
 /// Blatt, das direkt nach dem Merken erscheint.
 struct SavedTripSheet: View {
     let id: UUID
+    /// `true` direkt nach dem Merken, `false` beim späteren Öffnen der Einstellungen.
+    var isNew = true
 
     @Environment(SavedTripsStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -220,7 +225,7 @@ struct SavedTripSheet: View {
                     }
                 }
             }
-            .navigationTitle("Fahrt gemerkt")
+            .navigationTitle(isNew ? "Fahrt gemerkt" : "Einstellungen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

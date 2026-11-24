@@ -95,16 +95,19 @@ struct TransitousLiveTests {
     let provider = TransitousProvider()
 
     @Test func searchFindsBerlinStop() async throws {
+        await LiveThrottle.shared.wait()
         let stops = try await provider.searchStops(query: "Berlin Alexanderplatz")
         #expect(stops.contains { $0.stopID.hasPrefix("de-") })
     }
 
     @Test func nearbyFindsPirnaBahnhof() async throws {
+        await LiveThrottle.shared.wait()
         let stops = try await provider.nearbyStops(around: Coordinate(latitude: 50.9624, longitude: 13.9290))
         #expect(stops.first?.stopID == "de-DELFI_de:14628:3370")
     }
 
     @Test func departuresAndTripsArrive() async throws {
+        await LiveThrottle.shared.wait()
         let hbf = Stop(provider: .transitous, stopID: "de-DELFI_de:14612:28", name: "Hauptbahnhof", place: "Dresden")
         #expect(!(try await provider.departures(at: hbf, limit: 10)).isEmpty)
 
@@ -115,6 +118,7 @@ struct TransitousLiveTests {
     }
 
     @Test func viaIsRespected() async throws {
+        await LiveThrottle.shared.wait()
         let pirna = Stop(provider: .transitous, stopID: "de-DELFI_de:14628:3370", name: "Bahnhof", place: "Pirna")
         let postplatz = Stop(provider: .transitous, stopID: "de-DELFI_de:14612:37:1:1", name: "Postplatz", place: "Dresden")
         let neustadt = try #require(try await provider.searchStops(query: "Dresden Bahnhof Neustadt").first)
