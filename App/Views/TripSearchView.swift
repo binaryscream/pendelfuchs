@@ -44,6 +44,7 @@ struct TripSearchView: View {
             Form {
                 Section {
                     StopField(label: "Von", stop: origin) { picking = .origin }
+                        .listRowSeparator(.hidden, edges: .bottom)
 
                     // Zwischen Start und Ziel: links „Zwischenhalt“, rechts Tauschen.
                     connectorRow
@@ -176,6 +177,7 @@ struct TripSearchView: View {
         }
         .padding(.leading, 56)   // Breite der Beschriftung „Von“ + Abstand
         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+        .listRowSeparator(.hidden)
     }
 
     private var timeBinding: Binding<Date> {
@@ -266,6 +268,7 @@ struct StopPickerSheet: View {
     @State private var results: [Stop] = []
     @State private var message: String?
     @State private var nearby: [Stop] = []
+    @State private var nearbyLoaded = false
     @State private var searchActive = true
 
     var body: some View {
@@ -279,9 +282,19 @@ struct StopPickerSheet: View {
                     }
                     Section("In der Nähe") {
                         if nearby.isEmpty {
-                            HStack(spacing: 10) {
-                                ProgressView()
-                                Text("Standort wird ermittelt …").foregroundStyle(.secondary)
+                            switch location.status {
+                            case .denied:
+                                Text("Ohne Standortfreigabe keine Haltestellen in der Nähe – oben suchen.")
+                                    .foregroundStyle(.secondary)
+                            case .failed:
+                                Text("Standort konnte nicht ermittelt werden.").foregroundStyle(.secondary)
+                            case .located where nearbyLoaded:
+                                Text("Keine Haltestellen in der Nähe gefunden.").foregroundStyle(.secondary)
+                            default:
+                                HStack(spacing: 10) {
+                                    ProgressView()
+                                    Text("Standort wird ermittelt …").foregroundStyle(.secondary)
+                                }
                             }
                         } else {
                             ForEach(nearby.prefix(5)) { row($0) }
@@ -324,7 +337,8 @@ struct StopPickerSheet: View {
         try? await Task.sleep(for: .milliseconds(300))
         guard !Task.isCancelled else { return }
         do {
-            results = try await transit.searchStops(query: q)
+            let anchors = [location.coordinate].compactMap { $0 } + favorites.stops.compactMap(\.coordinate)
+            results = StopSearchRegion.narrow(try await transit.searchStops(query: q), around: anchors)
             message = results.isEmpty ? "Keine Haltestelle gefunden." : nil
         } catch is CancellationError {
         } catch {
@@ -336,5 +350,6 @@ struct StopPickerSheet: View {
         if location.coordinate == nil { await location.refresh() }
         guard let coordinate = location.coordinate else { return }
         nearby = (try? await transit.nearbyStops(around: coordinate)) ?? []
+        nearbyLoaded = true
     }
 }

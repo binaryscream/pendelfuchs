@@ -18,6 +18,7 @@ struct DepartureRow: View {
                     .font(.body.weight(.medium))
                     .strikethrough(cancelled)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 details
             }
 

@@ -135,7 +135,8 @@ struct HomeView: View {
         try? await Task.sleep(for: .milliseconds(300))   // Entprellen beim Tippen
         guard !Task.isCancelled else { return }
         do {
-            searchResults = try await transit.searchStops(query: q)
+            let anchors = [location.coordinate].compactMap { $0 } + favorites.stops.compactMap(\.coordinate)
+            searchResults = StopSearchRegion.narrow(try await transit.searchStops(query: q), around: anchors)
             searchError = searchResults.isEmpty ? "Keine Haltestelle gefunden." : nil
         } catch is CancellationError {
         } catch {

@@ -58,11 +58,12 @@ struct RailView: View {
             let mid = height / 2
             let x = geo.size.width / 2
             ZStack {
+                // Etwas über den Zeilenrand hinaus, damit zwischen den Listenzeilen keine Haarlinie bleibt.
                 if !isFirst {
-                    segment(from: 0, to: mid, filled: state.top, x: x)
+                    segment(from: -1.5, to: mid, filled: state.top, x: x)
                 }
                 if !isLast {
-                    segment(from: mid, to: height, filled: state.bottom, x: x)
+                    segment(from: mid, to: height + 1.5, filled: state.bottom, x: x)
                 }
                 if showDot {
                     let size: CGFloat = emphasized ? 16 : 11
@@ -156,6 +157,9 @@ struct TimelineStopRow: View {
                     .background(.quaternary, in: Capsule())
             }
         }
+        // Erste/letzte Zeile mit etwas Luft zum Kartenrand (dort endet die Leiste ohnehin am Punkt).
+        .padding(.top, isFirst ? 4 : 0)
+        .padding(.bottom, isLast ? 6 : 0)
         // Mindesthöhe ≥ Standard-Zeilenhöhe der Liste, sonst entstehen Lücken in der Leiste.
         .frame(minHeight: 48)
         .fixedSize(horizontal: false, vertical: true)
@@ -353,4 +357,25 @@ func remaining(until date: Date, now: Date) -> String {
 /// „in 5 min“ bzw. „jetzt“.
 func minutesUntil(_ date: Date, now: Date) -> String {
     date <= now ? "jetzt" : "in \(remaining(until: date, now: now))"
+}
+
+extension TripDisruption {
+    /// Kurzer Hinweis für Listen („S1 fällt aus“, „Anschluss verpasst“).
+    var shortText: String {
+        switch self {
+        case .rideCancelled(let line): "\(line ?? "Fahrt") fällt aus"
+        case .boardingCancelled: "Einstieg entfällt"
+        case .alightingCancelled: "Ausstieg entfällt"
+        case .connectionMissed(let line, _): "Anschluss \(line ?? "") verpasst"
+        }
+    }
+
+    /// Ein Wort für ein Statusschild.
+    var badgeText: String {
+        switch self {
+        case .rideCancelled: "Fällt aus"
+        case .boardingCancelled, .alightingCancelled: "Halt entfällt"
+        case .connectionMissed: "Anschluss weg"
+        }
+    }
 }

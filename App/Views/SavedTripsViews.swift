@@ -118,7 +118,8 @@ struct SavedTripRow: View {
         }
         .padding(.vertical, 2)
         // Live-Status nur für Fahrten in den nächsten 12 Stunden abfragen.
-        .task(id: upcoming) {
+        // Alle 5 Minuten neu abfragen (die Zeile wird minütlich neu gezeichnet).
+        .task(id: "\(upcoming?.timeIntervalSince1970 ?? 0)|\(Int(now.timeIntervalSince1970 / 300))") {
             guard let upcoming, upcoming.timeIntervalSince(now) < 12 * 3600 else { live = .idle; return }
             live = await LiveState.load(saved, on: upcoming, using: transit)
         }
@@ -181,7 +182,14 @@ struct SavedTripDetailView: View {
                             Text(message).foregroundStyle(.secondary)
                         }
                     }
-                    .task(id: upcoming) { live = await LiveState.load(saved, on: upcoming, using: transit) }
+                    .task(id: upcoming) {
+                        // Solange die Ansicht offen ist, jede Minute aktualisieren.
+                        while !Task.isCancelled {
+                            let loaded = await LiveState.load(saved, on: upcoming, using: transit)
+                            if case .failed = loaded, case .found = live {} else { live = loaded }
+                            try? await Task.sleep(for: .seconds(60))
+                        }
+                    }
 
                     Section {
                         LiveActivityButton(saved: saved, knownTrip: { switch live { case .found(let t), .rerouted(let t, _): t; default: nil } }())
@@ -364,8 +372,8 @@ private struct LiveBadge: View {
     var body: some View {
         switch state {
         case .found(let trip):
-            if trip.isCancelled {
-                badge("Fällt aus", .red)
+            if let disruption = trip.disruption {
+                badge(disruption.badgeText, .red)
             } else if let delay = trip.departure.delayMinutes, delay > 0 {
                 badge("+\(delay)", delay >= 3 ? .red : .orange)
             } else if trip.departure.realTime != nil {

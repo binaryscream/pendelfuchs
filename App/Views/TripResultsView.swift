@@ -51,7 +51,7 @@ struct TripResultsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("\(initialQuery.origin.label(style)) → \(initialQuery.destination.label(style))")
+            // Start und Ziel stehen schon im Titel.
             if let via = initialQuery.via {
                 Text("über \(via.label(style))")
             }
@@ -98,7 +98,8 @@ struct TripResultsView: View {
             let found = try await transit.trips(query)
             var merged = replace ? [:] : Dictionary(trips.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
             for trip in found { merged[trip.id] = trip }
-            trips = merged.values.sorted { $0.departure.scheduledTime < $1.departure.scheduledTime }
+            // Nach tatsächlicher Abfahrt sortieren – so, wie man sie am Bahnsteig erlebt.
+            trips = merged.values.sorted { $0.departure.expectedTime < $1.departure.expectedTime }
             errorMessage = nil
         } catch is CancellationError {
         } catch let error as URLError where error.code == .cancelled {
@@ -132,8 +133,8 @@ struct TripRow: View {
             legChain
 
             HStack(spacing: 6) {
-                if trip.isCancelled {
-                    Text("Fahrt fällt (teilweise) aus").foregroundStyle(.red).fontWeight(.semibold)
+                if let disruption = trip.disruption {
+                    Text(disruption.shortText).foregroundStyle(.red).fontWeight(.semibold)
                 } else {
                     Text(trip.interchanges == 0 ? "Direkt" : trip.interchanges == 1 ? "1 Umstieg" : "\(trip.interchanges) Umstiege")
                     if let platform = trip.rides.first?.stops.first?.platform, !platform.isEmpty {
