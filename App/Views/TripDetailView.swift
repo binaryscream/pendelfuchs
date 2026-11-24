@@ -145,11 +145,18 @@ private struct RideSection: View {
     let leg: TripLeg
     let now: Date
     @State private var showCoachSequence = false
+    /// Fahrt mit DB-Auslastung (Züge), sobald geladen.
+    @State private var dbLeg: TripLeg?
 
     var body: some View {
         let progress = leg.progress(at: now)
         Section {
-            RideHeader(leg: leg)
+            RideHeader(leg: dbLeg ?? leg)
+                .task(id: leg.departure?.scheduledTime) {
+                    guard leg.boardingOccupancy == nil, DBOccupancyProvider.supports(leg) else { return }
+                    let enriched = await DBOccupancyProvider().enrich(leg)
+                    if enriched.boardingOccupancy != nil { dbLeg = enriched }
+                }
 
             if DBCoachSequenceProvider.supports(leg) {
                 Button { showCoachSequence = true } label: {
@@ -174,6 +181,13 @@ private struct RideSection: View {
 /// Liniennummer, Richtung und Betreiber.
 struct RideHeader: View {
     let leg: TripLeg
+    /// Halt, für den die Auslastung gezeigt wird (Abfahrtsmonitor: „Hier“); sonst der Einstieg.
+    var stopIndex: Int?
+
+    private var occupancy: Occupancy? {
+        if let stopIndex, leg.stops.indices.contains(stopIndex), let value = leg.stops[stopIndex].occupancy { return value }
+        return leg.boardingOccupancy
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -186,7 +200,7 @@ struct RideHeader: View {
                 if !details.isEmpty {
                     Text(details.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
                 }
-                if let occupancy = leg.boardingOccupancy {
+                if let occupancy {
                     OccupancyView(occupancy: occupancy, showsTitle: true).font(.caption)
                 }
             }

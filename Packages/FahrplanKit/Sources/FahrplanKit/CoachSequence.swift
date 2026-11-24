@@ -55,11 +55,10 @@ public struct CoachSequence: Sendable, Hashable {
 
 /// Wagenreihung über die (inoffizielle) Web-Schnittstelle von bahn.de. Kann jederzeit ausfallen oder sich ändern.
 public struct DBCoachSequenceProvider: Sendable {
-    private let session: URLSession
-    private let baseURL = URL(string: "https://www.bahn.de/web/api/")!
+    private let client: DBWebClient
 
     public init(session: URLSession = .shared) {
-        self.session = session
+        client = DBWebClient(session: session)
     }
 
     /// Gibt es für diese Fahrt überhaupt eine Wagenreihung? (Zug mit Zugnummer und Koordinate am Einstieg.)
@@ -73,7 +72,7 @@ public struct DBCoachSequenceProvider: Sendable {
         guard Self.supports(leg), let number = leg.trainNumber, let board = leg.stops.first,
               let coordinate = board.coordinate, let departure = (board.departure ?? board.arrival)?.scheduledTime
         else { return nil }
-        guard let eva = try await evaNumber(near: coordinate) else { return nil }
+        guard let eva = try await client.evaNumber(near: coordinate) else { return nil }
 
         var berlin = Calendar(identifier: .gregorian)
         berlin.timeZone = TimeZone(identifier: "Europe/Berlin")!
@@ -81,7 +80,7 @@ public struct DBCoachSequenceProvider: Sendable {
         let iso = ISO8601DateFormatter()
         iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 
-        let data = try await get("reisebegleitung/wagenreihung/vehicle-sequence", [
+        let data = try await client.get("reisebegleitung/wagenreihung/vehicle-sequence", [
             "administrationId": "80",
             "category": Self.category(line: leg.line, mode: leg.mode),
             "date": String(format: "%04d-%02d-%02d", day.year ?? 0, day.month ?? 0, day.day ?? 0),
@@ -91,18 +90,6 @@ public struct DBCoachSequenceProvider: Sendable {
         ])
         guard let data else { return nil }
         return try DBDecoding.coachSequence(from: data)
-    }
-
-    /// DB-Bahnhofsnummer (EVA) des nächsten Bahnhofs mit Zügen im Umkreis von 1 km.
-    func evaNumber(near coordinate: Coordinate) async throws -> String? {
-        let key = String(format: "%.4f,%.4f", coordinate.latitude, coordinate.longitude)
-        if let cached = await EvaCache.shared.value(for: key) { return cached }
-        guard let data = try await get("reiseloesung/orte/nearby", [
-            "lat": String(coordinate.latitude), "long": String(coordinate.longitude), "radius": "1000", "maxNo": "10",
-        ]) else { return nil }
-        let eva = try DBDecoding.trainStation(from: data)
-        if let eva { await EvaCache.shared.set(eva, for: key) }
-        return eva
     }
 
     /// Zuggattung für die Abfrage („S2“ → „S“, „RB71“ → „RB“, „ICE 905“ → „ICE“). Die Schnittstelle ist hier tolerant.
@@ -116,27 +103,6 @@ public struct DBCoachSequenceProvider: Sendable {
         }
     }
 
-    /// `nil` bei 404 (keine Wagenreihung bekannt).
-    private func get(_ path: String, _ params: [String: String]) async throws -> Data? {
-        var components = URLComponents(url: baseURL.appending(path: path), resolvingAgainstBaseURL: false)!
-        components.queryItems = params.sorted { $0.key < $1.key }.map { URLQueryItem(name: $0.key, value: $0.value) }
-        var request = URLRequest(url: components.url!)
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("de", forHTTPHeaderField: "Accept-Language")
-        request.timeoutInterval = 15
-        let (data, response) = try await session.data(for: request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        if status == 404 || status == 204 { return nil }
-        guard (200..<300).contains(status) else { throw TransitError.badResponse(status: status) }
-        return data
-    }
-}
-
-private actor EvaCache {
-    static let shared = EvaCache()
-    private var values: [String: String] = [:]
-    func value(for key: String) -> String? { values[key] }
-    func set(_ value: String, for key: String) { values[key] = value }
 }
 
 // MARK: - Antwortformate
@@ -246,7 +212,7 @@ enum DBDecoding {
         )
     }
 
-    private static func decode<T: Decodable>(_ type: T.Type, _ data: Data) throws -> T {
+    static func decode<T: Decodable>(_ type: T.Type, _ data: Data) throws -> T {
         do { return try JSONDecoder().decode(type, from: data) }
         catch { throw TransitError.decoding(String(describing: error)) }
     }

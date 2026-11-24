@@ -170,4 +170,6 @@ Ein `ProviderRouter` wählt je nach Region und Verfügbarkeit die Quelle:
 - curl wird von bahn.de geblockt (`OPS_BLOCKED`), URLSession (iOS/macOS) funktioniert.
 - **Rechtlich:** keine Erlaubnis der DB, Nutzung wie bei db-vendo auf eigenes Risiko; vor einer Veröffentlichung
   klären oder durch einen Link nach außen ersetzen. In der App als „inoffiziell, ohne Gewähr“ gekennzeichnet.
-- Auslastung kommt nur vom VVO (`Occupancy` je Halt in `/tr/trips`, `/dm`, `/dm/trip`).
+- Auslastung: VVO (`Occupancy` je Halt in `/tr/trips`, `/dm`, `/dm/trip`); für Züge zusätzlich DB über
+  `reiseloesung/abfahrten?ortExtId=&datum=&zeit=` (Ortszeit) → Fahrt per Linie + Plan-Abfahrt → `reiseloesung/fahrt?journeyId=`
+  (`auslastungsmeldungen`, KLASSE_2, Stufe 1–4). Nachts gibt es oft keine Prognose. Zuordnung der Halte über normalisierte Namen.
