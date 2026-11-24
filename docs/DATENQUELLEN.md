@@ -158,3 +158,16 @@ Ein `ProviderRouter` wählt je nach Region und Verfügbarkeit die Quelle:
   R09-Funktelegrammen (Dresden). Kandidat für echte Fahrzeugpositionen statt der geschätzten – Abdeckung hängt von
   Empfängern ab, Nutzungsbedingungen noch nicht geprüft.
 - **VVO-Störungsmeldungen** (`POST /rc`): Baustellen und Störungen je Linie (Antwort > 200 kB).
+
+## Wagenreihung (Deutsche Bahn, inoffiziell)
+
+- `https://www.bahn.de/web/api/reisebegleitung/wagenreihung/vehicle-sequence` mit `administrationId=80`,
+  `category` (S/RB/RE/IC/ICE – die Schnittstelle ist tolerant), `date` (Tag in Europe/Berlin), `evaNumber`,
+  `number` (Zugnummer) und `time` (Plan-Abfahrt, ISO 8601 UTC). 404 = keine Wagenreihung.
+- Die EVA-Nummer des Einstiegs holt `reiseloesung/orte/nearby?lat=&long=&radius=1000` (erste 7-stellige
+  Nummer mit „80“ und Zug-Produkten).
+- Die Zugnummer kommt von VVO (`Mot.TrainNumber`) bzw. Transitous (`tripShortName`).
+- curl wird von bahn.de geblockt (`OPS_BLOCKED`), URLSession (iOS/macOS) funktioniert.
+- **Rechtlich:** keine Erlaubnis der DB, Nutzung wie bei db-vendo auf eigenes Risiko; vor einer Veröffentlichung
+  klären oder durch einen Link nach außen ersetzen. In der App als „inoffiziell, ohne Gewähr“ gekennzeichnet.
+- Auslastung kommt nur vom VVO (`Occupancy` je Halt in `/tr/trips`, `/dm`, `/dm/trip`).

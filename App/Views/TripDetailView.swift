@@ -144,11 +144,19 @@ struct TripDetailView: View {
 private struct RideSection: View {
     let leg: TripLeg
     let now: Date
+    @State private var showCoachSequence = false
 
     var body: some View {
         let progress = leg.progress(at: now)
         Section {
             RideHeader(leg: leg)
+
+            if DBCoachSequenceProvider.supports(leg) {
+                Button { showCoachSequence = true } label: {
+                    Label("Wagenreihung", systemImage: "train.side.front.car")
+                }
+                .sheet(isPresented: $showCoachSequence) { CoachSequenceView(leg: leg) }
+            }
 
             if case .underway(let passed, let fraction) = progress, passed + 1 < leg.stops.count {
                 NextStopRow(next: leg.stops[passed + 1], fraction: fraction, mode: leg.mode ?? .other, now: now)
