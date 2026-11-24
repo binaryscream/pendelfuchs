@@ -34,6 +34,7 @@ Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingung
 11. ✅ Verspätungsanzeige wählbar, Früher/Später im Abfahrtsmonitor, Strecken-Widget mit Rückweg und Tausch-Knopf, flüssigere Animationen
 12. Optional: Push-Server, damit Live-Aktivitäten auch im Hintergrund minutengenau aktualisiert werden
 13. Offen (TODO):
+    - Anfrage an den VVO versenden (Entwurf: `docs/VVO-ANFRAGE.md`)
     - Live-Aktivität endet nach der Ankunft nur, wenn iOS die App aufweckt – sonst erst nach bis zu 8 h (später ggf. kürzere Wartezeit oder Push-Server, siehe 12)
     - Offizielle VVO-Schnittstellen prüfen (TRIAS, SIRI-ET) statt der inoffiziellen WebAPI; Erlaubnis bei opendata@vvo-online.de klären
     - Fahrzeugpositionen in Dresden (TLMS) für die Karte; Quellen: <https://oepnv.dresden.lol>, <https://github.com/kiliankoe/vvo>
