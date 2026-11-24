@@ -240,6 +240,8 @@ struct RouteWidgetView: View {
 
     var body: some View {
         content
+            .padding(.horizontal, family == .accessoryRectangular ? 0 : 6)
+            .padding(.vertical, family == .accessoryRectangular ? 0 : 10)
             .containerBackground(for: .widget) { Color(.systemBackground) }
             .widgetURL(entry.linkURL)
     }
@@ -289,7 +291,7 @@ struct RouteWidgetView: View {
                 Button(intent: swap) {
                     Image(systemName: "arrow.left.arrow.right")
                         .font(.footnote.weight(.bold))
-                        .frame(width: 28, height: 28)
+                        .frame(width: 26, height: 26)
                         .background(Color(.secondarySystemFill), in: Circle())
                 }
                 .buttonStyle(.plain)
