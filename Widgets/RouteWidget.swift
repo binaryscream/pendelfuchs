@@ -87,9 +87,15 @@ enum RouteWidgetStore {
 
 // MARK: - Zeitleiste
 
+/// Eine Verbindung samt komplettem Lauf des Fahrzeugs (falls bekannt) für den Fortschrittsbalken.
+struct RouteTrip {
+    let trip: Trip
+    let run: TripLeg?
+}
+
 struct RouteEntry: TimelineEntry {
     enum Content {
-        case trips([Trip])
+        case trips([RouteTrip])
         case message(String)
     }
 
@@ -115,7 +121,7 @@ struct RouteProvider: AppIntentTimelineProvider {
 
     func placeholder(in context: Context) -> RouteEntry {
         RouteEntry(date: .now, from: Self.sampleFrom, to: Self.sampleTo, reversed: false, turnTime: nil, swap: nil,
-                   content: .trips(Self.sampleTrips()))
+                   content: .trips(Self.sampleTrips().map { RouteTrip(trip: $0, run: nil) }))
     }
 
     func snapshot(for configuration: SelectRouteIntent, in context: Context) async -> RouteEntry {
@@ -151,12 +157,21 @@ struct RouteProvider: AppIntentTimelineProvider {
         let directions = dates.map { RouteDirection.isReversed(at: $0, turnAt: turn, state: state) }
 
         let options = TripOptions(deutschlandTicketOnly: configuration.deutschlandTicketOnly)
-        var loaded: [Bool: Result<[Trip], Error>] = [:]
+        var loaded: [Bool: Result<[RouteTrip], Error>] = [:]
         for reversed in Set(directions) {
             let query = TripQuery(origin: reversed ? destination : origin, destination: reversed ? origin : destination,
                                   time: now, options: options)
-            do { loaded[reversed] = .success(try await DataSources.router().trips(query)) }
-            catch { loaded[reversed] = .failure(error) }
+            do {
+                let router = DataSources.router()
+                let trips = try await router.trips(query)
+                // Den kompletten Lauf nur für die angezeigten Verbindungen holen.
+                var result: [RouteTrip] = []
+                for trip in trips {
+                    let upcoming = trip.departure.expectedTime >= now.addingTimeInterval(-30)
+                    result.append(RouteTrip(trip: trip, run: upcoming && result.count < 5 ? await router.fullRun(of: trip) : nil))
+                }
+                loaded[reversed] = .success(result)
+            } catch { loaded[reversed] = .failure(error) }
         }
 
         return zip(dates, directions).map { date, reversed in
@@ -165,7 +180,7 @@ struct RouteProvider: AppIntentTimelineProvider {
             switch loaded[reversed] {
             case .success(let trips):
                 // Bereits abgefahrene Verbindungen fallen mit der Zeit heraus.
-                let upcoming = trips.filter { $0.departure.expectedTime >= date.addingTimeInterval(-30) }
+                let upcoming = trips.filter { $0.trip.departure.expectedTime >= date.addingTimeInterval(-30) }
                 return RouteEntry(date: date == start ? now : date, from: from, to: to, reversed: reversed, turnTime: turn,
                                   swap: swap, content: upcoming.isEmpty ? .message("Keine Verbindungen gefunden.") : .trips(upcoming))
             default:
@@ -233,7 +248,7 @@ struct RouteWidgetView: View {
         if family == .accessoryRectangular {
             lockScreen
         } else {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 header
                 switch entry.content {
                 case .message(let text):
@@ -242,9 +257,9 @@ struct RouteWidgetView: View {
                     Spacer(minLength: 0)
                 case .trips(let trips):
                     let shown = Array(trips.prefix(maxRows).enumerated())
-                    ForEach(shown, id: \.offset) { index, trip in
-                        Divider()
-                        RouteTripRow(trip: trip, now: entry.date)
+                    ForEach(shown, id: \.offset) { index, item in
+                        if index > 0 { Divider() }
+                        RouteTripRow(trip: item.trip, run: item.run, now: entry.date)
                             .frame(maxHeight: .infinity)
                     }
                 }
@@ -274,7 +289,7 @@ struct RouteWidgetView: View {
                 Button(intent: swap) {
                     Image(systemName: "arrow.left.arrow.right")
                         .font(.footnote.weight(.bold))
-                        .frame(width: 30, height: 30)
+                        .frame(width: 28, height: 28)
                         .background(Color(.secondarySystemFill), in: Circle())
                 }
                 .buttonStyle(.plain)
@@ -298,7 +313,8 @@ struct RouteWidgetView: View {
                 .font(.caption.weight(.semibold))
                 .lineLimit(1)
             if case .trips(let trips) = entry.content {
-                ForEach(Array(trips.prefix(maxRows).enumerated()), id: \.offset) { _, trip in
+                ForEach(Array(trips.prefix(maxRows).enumerated()), id: \.offset) { _, item in
+                    let trip = item.trip
                     HStack(spacing: 4) {
                         Text("\(trip.departure.expectedTime.formatted(date: .omitted, time: .shortened)) → \(trip.arrival.expectedTime.formatted(date: .omitted, time: .shortened))")
                             .monospacedDigit()
@@ -316,6 +332,7 @@ struct RouteWidgetView: View {
 
 private struct RouteTripRow: View {
     let trip: Trip
+    let run: TripLeg?
     let now: Date
 
     var body: some View {
@@ -332,7 +349,7 @@ private struct RouteTripRow: View {
                     .font(.system(.subheadline, design: .rounded).weight(.bold))
             }
 
-            RouteBar(trip: trip, now: now)
+            RouteBar(trip: trip, run: run, now: now)
 
             HStack(spacing: 5) {
                 if let platform = trip.rides.first?.stops.first?.platform, !platform.isEmpty {
@@ -362,46 +379,46 @@ private struct RouteTripRow: View {
     }
 }
 
-/// Reiseverlauf als Balken: jede Fahrt in der Farbe ihres Verkehrsmittels, Umstiege als blasse Lücke,
-/// Längen im Verhältnis zur Fahrzeit.
+/// Fortschrittsbalken über den kompletten Lauf des Fahrzeugs (Endhalt bis Endhalt). Der eigene Abschnitt
+/// (Einstieg bis Ausstieg) ist kräftiger getönt, der schon gefahrene Teil voll in der Linienfarbe.
+/// Ohne bekannten Lauf zeigt er stattdessen die Verbindung selbst.
 private struct RouteBar: View {
     let trip: Trip
+    let run: TripLeg?
     let now: Date
 
-    /// Anteil der Gesamtstrecke (0…1), der zur Zeit `now` schon zurückgelegt ist.
-    private var progress: Double { trip.overallProgress(at: now) ?? 0 }
+    private var color: Color { (trip.rides.first?.mode ?? .other).color }
 
-    private struct Segment { let weight: Double; let color: Color? }
-
-    private var segments: [Segment] {
-        var result: [Segment] = []
-        var cursor = trip.departure.expectedTime
-        for ride in trip.rides {
-            guard let start = ride.departure?.expectedTime, let end = ride.arrival?.expectedTime, end > start else { continue }
-            if start > cursor { result.append(Segment(weight: start.timeIntervalSince(cursor), color: nil)) }
-            result.append(Segment(weight: end.timeIntervalSince(start), color: (ride.mode ?? .other).color))
-            cursor = end
+    /// (Start, Ende) des gesamten Laufs und des eigenen Abschnitts.
+    private var span: (start: Date, end: Date, mineFrom: Date, mineTo: Date) {
+        let mineFrom = trip.departure.expectedTime, mineTo = trip.arrival.expectedTime
+        if let run, let a = run.departure?.expectedTime, let b = run.arrival?.expectedTime, b > a {
+            return (min(a, mineFrom), max(b, mineTo), mineFrom, mineTo)
         }
-        return result.isEmpty ? [Segment(weight: 1, color: .gray)] : result
+        return (mineFrom, mineTo, mineFrom, mineTo)
+    }
+
+    private func x(_ date: Date, _ width: CGFloat) -> CGFloat {
+        let span = span
+        let total = max(1, span.end.timeIntervalSince(span.start))
+        return width * CGFloat(min(1, max(0, date.timeIntervalSince(span.start) / total)))
     }
 
     var body: some View {
-        let parts = segments
-        let total = parts.reduce(0) { $0 + $1.weight }
+        let span = span
+        let done = trip.disruption == nil
         GeometryReader { proxy in
-            let gaps = CGFloat(parts.count - 1) * 2
-            let bar = HStack(spacing: 2) {
-                ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
-                    Capsule()
-                        .fill(part.color ?? Color.secondary.opacity(0.5))
-                        .frame(width: max(4, (proxy.size.width - gaps) * part.weight / total))
+            let w = proxy.size.width
+            ZStack(alignment: .leading) {
+                Capsule().fill(color.opacity(0.16))
+                Capsule().fill(color.opacity(0.4))
+                    .frame(width: max(4, x(span.mineTo, w) - x(span.mineFrom, w)))
+                    .offset(x: x(span.mineFrom, w))
+                if done {
+                    Capsule().fill(color).frame(width: x(now, w))
                 }
             }
-            bar.opacity(0.22)
-            bar.mask(alignment: .leading) {
-                Rectangle().frame(width: proxy.size.width * progress)
-            }
         }
-        .frame(height: 5)
+        .frame(height: 6)
     }
 }

@@ -102,3 +102,35 @@ struct VVOLiveTests {
         #expect(!deps.isEmpty)
     }
 }
+
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["FAHRPLAN_LIVE_TESTS"] == "1"))
+struct FullRunLiveTests {
+    @Test func fullRunIsLongerThanTheTripSegment() async throws {
+        await LiveThrottle.shared.wait()
+        let vvo = VVOProvider()
+        let origin = Stop(provider: .vvo, stopID: "33000028", name: "Hauptbahnhof", place: "Dresden")
+        let destination = Stop(provider: .vvo, stopID: "33003370", name: "Bahnhof", place: "Pirna")
+        let trips = try await vvo.trips(TripQuery(origin: origin, destination: destination, time: .now))
+        let single = try #require(trips.first { $0.rides.count == 1 })
+        let run = try #require(await vvo.fullRun(of: single))
+        #expect(run.stops.count > single.rides[0].stops.count)
+    }
+}
+
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["FAHRPLAN_LIVE_TESTS"] == "1"))
+struct FullRunRouterLiveTests {
+    @Test func routerFindsFullRun() async throws {
+        await LiveThrottle.shared.wait()
+        let router = ProviderRouter(vvo: nil)
+        let transitous = TransitousProvider()
+        let origin = try #require(try await transitous.searchStops(query: "Dresden Hbf").first)
+        await LiveThrottle.shared.wait()
+        let destination = try #require(try await transitous.searchStops(query: "Pirna Bahnhof").first)
+        await LiveThrottle.shared.wait()
+        let trips = try await router.trips(TripQuery(origin: origin, destination: destination, time: .now))
+        let single = try #require(trips.first { $0.rides.count == 1 })
+        print("SRC", single.source as Any, single.rides[0].stops.first?.stopID as Any, single.rides[0].line as Any)
+        let run = await router.fullRun(of: single)
+        print("RUN", run?.stops.count as Any, run?.departure as Any, run?.arrival as Any, run?.stops.first as Any)
+    }
+}

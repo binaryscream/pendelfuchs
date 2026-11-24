@@ -45,3 +45,30 @@ public enum TransitError: LocalizedError, Sendable {
         }
     }
 }
+
+extension TransitProvider {
+    /// Der komplette Lauf des Fahrzeugs (Endhalt bis Endhalt) für eine Verbindung mit genau einer Fahrt –
+    /// also auch die Halte vor dem Einstieg und nach dem Ausstieg. `nil`, wenn die Quelle ihn nicht liefert.
+    /// Findet die Fahrt über die Abfahrtstafel am Einstieg, weil Verbindungsabfragen keine Fahrt-Kennung enthalten.
+    public func fullRun(of trip: Trip) async -> TripLeg? {
+        guard trip.rides.count == 1, let ride = trip.rides.first, let board = ride.stops.first,
+              let scheduled = ride.departure?.scheduledTime, !ride.isCancelled else { return nil }
+        let stop = Stop(provider: trip.source ?? .transitous, stopID: board.stopID, name: board.name, place: board.place)
+        do {
+            let departures = try await departures(at: stop, limit: 12, from: scheduled > .now ? scheduled : nil)
+            guard let match = departures.first(where: {
+                $0.line == ride.line && abs($0.scheduledTime.timeIntervalSince(scheduled)) < 60
+            }) else { return nil }
+            var leg = try await journey(of: match, at: stop)
+            if leg.line == nil { leg.line = ride.line }
+            // Plausibilität: der Lauf muss unsere Fahrt enthalten.
+            // (Kennungen der Halte können aus einer anderen Quelle stammen, deshalb über die Zeiten prüfen.)
+            guard let start = leg.departure?.scheduledTime, let end = leg.arrival?.scheduledTime,
+                  let rideEnd = ride.arrival?.scheduledTime,
+                  start <= scheduled.addingTimeInterval(60), end >= rideEnd.addingTimeInterval(-60) else { return nil }
+            return leg
+        } catch {
+            return nil
+        }
+    }
+}
