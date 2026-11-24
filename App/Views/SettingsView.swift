@@ -43,7 +43,6 @@ struct SettingsView: View {
     @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var delayDisplay = DelayDisplay.badge
     @AppStorage(StopNameStyle.storageKey, store: AppGroup.defaults) private var stopNameStyle = StopNameStyle.withPlace
     @AppStorage(StopListExpansion.storageKey) private var stopListExpansion = StopListExpansion.collapsed
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -146,12 +145,6 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Einstellungen")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fertig") { dismiss() }
-                }
-            }
         }
     }
 }

@@ -18,7 +18,6 @@ struct HomeView: View {
     @State private var searchError: String?
     @State private var nearby: [Stop] = []
     @State private var nearbyError: String?
-    @State private var showSettings = false
     @State private var path = NavigationPath()
 
     var body: some View {
@@ -40,14 +39,10 @@ struct HomeView: View {
             .task { await loadNearby() }
             .refreshable { await loadNearby() }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Einstellungen", systemImage: "gearshape") { showSettings = true }
-                }
                 if !favorites.stops.isEmpty && query.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) { EditButton() }
                 }
             }
-            .sheet(isPresented: $showSettings) { SettingsView() }
         }
         .onChange(of: openStop, initial: true) {
             guard let stop = openStop else { return }

@@ -31,6 +31,7 @@ struct FahrplanXLApp: App {
                 Tab("Verbindungen", systemImage: "point.topleft.down.to.point.bottomright.curvepath",
                     value: AppTab.trips) { TripSearchView(openRoute: $openRoute) }
                 Tab("Meine Fahrten", systemImage: "star", value: AppTab.saved) { MyTripsView() }
+                Tab("Einstellungen", systemImage: "gearshape", value: AppTab.settings) { SettingsView() }
             }
                 // Antippen des Widgets öffnet die Haltestelle.
                 .onOpenURL { url in
@@ -70,7 +71,7 @@ struct FahrplanXLApp: App {
 }
 
 enum AppTab: Hashable {
-    case departures, trips, saved
+    case departures, trips, saved, settings
 }
 
 extension EnvironmentValues {
