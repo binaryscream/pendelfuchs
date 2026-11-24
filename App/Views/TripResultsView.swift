@@ -6,6 +6,9 @@ import SwiftUI
 /// Liste der gefundenen Verbindungen mit „Früher“/„Später“.
 struct TripResultsView: View {
     let initialQuery: TripQuery
+    /// Verbindung, die nach dem ersten Laden gleich geöffnet wird (Antippen im Strecken-Widget).
+    var autoOpen: TripTarget?
+    var onAutoOpen: ((Trip) -> Void)?
 
     @Environment(\.transit) private var transit
     @Environment(\.stopNameStyle) private var style
@@ -46,7 +49,10 @@ struct TripResultsView: View {
         .navigationTitle("\(initialQuery.origin.label(style)) → \(initialQuery.destination.label(style))")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await load(initialQuery, replace: true) }
-        .task { await load(initialQuery, replace: true) }
+        .task {
+            await load(initialQuery, replace: true)
+            if let autoOpen, let trip = trips.first(where: autoOpen.matches) { onAutoOpen?(trip) }
+        }
     }
 
     private var header: some View {

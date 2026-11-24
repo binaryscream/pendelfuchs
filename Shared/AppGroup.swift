@@ -40,23 +40,34 @@ enum DeepLink {
         return components.url
     }
 
-    /// Strecke für die Verbindungssuche: `fahrplanxl://route?o=<Start>&d=<Ziel>`.
-    static func url(forRoute from: Stop, _ to: Stop) -> URL? {
+    /// Strecke für die Verbindungssuche: `fahrplanxl://route?o=<Start>&d=<Ziel>`, optional mit einer bestimmten
+    /// Verbindung (`t` = Plan-Abfahrt in Sekunden seit 1970, `l` = Linien), die dann gleich geöffnet wird.
+    static func url(forRoute from: Stop, _ to: Stop, trip: Trip? = nil) -> URL? {
         guard let origin = StopToken.encode(from), let destination = StopToken.encode(to) else { return nil }
         var components = URLComponents()
         components.scheme = scheme
         components.host = "route"
         components.queryItems = [URLQueryItem(name: "o", value: origin), URLQueryItem(name: "d", value: destination)]
+        if let trip {
+            components.queryItems? += [
+                URLQueryItem(name: "t", value: String(Int(trip.departure.scheduledTime.timeIntervalSince1970))),
+                URLQueryItem(name: "l", value: trip.rides.map { $0.line ?? "?" }.joined(separator: ",")),
+            ]
+        }
         return components.url
     }
 
-    static func route(from url: URL) -> (from: Stop, to: Stop)? {
+    static func route(from url: URL) -> (from: Stop, to: Stop, trip: TripTarget?)? {
         guard url.scheme == scheme, url.host == "route",
               let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
               let o = items.first(where: { $0.name == "o" })?.value.flatMap(StopToken.decode),
               let d = items.first(where: { $0.name == "d" })?.value.flatMap(StopToken.decode)
         else { return nil }
-        return (o, d)
+        let target = items.first(where: { $0.name == "t" })?.value.flatMap(Double.init).map {
+            TripTarget(departure: Date(timeIntervalSince1970: $0),
+                       lines: (items.first(where: { $0.name == "l" })?.value ?? "").split(separator: ",").map(String.init))
+        }
+        return (o, d, target)
     }
 
     static func stop(from url: URL) -> Stop? {
@@ -91,5 +102,17 @@ enum StopToken {
         while base64.count % 4 != 0 { base64 += "=" }
         guard let data = Data(base64Encoded: base64) else { return nil }
         return try? JSONDecoder().decode(Stop.self, from: data)
+    }
+}
+
+/// Eine bestimmte Verbindung, die nach dem Öffnen der Suche gleich angezeigt werden soll.
+struct TripTarget: Hashable {
+    let departure: Date
+    let lines: [String]
+
+    /// Gleiche Plan-Abfahrt (±1 min) und – falls bekannt – gleiche Linien.
+    func matches(_ trip: Trip) -> Bool {
+        abs(trip.departure.scheduledTime.timeIntervalSince(departure)) < 60
+            && (lines.isEmpty || trip.rides.map { $0.line ?? "?" } == lines)
     }
 }

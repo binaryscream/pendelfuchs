@@ -113,6 +113,11 @@ struct RouteEntry: TimelineEntry {
         guard let from, let to else { return nil }
         return DeepLink.url(forRoute: from, to)
     }
+
+    func linkURL(for trip: Trip) -> URL? {
+        guard let from, let to else { return nil }
+        return DeepLink.url(forRoute: from, to, trip: trip)
+    }
 }
 
 struct RouteProvider: AppIntentTimelineProvider {
@@ -261,8 +266,11 @@ struct RouteWidgetView: View {
                     let shown = Array(trips.prefix(maxRows).enumerated())
                     ForEach(shown, id: \.offset) { index, item in
                         if index > 0 { Divider() }
-                        RouteTripRow(trip: item.trip, run: item.run, now: entry.date)
-                            .frame(maxHeight: .infinity)
+                        // Antippen öffnet genau diese Verbindung in der App.
+                        Link(destination: entry.linkURL(for: item.trip) ?? entry.linkURL ?? URL(string: "fahrplanxl://")!) {
+                            RouteTripRow(trip: item.trip, run: item.run, now: entry.date)
+                        }
+                        .frame(maxHeight: .infinity)
                     }
                 }
             }

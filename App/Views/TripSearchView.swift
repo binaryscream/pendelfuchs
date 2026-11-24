@@ -6,7 +6,9 @@ import SwiftUI
 /// Verbindungssuche: Von – Nach – (optionaler Zwischenhalt) – Datum – Uhrzeit.
 struct TripSearchView: View {
     /// Von außen (Strecken-Widget) zu öffnende Verbindungssuche.
-    @Binding var openRoute: TripQuery?
+    @Binding var openRoute: RouteLink?
+    /// Verbindung, die nach dem Laden der Ergebnisse gleich geöffnet wird (Widget).
+    @State private var pendingTrip: TripTarget?
 
     // Start/Ziel bleiben über App-Neustarts erhalten.
     @AppStorage("tripSearch.origin") private var originData = Data()
@@ -124,17 +126,25 @@ struct TripSearchView: View {
                 }
             }
             .navigationTitle("Verbindungen")
-            .onChange(of: openRoute, initial: true) { _, query in
-                guard let query else { return }
+            .onChange(of: openRoute, initial: true) { _, link in
+                guard let link else { return }
+                var query = link.query
+                // Bei einer bestimmten Verbindung kurz vor deren Abfahrt suchen, damit sie sicher dabei ist.
+                if let trip = link.trip { query.time = trip.departure.addingTimeInterval(-120) }
                 originData = Self.encode(query.origin)
                 destinationData = Self.encode(query.destination)
+                pendingTrip = link.trip
                 path = [.results(query)]
                 openRoute = nil
             }
             // Ein einziges Navigationsziel an der Wurzel – gemischte Ziele setzen den Stack sonst zurück.
             .navigationDestination(for: TripRoute.self) { route in
                 switch route {
-                case .results(let query): TripResultsView(initialQuery: query)
+                case .results(let query):
+                    TripResultsView(initialQuery: query, autoOpen: pendingTrip) { trip in
+                        pendingTrip = nil
+                        path.append(.detail(trip, query))
+                    }
                 case .detail(let trip, let query): TripDetailView(trip: trip, query: query)
                 }
             }

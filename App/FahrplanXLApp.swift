@@ -15,7 +15,7 @@ struct FahrplanXLApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab = AppTab.departures
     @State private var openStop: Stop?
-    @State private var openRoute: TripQuery?
+    @State private var openRoute: RouteLink?
 
     init() {
         // Daten liegen in der App Group, damit das Widget die Favoriten sieht.
@@ -41,7 +41,7 @@ struct FahrplanXLApp: App {
                     } else if let route = DeepLink.route(from: url) {
                         // Strecken-Widget: Verbindungssuche mit dieser Strecke öffnen.
                         selectedTab = .trips
-                        openRoute = TripQuery(origin: route.from, destination: route.to)
+                        openRoute = RouteLink(query: TripQuery(origin: route.from, destination: route.to), trip: route.trip)
                     }
                 }
                 .environment(favorites)
@@ -68,6 +68,12 @@ struct FahrplanXLApp: App {
             await TripActivityManager.shared.refreshAll()
         }
     }
+}
+
+/// Vom Strecken-Widget geöffnete Suche, optional mit der angetippten Verbindung.
+struct RouteLink: Equatable {
+    var query: TripQuery
+    var trip: TripTarget?
 }
 
 enum AppTab: Hashable {
