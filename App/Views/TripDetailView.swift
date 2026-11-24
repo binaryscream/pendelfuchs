@@ -150,6 +150,8 @@ private struct RideSection: View {
         Section {
             RideHeader(leg: leg)
 
+            ForEach(leg.alerts) { AlertRow(alert: $0) }
+
             if case .underway(let passed, let fraction) = progress, passed + 1 < leg.stops.count {
                 NextStopRow(next: leg.stops[passed + 1], fraction: fraction, mode: leg.mode ?? .other, now: now)
             }

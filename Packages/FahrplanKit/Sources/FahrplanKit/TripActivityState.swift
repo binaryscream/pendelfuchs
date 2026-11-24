@@ -12,6 +12,8 @@ public struct TripActivityState: Codable, Hashable, Sendable {
         public var fromName: String
         public var fromPlace: String?
         public var fromPlatform: String?
+        /// Geplantes Gleis beim Einstieg, falls abweichend bekannt (Gleiswechsel).
+        public var fromScheduledPlatform: String? = nil
         public var toName: String
         public var toPlace: String?
         public var toPlatform: String?
@@ -58,6 +60,7 @@ public struct TripActivityState: Codable, Hashable, Sendable {
                         fromName: first.name, fromPlace: first.place, fromPlatform: first.platform,
                         toName: last.name, toPlace: last.place, toPlatform: last.platform,
                         departure: dep, arrival: arr, isCancelled: leg.isCancelled)
+                .with { $0.fromScheduledPlatform = first.platformChanged ? first.scheduledPlatform : nil }
         }
         self.init(rides: rides, updatedAt: updatedAt, note: note)
     }
@@ -96,5 +99,13 @@ public struct TripActivityState: Codable, Hashable, Sendable {
         case .riding(let i): rides[i].arrival.expectedTime
         case .arrived: nil
         }
+    }
+}
+
+extension TripActivityState.Ride {
+    func with(_ change: (inout Self) -> Void) -> Self {
+        var copy = self
+        change(&copy)
+        return copy
     }
 }

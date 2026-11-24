@@ -47,8 +47,20 @@ public struct VVOProvider: TransitProvider {
         ]
         // Die API kennt keine Abfahrten in der Vergangenheit (sie springt auf „jetzt“).
         if let from, from > .now { body["time"] = VVODecoding.requestTime(from) }
+        async let alerts = routeChangeAlerts()
         let response: DepartureMonitorResponse = try await post("dm", body: body)
-        return response.departures
+        let known = await alerts
+        return response.departures.map { departure in
+            departure.with { $0.alerts = $0.alerts.resolvingVVO(known, at: departure.scheduledTime) }
+        }
+    }
+
+    /// Streckenänderungen (Bauarbeiten, Umleitungen) – zwischengespeichert, Fehler führen zu „keine Hinweise“.
+    func routeChangeAlerts() async -> [String: ServiceAlert] {
+        await VVORouteChangeCache.shared.alerts { [self] in
+            let response: RouteChangesResponse = try await post("rc", body: ["shortterm": true])
+            return response.alerts
+        }
     }
 
     public func journey(of departure: Departure, at stop: Stop) async throws -> TripLeg {
@@ -217,6 +229,7 @@ struct DepartureMonitorResponse: Decodable, StatusCarrying {
         let scheduledTime: String
         let state: String?
         let occupancy: String?
+        let routeChanges: [String]?
 
         struct Platform: Decodable {
             let name: String?
@@ -224,6 +237,7 @@ struct DepartureMonitorResponse: Decodable, StatusCarrying {
         }
 
         enum CodingKeys: String, CodingKey {
+            case routeChanges = "RouteChanges"
             case id = "Id"
             case lineName = "LineName"
             case direction = "Direction"
@@ -252,6 +266,7 @@ struct DepartureMonitorResponse: Decodable, StatusCarrying {
                 source: .vvo,
                 tripID: id
             )
+            .with { $0.alerts = (routeChanges ?? []).map(ServiceAlert.vvoPlaceholder) }
         }
 
         static func state(_ raw: String?, hasRealTime: Bool) -> DepartureState {

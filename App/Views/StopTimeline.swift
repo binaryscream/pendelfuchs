@@ -150,11 +150,25 @@ struct TimelineStopRow: View {
             }
             Spacer(minLength: 4)
             if emphasized, let platform = stop.platform, !platform.isEmpty {
-                Text(mode.platformLabel(platform))
-                    .font(.caption.weight(.medium))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(.quaternary, in: Capsule())
+                if stop.platformChanged {
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text(mode.platformLabel(platform))
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.orange, in: Capsule())
+                        Text("statt \(stop.scheduledPlatform ?? "")").font(.caption2).foregroundStyle(.orange)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Gleiswechsel: \(mode.platformLabel(platform)) statt \(stop.scheduledPlatform ?? "")")
+                } else {
+                    Text(mode.platformLabel(platform))
+                        .font(.caption.weight(.medium))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.quaternary, in: Capsule())
+                }
             }
         }
         // Erste/letzte Zeile mit etwas Luft zum Kartenrand (dort endet die Leiste ohnehin am Punkt).

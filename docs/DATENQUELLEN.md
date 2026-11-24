@@ -167,3 +167,13 @@ EVA per `reiseloesung/orte/nearby`, Wagenreihung per `reisebegleitung/wagenreihu
 Auslastung per `reiseloesung/abfahrten` → `reiseloesung/fahrt` (`auslastungsmeldungen`).
 
 Auslastung kommt weiter vom VVO (`Occupancy` je Halt in `/tr/trips`, `/dm`, `/dm/trip`).
+
+## Störungen, Bauarbeiten und Gleiswechsel
+
+- **VVO `/rc`** (`{"shortterm": true}`): Streckenänderungen mit Titel, HTML-Text, Gültigkeitszeiträumen und
+  Linien. Abfahrten (`/dm`: `RouteChanges`) und Fahrten (`/tr/trips`: `Mot.Changes`) verweisen per ID darauf.
+  Die App lädt `/rc` höchstens alle 15 Minuten und zeigt eine Meldung nur, wenn einer ihrer Zeiträume die
+  Abfahrt enthält.
+- **Transitous**: `alerts` an Halten und Fahrten (GTFS-RT, `headerText`, `descriptionText`, `impactPeriod`);
+  Gleiswechsel über `track` (aktuell) vs. `scheduledTrack` (Plan). Der VVO liefert kein Plan-Gleis – Gleiswechsel
+  sind deshalb nur bei Transitous-Daten erkennbar.

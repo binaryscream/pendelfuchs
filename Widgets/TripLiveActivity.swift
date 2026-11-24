@@ -106,6 +106,14 @@ private struct LockScreenView: View {
                 .frame(width: 112, alignment: .trailing)
             }
 
+            if state.note == nil, let ride = info.ride, let platform = ride.fromPlatform,
+               let scheduled = ride.fromScheduledPlatform, state.phase(at: .now) != .arrived {
+                Label("Gleiswechsel: \(ride.mode.platformLabel(platform)) statt \(scheduled)",
+                      systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .lineLimit(1)
+            }
             if let note = state.note {
                 Label(note, systemImage: "arrow.triangle.branch")
                     .font(.caption.weight(.semibold))
@@ -273,7 +281,10 @@ private struct PhaseInfo {
             headline = "Keine Daten"; subline = ""; countdownLabel = ""
             return
         }
-        let platform = ride.fromPlatform.map { " · \(ride.mode.platformLabel($0))" } ?? ""
+        let platform = ride.fromPlatform.map { value in
+            // Gleiswechsel gleich in der Überschrift: „Gl. 3 statt 1“.
+            " · \(ride.mode.platformLabel(value))" + (ride.fromScheduledPlatform.map { " statt \($0)" } ?? "")
+        } ?? ""
         let direction = ride.direction.map { "Richtung \($0)" } ?? ""
 
         if ride.isCancelled {

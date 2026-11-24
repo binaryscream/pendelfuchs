@@ -21,11 +21,19 @@ extension VVOProvider {
             "maxChanges": VVODecoding.maxChanges(options.maxTransfers),
         ]
 
+        let alerts = await routeChangeAlerts()
         func fetch(_ settings: [String: any Sendable]) async throws -> [Trip] {
             var body = body
             body["standardSettings"] = settings
             let response: TripsResponse = try await post("tr/trips", body: body)
-            return response.trips
+            return response.trips.map { trip in
+                var trip = trip
+                for index in trip.legs.indices {
+                    let time = trip.legs[index].departure?.scheduledTime ?? trip.departure.scheduledTime
+                    trip.legs[index].alerts = trip.legs[index].alerts.resolvingVVO(alerts, at: time)
+                }
+                return trip
+            }
         }
 
         var found: [Trip]
@@ -208,8 +216,10 @@ struct TripsResponse: Decodable, StatusCarrying {
             let transportationCompany: String?
             let productName: String?
             let trainNumber: String?
+            let changes: [String]?
 
             enum CodingKeys: String, CodingKey {
+                case changes = "Changes"
                 case trainNumber = "TrainNumber"
                 case productName = "ProductName"
                 case type = "Type"
@@ -230,6 +240,7 @@ struct TripsResponse: Decodable, StatusCarrying {
                 return TripLeg(kind: .ride, mode: .regionalBus, line: mot.name, direction: mot.direction,
                                operatorName: mot.transportationCompany, stops: stops, durationMinutes: duration,
                                notes: ["Schienenersatzverkehr"] + (infos ?? []))
+                    .with { $0.alerts = (mot.changes ?? []).map(ServiceAlert.vvoPlaceholder) }
             case "MobilityStairsUp", "MobilityStairsDown", "MobilityEscalatorUp", "MobilityEscalatorDown",
                  "MobilityElevatorUp", "MobilityElevatorDown", "MobilityRampUp", "MobilityRampDown":
                 // Treppen-/Aufzugshinweise: als Fußweg ohne Dauer behandeln.
@@ -248,6 +259,7 @@ struct TripsResponse: Decodable, StatusCarrying {
                     notes: infos ?? [],
                     trainNumber: mot.trainNumber.flatMap { $0.isEmpty ? nil : $0 }
                 )
+                .with { $0.alerts = (mot.changes ?? []).map(ServiceAlert.vvoPlaceholder) }
             }
         }
     }

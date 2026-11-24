@@ -47,7 +47,12 @@ struct DepartureRow: View {
             }
             if let platform = departure.platform, !platform.isEmpty {
                 Text("·")
-                Text(departure.mode.platformLabel(platform))
+                PlatformText(platform: platform, scheduled: departure.scheduledPlatform, mode: departure.mode)
+            }
+            if !departure.alerts.isEmpty {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .accessibilityLabel("Hinweis zur Fahrt")
             }
             if departure.occupancy != .unknown, !cancelled {
                 OccupancyView(occupancy: departure.occupancy)

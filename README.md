@@ -33,7 +33,7 @@ Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingung
 10. ✅ Zeitleiste mit Punkten, Fahrtverlauf aus dem Abfahrtsmonitor, Suchoptionen (Deutschlandticket, Umstiege, Gehgeschwindigkeit, Verkehrsmittel)
 11. ✅ Verspätungsanzeige wählbar, Früher/Später im Abfahrtsmonitor, Strecken-Widget mit Rückweg und Tausch-Knopf, flüssigere Animationen
 12. Optional: Push-Server, damit Live-Aktivitäten auch im Hintergrund minutengenau aktualisiert werden
-13. ✅ Zuginfos: Auslastung (VVO) und Zugnummer; Verpass-Assistent pro Fahrt
+13. ✅ Zuginfos: Auslastung (VVO) und Zugnummer; Verpass-Assistent pro Fahrt; Störungs-/Baustellenhinweise und Gleiswechsel
 14. Offen (TODO):
     - Wagenreihung und Auslastung für Züge, sobald es eine offizielle DB-Anbindung gibt (DB API Marketplace prüfen; alter Stand in der Git-Historie)
     - Verpasster Anschluss, Stufe 2: Standort/Laufzeit einbeziehen (braucht Standort „Immer“, am besten mit Push-Server); Stufe 1 (Umstellung nach Echtzeitdaten) ist eingebaut

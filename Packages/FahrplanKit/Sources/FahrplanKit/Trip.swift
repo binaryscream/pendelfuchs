@@ -60,6 +60,15 @@ public struct Trip: Codable, Sendable, Hashable, Identifiable {
 
     public var isCancelled: Bool { rides.contains { $0.isCancelled } }
 
+    /// Alle Hinweise der Fahrten (ohne Doppelte).
+    public var alerts: [ServiceAlert] {
+        var seen = Set<String>()
+        return rides.flatMap(\.alerts).filter { seen.insert($0.id).inserted }
+    }
+
+    /// Gleiswechsel beim Einstieg in eine der Fahrten.
+    public var hasPlatformChange: Bool { rides.contains { $0.stops.first?.platformChanged == true } }
+
     /// Mindestens eine Fahrt der Verbindung fällt ganz aus.
     public var hasCancelledRide: Bool { rides.contains { $0.isFullyCancelled } }
 
@@ -114,8 +123,14 @@ public struct TripLeg: Codable, Sendable, Hashable {
     public var notes: [String]
     /// Streckenverlauf für die Karte (leer, wenn die Quelle keinen liefert).
     public var path: [Coordinate]
-    /// Zugnummer (z. B. „32712“), falls bekannt – Grundlage für die Wagenreihung.
+    /// Zugnummer (z. B. „32712“), falls bekannt.
     public var trainNumber: String?
+    /// Störungs-/Baustellenhinweise zu dieser Fahrt (optional gespeichert, damit ältere Daten lesbar bleiben).
+    public var alertList: [ServiceAlert]?
+    public var alerts: [ServiceAlert] {
+        get { alertList ?? [] }
+        set { alertList = newValue.isEmpty ? nil : newValue }
+    }
 
     public init(kind: Kind, mode: TransportMode? = nil, line: String? = nil, direction: String? = nil,
                 operatorName: String? = nil, stops: [TripStop] = [], durationMinutes: Int? = nil, notes: [String] = [],
@@ -160,6 +175,14 @@ public struct TripStop: Codable, Sendable, Hashable {
     public var coordinate: Coordinate?
     /// Erwartete Auslastung ab diesem Halt (nur manche Quellen, z. B. VVO).
     public var occupancy: Occupancy?
+    /// Geplantes Gleis, wenn die Quelle es getrennt vom aktuellen liefert (Transitous).
+    public var scheduledPlatform: String?
+
+    /// Gleiswechsel: aktuelles Gleis weicht vom geplanten ab.
+    public var platformChanged: Bool {
+        guard let platform, let scheduledPlatform else { return false }
+        return platform != scheduledPlatform
+    }
 
     public init(stopID: String, name: String, place: String?, platform: String?,
                 arrival: TimePoint?, departure: TimePoint?, isCancelled: Bool = false, coordinate: Coordinate? = nil,

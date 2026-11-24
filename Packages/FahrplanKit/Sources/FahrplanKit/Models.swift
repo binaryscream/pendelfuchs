@@ -120,6 +120,19 @@ public struct Departure: Codable, Sendable, Hashable, Identifiable {
     public var source: ProviderID?
     /// Kennung der Fahrt bei der Quelle – für den Fahrtverlauf.
     public var tripID: String?
+    /// Geplantes Gleis, falls getrennt vom aktuellen bekannt (Transitous).
+    public var scheduledPlatform: String?
+    /// Störungs-/Baustellenhinweise (optional gespeichert).
+    public var alertList: [ServiceAlert]?
+    public var alerts: [ServiceAlert] {
+        get { alertList ?? [] }
+        set { alertList = newValue.isEmpty ? nil : newValue }
+    }
+
+    public var platformChanged: Bool {
+        guard let platform, let scheduledPlatform else { return false }
+        return platform != scheduledPlatform
+    }
 
     public init(id: String, line: String, direction: String, platform: String?, mode: TransportMode,
                 scheduledTime: Date, realTime: Date?, state: DepartureState, occupancy: Occupancy,
@@ -168,5 +181,30 @@ extension TransportMode {
     public static func isLongDistanceName(_ line: String) -> Bool {
         let prefix = line.uppercased().prefix { $0.isLetter }
         return ["ICE", "IC", "EC", "EN", "NJ", "RJ", "RJX", "ECE", "TGV", "FLX", "ES", "WB"].contains(String(prefix))
+    }
+}
+
+extension Departure {
+    /// Kopie mit Änderungen (für nachträgliche Ergänzungen beim Dekodieren).
+    func with(_ change: (inout Departure) -> Void) -> Departure {
+        var copy = self
+        change(&copy)
+        return copy
+    }
+}
+
+extension TripStop {
+    func with(_ change: (inout TripStop) -> Void) -> TripStop {
+        var copy = self
+        change(&copy)
+        return copy
+    }
+}
+
+extension TripLeg {
+    func with(_ change: (inout TripLeg) -> Void) -> TripLeg {
+        var copy = self
+        change(&copy)
+        return copy
     }
 }

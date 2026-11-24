@@ -382,6 +382,9 @@ private struct LiveBadge: View {
         case .found(let trip):
             if let disruption = trip.disruption {
                 badge(disruption.badgeText, .red)
+            } else if let stop = trip.rides.first(where: { $0.stops.first?.platformChanged == true })?.stops.first,
+                      let platform = stop.platform {
+                badge("Gleis \(platform)!", .orange)
             } else if let delay = trip.departure.delayMinutes, delay > 0 {
                 badge("+\(delay)", delay >= 3 ? .red : .orange)
             } else if trip.departure.realTime != nil {

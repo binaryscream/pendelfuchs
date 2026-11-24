@@ -143,9 +143,16 @@ struct TripRow: View {
                     Text(disruption.shortText).foregroundStyle(.red).fontWeight(.semibold)
                 } else {
                     Text(trip.interchanges == 0 ? "Direkt" : trip.interchanges == 1 ? "1 Umstieg" : "\(trip.interchanges) Umstiege")
-                    if let platform = trip.rides.first?.stops.first?.platform, !platform.isEmpty {
+                    if let first = trip.rides.first?.stops.first, let platform = first.platform, !platform.isEmpty {
                         Text("·")
-                        Text(trip.rides.first?.mode?.usesTracks == true ? "Gl. \(platform)" : "Steig \(platform)")
+                        PlatformText(platform: platform, scheduled: first.scheduledPlatform,
+                                     mode: trip.rides.first?.mode ?? .train)
+                    }
+                    if !trip.alerts.isEmpty {
+                        Text("·")
+                        Label("Hinweis", systemImage: "exclamationmark.triangle.fill")
+                            .labelStyle(.titleAndIcon)
+                            .foregroundStyle(.orange)
                     }
                 }
                 Spacer()

@@ -240,6 +240,7 @@ enum TransitousAPI {
         let track: String?
         let scheduledTrack: String?
         let cancelled: Bool?
+        let alerts: [TransitousAPI.Alert]?
 
         func tripStop(realTime: Bool) -> TripStop {
             func point(_ scheduled: Date?, _ actual: Date?) -> TimePoint? {
@@ -254,6 +255,7 @@ enum TransitousAPI {
                             departure: point(scheduledDeparture, departure),
                             isCancelled: cancelled ?? false,
                             coordinate: coordinate)
+            .with { $0.scheduledPlatform = TransitousAPI.platform(scheduledTrack) }
         }
     }
 
@@ -298,6 +300,10 @@ enum TransitousAPI {
                 source: .transitous,
                 tripID: tripId
             )
+            .with {
+                $0.scheduledPlatform = TransitousAPI.platform(place.scheduledTrack)
+                $0.alerts = (place.alerts ?? []).compactMap(\.serviceAlert)
+            }
         }
     }
 
@@ -340,6 +346,36 @@ enum TransitousAPI {
               let digits = tripShortName?.split(separator: " ").last.map(String.init),
               let number = Int(digits), number > 0 else { return nil }
         return String(number)
+    }
+
+    /// Echtzeit-Meldung (GTFS-RT Service Alert) laut MOTIS-API.
+    struct Alert: Decodable {
+        let headerText: String?
+        let descriptionText: String?
+        let url: String?
+        let impactPeriod: [Period]?
+
+        struct Period: Decodable {
+            let start: Date?
+            let end: Date?
+        }
+
+        var serviceAlert: ServiceAlert? {
+            let header = headerText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let description = descriptionText?.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !header.isEmpty || !(description ?? "").isEmpty else { return nil }
+            let title = header.isEmpty ? String(description!.prefix(80)) : header
+            return ServiceAlert(id: "transitous:\(title.hashValue)|\(description?.count ?? 0)",
+                                title: title,
+                                text: description.map(ServiceAlert.plainText(fromHTML:)).flatMap { $0 == title ? nil : $0 },
+                                validFrom: impactPeriod?.compactMap(\.start).min(),
+                                validUntil: impactPeriod?.compactMap(\.end).max(),
+                                url: url.flatMap(URL.init(string:)),
+                                periods: impactPeriod?.compactMap { period in
+                                    guard let start = period.start, let end = period.end, end >= start else { return nil }
+                                    return DateInterval(start: start, end: end)
+                                })
+        }
     }
 
     // MARK: Plan
@@ -385,6 +421,7 @@ enum TransitousAPI {
         let agencyName: String?
         let cancelled: Bool?
         let legGeometry: Geometry?
+        let alerts: [Alert]?
 
         struct Geometry: Decodable {
             let points: String
@@ -418,6 +455,11 @@ enum TransitousAPI {
                     path: path,
                     trainNumber: TransitousAPI.trainNumber(tripShortName: tripShortName, mode: mode)
                 )
+                .with {
+                    var seen = Set<String>()
+                    $0.alerts = ((alerts ?? []) + (from.alerts ?? []) + (to.alerts ?? []))
+                        .compactMap(\.serviceAlert).filter { seen.insert($0.id).inserted }
+                }
             }
         }
     }

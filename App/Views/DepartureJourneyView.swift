@@ -59,6 +59,7 @@ struct DepartureJourneyView: View {
         return List {
             Section {
                 RideHeader(leg: leg, stopIndex: highlightedIndex(in: leg))
+                ForEach(departure.alerts) { AlertRow(alert: $0) }
                 TripStatusView(trip: Trip(legs: [leg], interchanges: 0), now: now)
             } footer: {
                 if let source = departure.source {

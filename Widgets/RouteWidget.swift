@@ -364,8 +364,17 @@ private struct RouteTripRow: View {
             // Links Gleis, in der Mitte die Linien, rechts die Dauer.
             HStack(spacing: 6) {
                 HStack(spacing: 5) {
-                    if let platform = trip.rides.first?.stops.first?.platform, !platform.isEmpty {
-                        Text("Gl. \(platform)")
+                    if let first = trip.rides.first?.stops.first, let platform = first.platform, !platform.isEmpty {
+                        if first.platformChanged {
+                            Text("Gl. \(platform) statt \(first.scheduledPlatform ?? "")")
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.orange)
+                        } else {
+                            Text("Gl. \(platform)")
+                        }
+                    }
+                    if !trip.alerts.isEmpty {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                     }
                     if trip.interchanges > 0 {
                         Text("\(trip.interchanges)×").foregroundStyle(.tertiary)
