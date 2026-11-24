@@ -36,6 +36,15 @@ import Testing
         #expect(s2.operatorName == "DB Regio AG Südost")
     }
 
+    @Test func decodesTrainNumberAndOccupancy() throws {
+        let trip = try #require(try trips().first { $0.rides.first?.line == "S2" })
+        #expect(trip.rides[0].trainNumber == "32712")
+        #expect(trip.rides[0].boardingOccupancy == nil, "„Unknown“ wird nicht angezeigt")
+        let url = try #require(Bundle.module.url(forResource: "vvo-dmtrip", withExtension: "json", subdirectory: "Fixtures"))
+        let journey = try VVODecoding.decode(JourneyResponse.self, from: Data(contentsOf: url))
+        #expect(journey.stops.compactMap(\.tripStop).contains { $0.occupancy == .manySeats })
+    }
+
     @Test func stairsAndFootpathsBecomeOneWalk() throws {
         let trip = try #require(try trips().first)
         // S-Bahn, Treppe + Fußweg (zusammengefasst), Straßenbahn

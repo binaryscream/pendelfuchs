@@ -129,3 +129,12 @@ struct TransitousLiveTests {
         }
     }
 }
+
+@Suite struct TransitousTrainNumberTests {
+    @Test func extractsTrainNumbers() {
+        #expect(TransitousAPI.trainNumber(tripShortName: "016536", mode: "REGIONAL_RAIL") == "16536")
+        #expect(TransitousAPI.trainNumber(tripShortName: "ICE 597", mode: "HIGHSPEED_RAIL") == "597")
+        #expect(TransitousAPI.trainNumber(tripShortName: "62", mode: "BUS") == nil)
+        #expect(TransitousAPI.trainNumber(tripShortName: "", mode: "RAIL") == nil)
+    }
+}

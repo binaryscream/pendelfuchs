@@ -114,10 +114,13 @@ public struct TripLeg: Codable, Sendable, Hashable {
     public var notes: [String]
     /// Streckenverlauf für die Karte (leer, wenn die Quelle keinen liefert).
     public var path: [Coordinate]
+    /// Zugnummer (z. B. „32712“), falls bekannt – Grundlage für die Wagenreihung.
+    public var trainNumber: String?
 
     public init(kind: Kind, mode: TransportMode? = nil, line: String? = nil, direction: String? = nil,
                 operatorName: String? = nil, stops: [TripStop] = [], durationMinutes: Int? = nil, notes: [String] = [],
-                path: [Coordinate] = []) {
+                path: [Coordinate] = [], trainNumber: String? = nil) {
+        self.trainNumber = trainNumber
         self.kind = kind
         self.mode = mode
         self.line = line
@@ -141,6 +144,9 @@ public struct TripLeg: Codable, Sendable, Hashable {
 
     /// Die ganze Fahrt fällt aus (alle Halte). Dann gibt es keinen Fortschritt und kein Fahrzeug.
     public var isFullyCancelled: Bool { !stops.isEmpty && stops.allSatisfy(\.isCancelled) }
+
+    /// Auslastung beim Einstieg (erste bekannte Angabe ab dem ersten Halt).
+    public var boardingOccupancy: Occupancy? { stops.dropLast().lazy.compactMap(\.occupancy).first }
 }
 
 public struct TripStop: Codable, Sendable, Hashable {
@@ -152,9 +158,13 @@ public struct TripStop: Codable, Sendable, Hashable {
     public var departure: TimePoint?
     public var isCancelled: Bool
     public var coordinate: Coordinate?
+    /// Erwartete Auslastung ab diesem Halt (nur manche Quellen, z. B. VVO).
+    public var occupancy: Occupancy?
 
     public init(stopID: String, name: String, place: String?, platform: String?,
-                arrival: TimePoint?, departure: TimePoint?, isCancelled: Bool = false, coordinate: Coordinate? = nil) {
+                arrival: TimePoint?, departure: TimePoint?, isCancelled: Bool = false, coordinate: Coordinate? = nil,
+                occupancy: Occupancy? = nil) {
+        self.occupancy = occupancy == .unknown ? nil : occupancy
         self.stopID = stopID
         self.name = name
         self.place = place

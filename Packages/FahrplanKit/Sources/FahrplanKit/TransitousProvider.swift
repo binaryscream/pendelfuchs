@@ -333,6 +333,15 @@ enum TransitousAPI {
         return "?"
     }
 
+    /// Zugnummer aus `tripShortName` („016536“ → „16536“, „ICE 597“ → „597“), nur bei Zügen.
+    static func trainNumber(tripShortName: String?, mode: String) -> String? {
+        guard ["RAIL", "HIGHSPEED_RAIL", "LONG_DISTANCE", "NIGHT_RAIL", "REGIONAL_FAST_RAIL", "REGIONAL_RAIL",
+               "SUBURBAN", "METRO"].contains(mode),
+              let digits = tripShortName?.split(separator: " ").last.map(String.init),
+              let number = Int(digits), number > 0 else { return nil }
+        return String(number)
+    }
+
     // MARK: Plan
 
     struct PlanResponse: Decodable {
@@ -406,7 +415,8 @@ enum TransitousAPI {
                     operatorName: agencyName,
                     stops: stops,
                     durationMinutes: minutes,
-                    path: path
+                    path: path,
+                    trainNumber: TransitousAPI.trainNumber(tripShortName: tripShortName, mode: mode)
                 )
             }
         }

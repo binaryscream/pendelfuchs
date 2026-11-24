@@ -49,6 +49,9 @@ struct DepartureRow: View {
                 Text("·")
                 Text(departure.mode.platformLabel(platform))
             }
+            if departure.occupancy != .unknown, !cancelled {
+                OccupancyView(occupancy: departure.occupancy)
+            }
         }
         .font(.caption)
         .foregroundStyle(.secondary)

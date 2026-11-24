@@ -207,8 +207,10 @@ struct TripsResponse: Decodable, StatusCarrying {
             let direction: String?
             let transportationCompany: String?
             let productName: String?
+            let trainNumber: String?
 
             enum CodingKeys: String, CodingKey {
+                case trainNumber = "TrainNumber"
                 case productName = "ProductName"
                 case type = "Type"
                 case name = "Name"
@@ -243,7 +245,8 @@ struct TripsResponse: Decodable, StatusCarrying {
                     operatorName: mot.transportationCompany,
                     stops: stops,
                     durationMinutes: duration,
-                    notes: infos ?? []
+                    notes: infos ?? [],
+                    trainNumber: mot.trainNumber.flatMap { $0.isEmpty ? nil : $0 }
                 )
             }
         }
@@ -261,6 +264,7 @@ struct TripsResponse: Decodable, StatusCarrying {
         let departureState: String?
         let arrivalState: String?
         let cancelReasons: [String]?
+        let occupancy: String?
         /// Achtung: trotz des Namens GK4-Hochwert bzw. -Rechtswert.
         let latitude: Double?
         let longitude: Double?
@@ -282,6 +286,7 @@ struct TripsResponse: Decodable, StatusCarrying {
             case departureState = "DepartureState"
             case arrivalState = "ArrivalState"
             case cancelReasons = "CancelReasons"
+            case occupancy = "Occupancy"
             case latitude = "Latitude"
             case longitude = "Longitude"
         }
@@ -300,7 +305,8 @@ struct TripsResponse: Decodable, StatusCarrying {
                 arrival: point(arrivalTime, arrivalRealTime),
                 departure: point(departureTime, departureRealTime),
                 isCancelled: cancelled,
-                coordinate: VVODecoding.coordinate(northing: latitude, easting: longitude)
+                coordinate: VVODecoding.coordinate(northing: latitude, easting: longitude),
+                occupancy: DepartureMonitorResponse.RawDeparture.occupancy(occupancy)
             )
         }
     }
@@ -350,6 +356,7 @@ struct JourneyResponse: Decodable, StatusCarrying {
         let time: String?
         let realTime: String?
         let state: String?
+        let occupancy: String?
 
         struct Platform: Decodable {
             let name: String?
@@ -357,6 +364,7 @@ struct JourneyResponse: Decodable, StatusCarrying {
         }
 
         enum CodingKeys: String, CodingKey {
+            case occupancy = "Occupancy"
             case id = "Id"
             case place = "Place"
             case name = "Name"
@@ -376,7 +384,8 @@ struct JourneyResponse: Decodable, StatusCarrying {
             return TripStop(stopID: id ?? "", name: name, place: place.flatMap { $0.isEmpty ? nil : $0 },
                             platform: platform?.name, arrival: point, departure: point,
                             isCancelled: state == "Cancelled",
-                            coordinate: VVODecoding.coordinate(northing: latitude, easting: longitude))
+                            coordinate: VVODecoding.coordinate(northing: latitude, easting: longitude),
+                            occupancy: DepartureMonitorResponse.RawDeparture.occupancy(occupancy))
         }
     }
 

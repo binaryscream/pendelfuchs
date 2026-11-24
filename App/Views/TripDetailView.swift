@@ -174,8 +174,12 @@ struct RideHeader: View {
                 if let direction = leg.direction {
                     Text("Richtung \(direction)").font(.subheadline.weight(.medium))
                 }
-                if let op = leg.operatorName {
-                    Text(op).font(.caption).foregroundStyle(.secondary)
+                let details = [leg.trainNumber.map { "Zug \($0)" }, leg.operatorName].compactMap { $0 }
+                if !details.isEmpty {
+                    Text(details.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                }
+                if let occupancy = leg.boardingOccupancy {
+                    OccupancyView(occupancy: occupancy, showsTitle: true).font(.caption)
                 }
             }
         }
