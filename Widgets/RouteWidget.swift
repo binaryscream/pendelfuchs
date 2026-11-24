@@ -233,7 +233,7 @@ struct RouteWidgetView: View {
         if family == .accessoryRectangular {
             lockScreen
         } else {
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 4) {
                 header
                 switch entry.content {
                 case .message(let text):
@@ -241,10 +241,12 @@ struct RouteWidgetView: View {
                     Text(text).font(.caption).foregroundStyle(.secondary)
                     Spacer(minLength: 0)
                 case .trips(let trips):
-                    ForEach(Array(trips.prefix(maxRows).enumerated()), id: \.offset) { _, trip in
-                        RouteTripRow(trip: trip)
+                    let shown = Array(trips.prefix(maxRows).enumerated())
+                    ForEach(shown, id: \.offset) { index, trip in
+                        Divider()
+                        RouteTripRow(trip: trip, now: entry.date)
+                            .frame(maxHeight: .infinity)
                     }
-                    Spacer(minLength: 0)
                 }
             }
         }
@@ -314,9 +316,11 @@ struct RouteWidgetView: View {
 
 private struct RouteTripRow: View {
     let trip: Trip
+    let now: Date
 
     var body: some View {
-        VStack(spacing: 3) {
+        VStack(spacing: 4) {
+            Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 DelayedTimeText(scheduled: trip.departure.scheduledTime, actual: trip.departure.realTime)
                     .font(.system(.subheadline, design: .rounded).weight(.bold))
@@ -328,7 +332,7 @@ private struct RouteTripRow: View {
                     .font(.system(.subheadline, design: .rounded).weight(.bold))
             }
 
-            RouteBar(trip: trip)
+            RouteBar(trip: trip, now: now)
 
             HStack(spacing: 5) {
                 if let platform = trip.rides.first?.stops.first?.platform, !platform.isEmpty {
@@ -348,10 +352,8 @@ private struct RouteTripRow: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(Color(.secondarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var duration: String {
@@ -364,6 +366,10 @@ private struct RouteTripRow: View {
 /// Längen im Verhältnis zur Fahrzeit.
 private struct RouteBar: View {
     let trip: Trip
+    let now: Date
+
+    /// Anteil der Gesamtstrecke (0…1), der zur Zeit `now` schon zurückgelegt ist.
+    private var progress: Double { trip.overallProgress(at: now) ?? 0 }
 
     private struct Segment { let weight: Double; let color: Color? }
 
@@ -384,12 +390,16 @@ private struct RouteBar: View {
         let total = parts.reduce(0) { $0 + $1.weight }
         GeometryReader { proxy in
             let gaps = CGFloat(parts.count - 1) * 2
-            HStack(spacing: 2) {
+            let bar = HStack(spacing: 2) {
                 ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
                     Capsule()
-                        .fill(part.color ?? Color.secondary.opacity(0.35))
+                        .fill(part.color ?? Color.secondary.opacity(0.5))
                         .frame(width: max(4, (proxy.size.width - gaps) * part.weight / total))
                 }
+            }
+            bar.opacity(0.22)
+            bar.mask(alignment: .leading) {
+                Rectangle().frame(width: proxy.size.width * progress)
             }
         }
         .frame(height: 5)
