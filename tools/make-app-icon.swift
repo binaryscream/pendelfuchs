@@ -1,121 +1,140 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// Zeichnet das App-Icon von Fahrplan XL (1024 × 1024) in drei Varianten:
-// normal, dunkel und getönt (iOS 18). Aufruf:
-//   swift tools/make-app-icon.swift App/Assets.xcassets/AppIcon.appiconset
+// Erzeugt die App-Icons (1024 × 1024, vollflächig, ohne Transparenz) aus `design/app-icon-source.png`:
+//   normal, dunkel (gleiches Bild – es ist ohnehin dunkel) und getönt (Graustufen, iOS färbt es ein).
 //
-// Motiv: eine Abfahrtstafel – weiße Karte mit drei Zeilen (Linienkennung + Ziel + Minuten)
-// in den Linienfarben der App (S-Bahn grün, Straßenbahn rot, Bus orange).
+// Die Vorlage hat abgerundete Ecken auf schwarzem Grund. iOS rundet selbst ab, deshalb wird das Quadrat
+// ausgeschnitten, der hellere Rand entfernt und der Schwarzanteil in den Ecken mit der Nachbarfarbe gefüllt.
+//
+// Aufruf: swift tools/make-app-icon.swift design/app-icon-source.png App/Assets.xcassets/AppIcon.appiconset
 
-import AppKit
 import CoreGraphics
+import Foundation
+import ImageIO
+import UniformTypeIdentifiers
 
-let size = 1024.0
+let arguments = CommandLine.arguments
+guard arguments.count >= 3 else { fatalError("Aufruf: make-app-icon.swift <Vorlage.png> <Ausgabeordner>") }
+let sourceURL = URL(fileURLWithPath: arguments[1])
+let outputURL = URL(fileURLWithPath: arguments[2])
 
-struct Palette {
-    var backgroundTop: CGColor
-    var backgroundBottom: CGColor
-    var card: CGColor
-    var bar: CGColor
-    var badges: [CGColor]
-    var badgeText: CGColor
+guard let source = CGImageSourceCreateWithURL(sourceURL as CFURL, nil),
+      let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { fatalError("Vorlage nicht lesbar") }
+
+let width = image.width, height = image.height
+var pixels = [UInt8](repeating: 0, count: width * height * 4)
+let rgb = CGColorSpace(name: CGColorSpace.sRGB)!
+let layout = CGImageAlphaInfo.noneSkipLast.rawValue
+
+pixels.withUnsafeMutableBytes { buffer in
+    let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                            bytesPerRow: width * 4, space: rgb, bitmapInfo: layout)!
+    context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
 }
 
-func rgb(_ r: Double, _ g: Double, _ b: Double, _ a: Double = 1) -> CGColor {
-    CGColor(srgbRed: r / 255, green: g / 255, blue: b / 255, alpha: a)
+@inline(__always) func index(_ x: Int, _ y: Int) -> Int { y * width + x }
+@inline(__always) func isBlack(_ i: Int) -> Bool {
+    Int(pixels[i * 4]) + Int(pixels[i * 4 + 1]) + Int(pixels[i * 4 + 2]) < 24
 }
 
-let light = Palette(
-    backgroundTop: rgb(40, 140, 255), backgroundBottom: rgb(0, 72, 186),
-    card: rgb(255, 255, 255), bar: rgb(203, 211, 224),
-    badges: [rgb(0, 150, 80), rgb(215, 26, 33), rgb(245, 140, 0)],
-    badgeText: rgb(255, 255, 255))
+let neighbours = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
-let dark = Palette(
-    backgroundTop: rgb(30, 34, 44), backgroundBottom: rgb(10, 12, 18),
-    card: rgb(44, 48, 58), bar: rgb(92, 99, 114),
-    badges: [rgb(20, 170, 95), rgb(230, 52, 58), rgb(250, 155, 20)],
-    badgeText: rgb(255, 255, 255))
-
-// Getönt: Graustufen auf Schwarz – iOS färbt nach Helligkeit ein.
-let tinted = Palette(
-    backgroundTop: rgb(0, 0, 0), backgroundBottom: rgb(0, 0, 0),
-    card: rgb(255, 255, 255, 0.22), bar: rgb(255, 255, 255, 0.55),
-    badges: [rgb(255, 255, 255), rgb(255, 255, 255, 0.85), rgb(255, 255, 255, 0.7)],
-    badgeText: rgb(0, 0, 0))
-
-func draw(_ p: Palette, to url: URL) throws {
-    let space = CGColorSpace(name: CGColorSpace.sRGB)!
-    guard let ctx = CGContext(data: nil, width: Int(size), height: Int(size), bitsPerComponent: 8,
-                              bytesPerRow: 0, space: space,
-                              bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { fatalError() }
-
-    // Hintergrund (iOS rundet die Ecken selbst ab – Icon muss vollflächig sein).
-    let gradient = CGGradient(colorsSpace: space, colors: [p.backgroundTop, p.backgroundBottom] as CFArray,
-                              locations: [0, 1])!
-    ctx.drawLinearGradient(gradient, start: CGPoint(x: 0, y: size), end: CGPoint(x: 0, y: 0), options: [])
-
-    // Karte
-    let card = CGRect(x: 102, y: 172, width: 820, height: 680)
-    ctx.saveGState()
-    ctx.setShadow(offset: CGSize(width: 0, height: -14), blur: 40, color: rgb(0, 0, 0, 0.28))
-    ctx.addPath(CGPath(roundedRect: card, cornerWidth: 96, cornerHeight: 96, transform: nil))
-    ctx.setFillColor(p.card)
-    ctx.fillPath()
-    ctx.restoreGState()
-
-    // Drei Zeilen: Linienkennung, Ziel-Balken, Minuten-Balken
-    let rowHeight = 136.0
-    let gap = 56.0
-    let totalHeight = 3 * rowHeight + 2 * gap
-    var y = card.midY + totalHeight / 2 - rowHeight
-    let destinationWidths = [270.0, 215.0, 245.0]
-    let labels = ["S1", "7", "62"]
-
-    for row in 0..<3 {
-        // Linienkennung (Straßenbahn eckiger, wie in der App)
-        let badge = CGRect(x: card.minX + 64, y: y, width: 230, height: rowHeight)
-        let radius = row == 1 ? 30.0 : rowHeight / 2
-        ctx.addPath(CGPath(roundedRect: badge, cornerWidth: radius, cornerHeight: radius, transform: nil))
-        ctx.setFillColor(p.badges[row])
-        ctx.fillPath()
-
-        // Beschriftung der Linienkennung
-        let font = NSFont.systemFont(ofSize: 92, weight: .heavy)
-        let attributed = NSAttributedString(string: labels[row], attributes: [
-            .font: font, .foregroundColor: NSColor(cgColor: p.badgeText)!,
-        ])
-        let line = CTLineCreateWithAttributedString(attributed)
-        let bounds = CTLineGetBoundsWithOptions(line, .useOpticalBounds)
-        ctx.textPosition = CGPoint(x: badge.midX - bounds.width / 2 - bounds.minX,
-                                   y: badge.midY - bounds.height / 2 - bounds.minY)
-        CTLineDraw(line, ctx)
-
-        // Ziel-Balken
-        let barHeight = 48.0
-        let destination = CGRect(x: badge.maxX + 46, y: y + (rowHeight - barHeight) / 2,
-                                 width: destinationWidths[row], height: barHeight)
-        ctx.addPath(CGPath(roundedRect: destination, cornerWidth: barHeight / 2, cornerHeight: barHeight / 2, transform: nil))
-        ctx.setFillColor(p.bar)
-        ctx.fillPath()
-
-        // Minuten-Balken (rechtsbündig, kräftiger)
-        let minutes = CGRect(x: card.maxX - 64 - 84, y: y + (rowHeight - 68) / 2, width: 84, height: 68)
-        ctx.addPath(CGPath(roundedRect: minutes, cornerWidth: 24, cornerHeight: 24, transform: nil))
-        ctx.setFillColor(p.badges[row])
-        ctx.fillPath()
-
-        y -= rowHeight + gap
+// 1. Außenbereich: schwarz und mit dem Bildrand verbunden.
+var outside = [Bool](repeating: false, count: width * height)
+var queue: [Int] = []
+func seed(_ x: Int, _ y: Int) {
+    let i = index(x, y)
+    if !outside[i], isBlack(i) { outside[i] = true; queue.append(i) }
+}
+for x in 0..<width { seed(x, 0); seed(x, height - 1) }
+for y in 0..<height { seed(0, y); seed(width - 1, y) }
+var head = 0
+while head < queue.count {
+    let i = queue[head]; head += 1
+    let x = i % width, y = i / width
+    for (dx, dy) in neighbours {
+        let nx = x + dx, ny = y + dy
+        guard nx >= 0, ny >= 0, nx < width, ny < height else { continue }
+        let j = index(nx, ny)
+        if !outside[j], isBlack(j) { outside[j] = true; queue.append(j) }
     }
-
-    let image = ctx.makeImage()!
-    let rep = NSBitmapImageRep(cgImage: image)
-    try rep.representation(using: .png, properties: [:])!.write(to: url)
 }
 
-let out = URL(fileURLWithPath: CommandLine.arguments.dropFirst().first ?? ".")
-try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-try draw(light, to: out.appending(path: "AppIcon.png"))
-try draw(dark, to: out.appending(path: "AppIcon-Dark.png"))
-try draw(tinted, to: out.appending(path: "AppIcon-Tinted.png"))
-print("Icons geschrieben nach \(out.path)")
+// 2. Rahmen der Form
+var minX = width, maxX = 0, minY = height, maxY = 0
+for y in 0..<height { for x in 0..<width where !outside[index(x, y)] {
+    minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+} }
+
+// 3. Abstand zum Außenbereich (Schachbrett-Näherung) → „vertrauenswürdig“ = weit genug innen, ohne hellen Rand
+let rim = 16
+var distance = [Int](repeating: Int.max, count: width * height)
+queue = []
+for i in 0..<outside.count where outside[i] { distance[i] = 0; queue.append(i) }
+head = 0
+while head < queue.count {
+    let i = queue[head]; head += 1
+    if distance[i] >= rim + 1 { continue }
+    let x = i % width, y = i / width
+    for (dx, dy) in neighbours {
+        let nx = x + dx, ny = y + dy
+        guard nx >= 0, ny >= 0, nx < width, ny < height else { continue }
+        let j = index(nx, ny)
+        if distance[j] == Int.max { distance[j] = distance[i] + 1; queue.append(j) }
+    }
+}
+let trusted = distance.map { $0 > rim }
+
+// 4. Alles Nicht-Vertrauenswürdige (Ecken, Rand) mit der Farbe des nächsten vertrauenswürdigen Pixels füllen
+var filled = [Bool](repeating: false, count: width * height)
+queue = []
+for i in 0..<trusted.count where trusted[i] { filled[i] = true; queue.append(i) }
+head = 0
+while head < queue.count {
+    let i = queue[head]; head += 1
+    let x = i % width, y = i / width
+    for (dx, dy) in neighbours {
+        let nx = x + dx, ny = y + dy
+        guard nx >= 0, ny >= 0, nx < width, ny < height else { continue }
+        let j = index(nx, ny)
+        if !filled[j] {
+            filled[j] = true
+            for c in 0..<3 { pixels[j * 4 + c] = pixels[i * 4 + c] }
+            queue.append(j)
+        }
+    }
+}
+
+// 5. Quadrat in der Mitte der Form ausschneiden
+let side = min(maxX - minX, maxY - minY) + 1
+let originX = minX + ((maxX - minX + 1) - side) / 2
+let originY = minY + ((maxY - minY + 1) - side) / 2
+
+func renderIcon(gray: Bool) -> CGImage {
+    let provider = CGDataProvider(data: Data(pixels) as CFData)!
+    let full = CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: width * 4,
+                       space: rgb, bitmapInfo: CGBitmapInfo(rawValue: layout), provider: provider, decode: nil,
+                       shouldInterpolate: true, intent: .defaultIntent)!
+    let crop = full.cropping(to: CGRect(x: originX, y: originY, width: side, height: side))!
+    let space = gray ? CGColorSpaceCreateDeviceGray() : rgb
+    let info = gray ? CGImageAlphaInfo.none.rawValue : layout
+    let context = CGContext(data: nil, width: 1024, height: 1024, bitsPerComponent: 8, bytesPerRow: 0,
+                            space: space, bitmapInfo: info)!
+    context.interpolationQuality = .high
+    context.draw(crop, in: CGRect(x: 0, y: 0, width: 1024, height: 1024))
+    return context.makeImage()!
+}
+
+func write(_ image: CGImage, _ name: String) {
+    let url = outputURL.appendingPathComponent(name)
+    let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil)!
+    CGImageDestinationAddImage(destination, image, nil)
+    guard CGImageDestinationFinalize(destination) else { fatalError("\(name) nicht schreibbar") }
+}
+
+try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
+let color = renderIcon(gray: false)
+write(color, "AppIcon.png")
+write(color, "AppIcon-Dark.png")
+write(renderIcon(gray: true), "AppIcon-Tinted.png")
+print("Icons geschrieben nach \(outputURL.path) (Quadrat \(side) px aus \(width)×\(height))")

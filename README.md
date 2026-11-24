@@ -66,4 +66,5 @@ FAHRPLAN_LIVE_TESTS=1 swift test    # zusätzlich gegen die echte VVO-API
 - `Shared/` – Code, den App und Widget-Erweiterung gemeinsam nutzen (Linienfarben, Live-Aktivitäts-Attribute)
 - `Widgets/` – Widget-Erweiterung (Abfahrten-Widget, Live-Aktivität); Daten teilt sie mit der App über die App Group `group.de.fahrplanxl.app`
 - `Packages/FahrplanKit/` – gemeinsame Logik: Datenmodelle, Datenquellen, Favoriten (später auch von Widgets genutzt)
+- `design/` – Vorlage des App-Icons; `tools/make-app-icon.swift` erzeugt daraus die Icon-Varianten (`swift tools/make-app-icon.swift design/app-icon-source.png App/Assets.xcassets/AppIcon.appiconset`)
 - `project.yml` – Projektbeschreibung für XcodeGen (das `.xcodeproj` wird daraus erzeugt)

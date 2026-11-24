@@ -297,13 +297,30 @@ struct NextStopRow: View {
 
 /// Gesamtfortschritt: vor der Abfahrt, unterwegs, angekommen.
 struct TripStatusView: View {
+    @Environment(\.stopNameStyle) private var style
     let trip: Trip
     let now: Date
+
+    private func message(for disruption: TripDisruption) -> String {
+        switch disruption {
+        case .rideCancelled(let line):
+            trip.rides.count > 1 ? "\(line ?? "Eine Fahrt") fällt aus" : "Diese Fahrt fällt aus"
+        case .boardingCancelled(_, let stop):
+            "Einstieg entfällt: \(stop.label(style))"
+        case .alightingCancelled(_, let stop):
+            "Ausstieg entfällt: \(stop.label(style))"
+        }
+    }
 
     var body: some View {
         let departure = trip.departure.expectedTime
         let arrival = trip.arrival.expectedTime
-        if now >= arrival {
+        if let disruption = trip.disruption {
+            // Nicht fahrbar: kein Fortschritt und keine Abfahrtszeit, sondern ein klarer Hinweis.
+            Label(message(for: disruption), systemImage: "xmark.circle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.red)
+        } else if now >= arrival {
             Label("Angekommen", systemImage: "checkmark.circle.fill")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.green)

@@ -59,6 +59,20 @@ public struct Trip: Codable, Sendable, Hashable, Identifiable {
     public var duration: TimeInterval { arrival.expectedTime.timeIntervalSince(departure.expectedTime) }
 
     public var isCancelled: Bool { rides.contains { $0.isCancelled } }
+
+    /// Mindestens eine Fahrt der Verbindung fällt ganz aus.
+    public var hasCancelledRide: Bool { rides.contains { $0.isFullyCancelled } }
+
+    /// Warum die Verbindung so nicht fahrbar ist (Fahrt fällt aus, Ein- oder Ausstieg entfällt); sonst `nil`.
+    /// Entfallene Halte mitten auf der Strecke stören nicht – die Bahn fährt trotzdem.
+    public var disruption: TripDisruption? {
+        if let ride = rides.first(where: \.isFullyCancelled) { return .rideCancelled(line: ride.line) }
+        for ride in rides {
+            if let first = ride.stops.first, first.isCancelled { return .boardingCancelled(line: ride.line, stop: first) }
+            if let last = ride.stops.last, last.isCancelled { return .alightingCancelled(line: ride.line, stop: last) }
+        }
+        return nil
+    }
 }
 
 /// Geplante Zeit plus optionale Echtzeit-Prognose.
@@ -117,6 +131,9 @@ public struct TripLeg: Codable, Sendable, Hashable {
     public var arrival: TimePoint? { stops.last?.arrival ?? stops.last?.departure }
     public var intermediateStops: ArraySlice<TripStop> { stops.count > 2 ? stops.dropFirst().dropLast() : [] }
     public var isCancelled: Bool { stops.contains { $0.isCancelled } }
+
+    /// Die ganze Fahrt fällt aus (alle Halte). Dann gibt es keinen Fortschritt und kein Fahrzeug.
+    public var isFullyCancelled: Bool { !stops.isEmpty && stops.allSatisfy(\.isCancelled) }
 }
 
 public struct TripStop: Codable, Sendable, Hashable {
@@ -143,4 +160,12 @@ public struct TripStop: Codable, Sendable, Hashable {
 
     /// Zeitpunkt, an dem das Fahrzeug den Halt verlässt (bzw. erreicht, beim letzten Halt).
     public var passTime: Date? { (departure ?? arrival)?.expectedTime }
+}
+
+
+/// Grund, warum eine Verbindung nicht wie geplant fahrbar ist.
+public enum TripDisruption: Equatable, Hashable, Sendable {
+    case rideCancelled(line: String?)
+    case boardingCancelled(line: String?, stop: TripStop)
+    case alightingCancelled(line: String?, stop: TripStop)
 }

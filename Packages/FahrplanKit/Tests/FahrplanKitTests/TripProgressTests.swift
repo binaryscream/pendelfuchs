@@ -61,6 +61,45 @@ private func fixture(_ name: String) throws -> Data {
         #expect(leg.estimatedPosition(at: t0 - 60) == nil)
     }
 
+    @Test func cancelledRideHasNoProgressAndNoVehicle() {
+        var cancelled = leg
+        for i in cancelled.stops.indices { cancelled.stops[i].isCancelled = true }
+        #expect(cancelled.isFullyCancelled)
+        #expect(cancelled.progress(at: t0 + 15 * 60) == .notStarted)
+        #expect(cancelled.estimatedPosition(at: t0 + 15 * 60) == nil)
+
+        let trip = Trip(legs: [cancelled], interchanges: 0)
+        #expect(trip.hasCancelledRide)
+        #expect(trip.overallProgress(at: t0 + 10 * 60) == nil)
+    }
+
+    @Test func cancelledBoardingStopMakesTripUnusable() {
+        var boarding = leg
+        boarding.stops[0].isCancelled = true
+        let trip = Trip(legs: [boarding], interchanges: 0)
+        #expect(!trip.hasCancelledRide, "die Fahrt selbst fährt")
+        #expect(trip.disruption == .boardingCancelled(line: "7", stop: boarding.stops[0]))
+        #expect(trip.overallProgress(at: t0 + 10 * 60) == nil)
+
+        var alighting = leg
+        alighting.stops[2].isCancelled = true
+        #expect(Trip(legs: [alighting], interchanges: 0).disruption == .alightingCancelled(line: "7", stop: alighting.stops[2]))
+
+        var cancelled = leg
+        for i in cancelled.stops.indices { cancelled.stops[i].isCancelled = true }
+        #expect(Trip(legs: [cancelled], interchanges: 0).disruption == .rideCancelled(line: "7"))
+        #expect(Trip(legs: [leg], interchanges: 0).disruption == nil)
+    }
+
+    @Test func skippedStopKeepsTheRideRunning() {
+        var partly = leg
+        partly.stops[1].isCancelled = true
+        #expect(partly.isCancelled && !partly.isFullyCancelled)
+        #expect(partly.progress(at: t0 + 15 * 60) != .notStarted)
+        #expect(!Trip(legs: [partly], interchanges: 0).hasCancelledRide)
+        #expect(Trip(legs: [partly], interchanges: 0).disruption == nil, "ein Halt mitten auf der Strecke stört nicht")
+    }
+
     @Test func overallProgress() {
         let trip = Trip(legs: [leg], interchanges: 0)
         #expect(trip.overallProgress(at: t0 - 60) == nil)

@@ -21,6 +21,8 @@ public enum RideProgress: Equatable, Sendable {
 
 extension TripLeg {
     public func progress(at now: Date) -> RideProgress {
+        // Eine ausgefallene Fahrt fährt nicht – kein „unterwegs“, kein Fahrzeug.
+        if isFullyCancelled { return .notStarted }
         let times = stops.enumerated().map { index, stop -> Date? in
             // Abfahrt zählt, außer beim letzten Halt (dort die Ankunft).
             index == stops.count - 1 ? (stop.arrival ?? stop.departure)?.expectedTime : stop.passTime
@@ -63,6 +65,7 @@ extension TripLeg {
 extension Trip {
     /// Anteil der gesamten Fahrt (0…1), `nil` vor der Abfahrt.
     public func overallProgress(at now: Date) -> Double? {
+        guard disruption == nil else { return nil }
         let start = departure.expectedTime
         let end = arrival.expectedTime
         guard now >= start, end > start else { return nil }

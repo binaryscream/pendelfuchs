@@ -24,6 +24,7 @@ final class TripActivityManager {
         case disabled
         case noUpcomingTrip
         case notFound
+        case cancelled
 
         var errorDescription: String? {
             switch self {
@@ -33,6 +34,8 @@ final class TripActivityManager {
                 "Für diese Fahrt steht in nächster Zeit kein Termin an."
             case .notFound:
                 "Die Verbindung wurde zur gewohnten Zeit nicht gefunden – vielleicht hat sich der Fahrplan geändert."
+            case .cancelled:
+                "Diese Verbindung ist wegen eines Ausfalls nicht fahrbar – dafür gibt es keine Live-Aktivität."
             }
         }
     }
@@ -62,6 +65,8 @@ final class TripActivityManager {
         for activity in activities where activity.attributes.saved.id == saved.id {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
+
+        guard trip.disruption == nil else { throw StartError.cancelled }
 
         let state = TripActivityState(trip: trip)
         _ = try Activity.request(
