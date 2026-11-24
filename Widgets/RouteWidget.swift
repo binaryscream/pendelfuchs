@@ -353,21 +353,30 @@ private struct RouteTripRow: View {
 
             RouteBar(trip: trip, run: run, now: now)
 
-            HStack(spacing: 5) {
-                if let platform = trip.rides.first?.stops.first?.platform, !platform.isEmpty {
-                    Text("Gl. \(platform)")
+            // Links Gleis, in der Mitte die Linien, rechts die Dauer.
+            HStack(spacing: 6) {
+                HStack(spacing: 5) {
+                    if let platform = trip.rides.first?.stops.first?.platform, !platform.isEmpty {
+                        Text("Gl. \(platform)")
+                    }
+                    if trip.interchanges > 0 {
+                        Text("\(trip.interchanges)×").foregroundStyle(.tertiary)
+                    }
                 }
-                if trip.interchanges > 0 {
-                    Text("\(trip.interchanges)×").foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: 3) {
+                    ForEach(Array(trip.rides.prefix(3).enumerated()), id: \.offset) { _, ride in
+                        LineBadge(line: ride.line ?? "?", mode: ride.mode ?? .other, compact: true)
+                            .frame(minWidth: 44)
+                            .scaleEffect(0.85)
+                            .frame(height: 19)
+                    }
                 }
-                Spacer(minLength: 4)
-                let rides = trip.rides
-                ForEach(Array(rides.prefix(3).enumerated()), id: \.offset) { _, ride in
-                    LineBadge(line: ride.line ?? "?", mode: ride.mode ?? .other, compact: true)
-                        .scaleEffect(0.85, anchor: .trailing)
-                        .frame(height: 19)
-                }
+                .fixedSize()
+
                 Text(duration).monospacedDigit()
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .font(.caption)
             .foregroundStyle(.secondary)
