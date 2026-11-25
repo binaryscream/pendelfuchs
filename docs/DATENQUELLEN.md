@@ -201,7 +201,18 @@ Auslastung kommt weiter vom VVO (`Occupancy` je Halt in `/tr/trips`, `/dm`, `/dm
 - **Timetables** ist nicht mehr im Katalog (Produktseite 404).
 - **OpenBoards** ist offen und kostenlos (10 Anfragen/s, Bedingungen wie „Web Bahnhofstafel“): Abfahrts- und
   Ankunftstafeln der Schiene mit Gleisen, Ausfällen, Ersatzzügen und Störungstexten – aber ohne Wagenreihung und
-  Auslastung. Kandidat für genauere Gleiswechsel und Störungen bei Zügen, nicht für diesen Punkt.
+  Auslastung. Genauer geprüft (25.11.2026), **vorerst nicht eingebaut**:
+  - Zugang nur mit Marketplace-Konto und eigenem Schlüssel (`DB-Client-Id`, `DB-Api-Key`); in einer
+    Open-Source-App läge der Schlüssel offen im Code bzw. in der App.
+  - Es gelten die Bedingungen der „Web-Bahnhofstafel“ (db.info/bahnhof-de/nutzungsbedingungen_wbt.html):
+    Verbreitung bzw. öffentliche Wiedergabe der Inhalte zu gewerblichen Zwecken und automatisierte Extraktion nur
+    mit vorheriger schriftlicher Zustimmung – für eine veröffentlichte App also vorher bei
+    opendata.infrago@deutschebahn.com nachfragen.
+  - Transitous liefert für Züge schon Echtzeit, geplantes und aktuelles Gleis und Ausfälle (Stichprobe Dresden Hbf:
+    14 von 15 Zügen mit Echtzeit und Gleis, zwei echte Gleiswechsel). Mehrwert von OpenBoards wären vor allem
+    Verspätungsgründe, Störungs- und Kundentexte sowie Ersatzverkehre bei der Bahn.
+  - Antwortfelder sind öffentlich nicht dokumentiert (Spec-Seite leer); ob Nicht-DB-Unternehmen enthalten sind, ist
+    offen.
 
 Fazit: Wagenreihung und Zug-Auslastung bleiben vorerst draußen.
 
