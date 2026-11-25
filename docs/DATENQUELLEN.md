@@ -190,6 +190,21 @@ Auslastung per `reiseloesung/abfahrten` → `reiseloesung/fahrt` (`auslastungsme
 
 Auslastung kommt weiter vom VVO (`Occupancy` je Halt in `/tr/trips`, `/dm`, `/dm/trip`).
 
+**Offizielle Wege laut DB API Marketplace (geprüft 25.11.2026):**
+
+- **Wagenreihung** gibt es nur in **RIS::Transports** – Zugang „ausschließlich Eisenbahnverkehrsunternehmen sowie
+  ausgewählten Dritten …, die nachweislich in deren Auftrag handeln“, nach Prüfung und mit Vertrag; Testzugang
+  2 Monate, danach Pakete „Preis auf Anfrage“. Die Endpunkte `/occupancies` dort sind nicht dokumentiert. Anfrage
+  wäre über ris-api@deutschebahn.com möglich, für eine freie App aber wenig aussichtsreich.
+- **Auslastung je Zug**: kein offenes Produkt. RIS::Stations kennt nur Bahnhofs-Auslastung (Pakete ab 4.200 €/Jahr),
+  RIS::Boards/RIS::Journeys (Transporteure) nennen keine Auslastung und sind DB-Vertriebspartnern vorbehalten.
+- **Timetables** ist nicht mehr im Katalog (Produktseite 404).
+- **OpenBoards** ist offen und kostenlos (10 Anfragen/s, Bedingungen wie „Web Bahnhofstafel“): Abfahrts- und
+  Ankunftstafeln der Schiene mit Gleisen, Ausfällen, Ersatzzügen und Störungstexten – aber ohne Wagenreihung und
+  Auslastung. Kandidat für genauere Gleiswechsel und Störungen bei Zügen, nicht für diesen Punkt.
+
+Fazit: Wagenreihung und Zug-Auslastung bleiben vorerst draußen.
+
 ## Störungen, Bauarbeiten und Gleiswechsel
 
 - **VVO `/rc`** (`{"shortterm": true}`): Streckenänderungen mit Titel, HTML-Text, Gültigkeitszeiträumen und
