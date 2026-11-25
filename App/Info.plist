@@ -35,6 +35,25 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>INAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Fahrplan X L</string>
+			<key>INAlternativeAppNamePronunciationHint</key>
+			<string>Fahrplan Iks El</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Fahrplan Excel</string>
+			<key>INAlternativeAppNamePronunciationHint</key>
+			<string>Fahrplan Ixel</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Fahrplan</string>
+		</dict>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSLocationWhenInUseUsageDescription</key>
