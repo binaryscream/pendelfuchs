@@ -133,6 +133,15 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
         set { rerouteAssistant = newValue }
     }
 
+    /// Benachrichtigungen zu dieser Fahrt (Ausfall, Verspätung …). Optional gespeichert, damit ältere Daten
+    /// lesbar bleiben; `nil` = eingeschaltet.
+    public var notifications: Bool?
+
+    public var usesNotifications: Bool {
+        get { notifications ?? true }
+        set { notifications = newValue }
+    }
+
     public init(trip: Trip, query: TripQuery, weekdays: Set<Weekday> = [], calendar: Calendar = .current) {
         func clean(_ stop: Stop) -> Stop { var s = stop; s.distance = nil; return s }
         id = UUID()

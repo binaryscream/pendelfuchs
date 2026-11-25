@@ -315,6 +315,14 @@ struct SavedTripSettingsSections: View {
                 Text("Fällt die Fahrt aus oder ist der Anschluss laut Echtzeit nicht mehr zu schaffen, nehmen Live-Aktivität und Übersicht automatisch die nächste passende Verbindung.")
             }
 
+            Section {
+                Toggle(isOn: binding(saved, \.usesNotifications)) {
+                    Label("Benachrichtigungen", systemImage: "bell.badge")
+                }
+            } footer: {
+                Text(notificationFooter(saved))
+            }
+
             Section("Name (optional)") {
                 TextField("z. B. Zur Arbeit", text: Binding(
                     get: { saved.name ?? "" },
@@ -322,6 +330,16 @@ struct SavedTripSettingsSections: View {
                 ))
             }
         }
+    }
+
+    private func notificationFooter(_ saved: SavedTrip) -> String {
+        if !(AppGroup.defaults.object(forKey: TripNotifier.enabledKey) as? Bool ?? true) {
+            return "Benachrichtigungen sind unter Einstellungen → Benachrichtigungen für alle Fahrten ausgeschaltet."
+        }
+        if !saved.isRegular {
+            return "Bei Ausfall, Verspätung, Gleiswechsel oder Anschlussproblemen – für regelmäßige Fahrten und solange eine Live-Aktivität läuft."
+        }
+        return "Bei Ausfall, Verspätung, Gleiswechsel oder Anschlussproblemen, ab einer Stunde vor der Abfahrt."
     }
 
     private func binding<T>(_ saved: SavedTrip, _ keyPath: WritableKeyPath<SavedTrip, T>) -> Binding<T> {

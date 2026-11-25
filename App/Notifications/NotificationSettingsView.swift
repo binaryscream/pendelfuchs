@@ -36,7 +36,7 @@ struct NotificationSettingsView: View {
                     }
                 }
             } footer: {
-                Text("Für regelmäßige Fahrten aus „Meine Fahrten“ und Fahrten mit laufender Live-Aktivität – ab einer Stunde vor der Abfahrt bis zur Ankunft.")
+                Text("Für regelmäßige Fahrten aus „Meine Fahrten“ und Fahrten mit laufender Live-Aktivität – ab einer Stunde vor der Abfahrt bis zur Ankunft. Einzelne Fahrten lassen sich in ihren Einstellungen ausnehmen.")
             }
 
             if enabled {

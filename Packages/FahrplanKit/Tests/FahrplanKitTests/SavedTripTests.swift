@@ -147,3 +147,20 @@ private func trip(_ lines: [String], at dep: Date) -> Trip {
         #expect(SavedTripsStore(defaults: defaults).trips.count == 1)
     }
 }
+
+@Suite struct SavedTripNotificationSettingTests {
+    @Test func notificationsDefaultOnAndSurviveEncoding() throws {
+        var saved = SavedTrip(trip: trip(["S1"], at: date(23, 6, 30)),
+                              query: TripQuery(origin: pirna, destination: postplatz), calendar: berlin)
+        #expect(saved.usesNotifications, "neu gemerkte Fahrten melden sich")
+        saved.usesNotifications = false
+        let decoded = try JSONDecoder().decode(SavedTrip.self, from: JSONEncoder().encode(saved))
+        #expect(decoded.usesNotifications == false)
+
+        // Ältere Daten ohne das Feld: eingeschaltet.
+        var json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(saved)) as! [String: Any]
+        json.removeValue(forKey: "notifications")
+        let old = try JSONDecoder().decode(SavedTrip.self, from: JSONSerialization.data(withJSONObject: json))
+        #expect(old.usesNotifications)
+    }
+}

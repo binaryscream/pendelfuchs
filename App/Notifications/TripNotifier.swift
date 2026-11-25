@@ -102,11 +102,12 @@ final class TripNotifier {
             result.append((saved, departure))
         }
 
-        for saved in store.trips where saved.isRegular {
+        for saved in store.trips where saved.isRegular && saved.usesNotifications {
             if let next = saved.nextOccurrence(after: now, grace: 3 * 3600) { consider(saved, departure: next) }
         }
         for activity in Activity<TripActivityAttributes>.activities where activity.activityState == .active {
             let saved = store.trip(id: activity.attributes.saved.id) ?? activity.attributes.saved
+            guard saved.usesNotifications else { continue }
             consider(saved, departure: activity.content.state.departure.scheduledTime)
         }
         return result
