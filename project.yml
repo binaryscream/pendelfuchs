@@ -47,6 +47,13 @@ targets:
         BGTaskSchedulerPermittedIdentifiers:
           - de.fahrplanxl.app.refresh
         CFBundleDisplayName: Fahrplan XL
+        # So, wie Siri „Fahrplan XL“ oft versteht – damit Sätze mit dem App-Namen nicht bei anderen Apps landen.
+        INAlternativeAppNames:
+          - INAlternativeAppName: Fahrplan X L
+            INAlternativeAppNamePronunciationHint: Fahrplan Iks El
+          - INAlternativeAppName: Fahrplan Excel
+            INAlternativeAppNamePronunciationHint: Fahrplan Ixel
+          - INAlternativeAppName: Fahrplan
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDevelopmentRegion: de

@@ -83,10 +83,41 @@ struct FahrplanShortcuts: AppShortcutsProvider {
             intent: StartTripActivityIntent(),
             phrases: [
                 "Live-Aktivität in \(.applicationName) starten",
-                "Nächste Fahrt in \(.applicationName)",
+                "Starte Live-Aktivität mit \(.applicationName)",
+                "\(.applicationName) Live-Aktivität starten",
             ],
             shortTitle: "Live-Aktivität starten",
             systemImageName: "tram.fill"
+        )
+        AppShortcut(
+            intent: NextDeparturesIntent(),
+            // Der App-Name steht in jeder Variante – sonst übernimmt Siri den Satz selbst oder eine andere App.
+            phrases: [
+                "Abfahrten in \(.applicationName)",
+                "Abfahrten mit \(.applicationName)",
+                "\(.applicationName) Abfahrten",
+                "Zeig Abfahrten in \(.applicationName)",
+                "Nächste Abfahrten in \(.applicationName)",
+                "Nächste Abfahrten an \(\.$stop) in \(.applicationName)",
+                "Abfahrten an \(\.$stop) mit \(.applicationName)",
+                "\(.applicationName) Abfahrten \(\.$stop)",
+                "Was fährt ab \(\.$stop) in \(.applicationName)",
+            ],
+            shortTitle: "Nächste Abfahrten",
+            systemImageName: "clock"
+        )
+        AppShortcut(
+            intent: SavedTripStatusIntent(),
+            phrases: [
+                "Wie fährt meine Fahrt in \(.applicationName)",
+                "Nächste Fahrt in \(.applicationName)",
+                "Meine Fahrt mit \(.applicationName)",
+                "\(.applicationName) meine Fahrt",
+                "Stand von \(\.$trip) in \(.applicationName)",
+                "\(.applicationName) \(\.$trip)",
+            ],
+            shortTitle: "Stand meiner Fahrt",
+            systemImageName: "star"
         )
     }
 }

@@ -22,6 +22,9 @@ struct StopDeparturesView: View {
     @State private var windowStart: Date?
     @State private var limit = Self.defaultLimit
     @State private var loadingMore: Direction?
+    /// Linienfilter: leer = alle Linien. Bei genau einer Linie zusätzlich eine Richtung wählbar.
+    @State private var lineFilter: Set<String> = []
+    @State private var directionFilter: String?
 
     private enum Direction { case earlier, later }
 
@@ -41,10 +44,18 @@ struct StopDeparturesView: View {
                     moreButton("Später", systemImage: "chevron.down", direction: .later)
                 }
             } else if !departures.isEmpty {
+                if lines.count > 1 {
+                    Section { filterBar }
+                }
                 Section {
                     moreButton("Früher", systemImage: "chevron.up", direction: .earlier)
 
-                    ForEach(departures) { departure in
+                    if visibleDepartures.isEmpty {
+                        Text("Keine Abfahrten dieser Linie im angezeigten Zeitraum.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(visibleDepartures) { departure in
                         // Antippen öffnet den Fahrtverlauf.
                         NavigationLink(value: DepartureRoute(departure: departure, stop: stop)) {
                             // Countdown jede Viertelminute neu berechnen, ohne neu zu laden.
@@ -93,6 +104,85 @@ struct StopDeparturesView: View {
                 try? await Task.sleep(for: refreshInterval)
             }
         }
+    }
+
+    // MARK: Linienfilter
+
+    /// Linien an dieser Haltestelle (nach Liniennummer sortiert) mit ihrem Verkehrsmittel.
+    private var lines: [(name: String, mode: TransportMode)] {
+        var seen: [String: TransportMode] = [:]
+        for departure in departures where seen[departure.line] == nil { seen[departure.line] = departure.mode }
+        return seen.map { ($0.key, $0.value) }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    private var visibleDepartures: [Departure] {
+        departures.filter { departure in
+            (lineFilter.isEmpty || lineFilter.contains(departure.line))
+                && (directionFilter == nil || departure.direction == directionFilter)
+        }
+    }
+
+    /// Linien zum Antippen; bei genau einer gewählten Linie darunter deren Richtungen.
+    private var filterBar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(lines, id: \.name) { line in
+                        let selected = lineFilter.contains(line.name)
+                        Button {
+                            withAnimation(.snappy) {
+                                if selected { lineFilter.remove(line.name) } else { lineFilter.insert(line.name) }
+                                directionFilter = nil
+                            }
+                        } label: {
+                            LineBadge(line: line.name, mode: line.mode, compact: true)
+                                .opacity(lineFilter.isEmpty || selected ? 1 : 0.35)
+                                .overlay {
+                                    if selected {
+                                        RoundedRectangle(cornerRadius: 7).stroke(.primary, lineWidth: 2).padding(-3)
+                                    }
+                                }
+                                .padding(3)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Linie \(line.name)")
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                    }
+                    if !lineFilter.isEmpty {
+                        Button("Alle") {
+                            withAnimation(.snappy) { lineFilter = []; directionFilter = nil }
+                        }
+                        .font(.subheadline)
+                        .padding(.leading, 4)
+                    }
+                }
+            }
+            if lineFilter.count == 1, let line = lineFilter.first {
+                let directions = Array(Set(departures.filter { $0.line == line }.map(\.direction))).sorted()
+                if directions.count > 1 {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(directions, id: \.self) { direction in
+                                let selected = directionFilter == direction
+                                Button {
+                                    withAnimation(.snappy) { directionFilter = selected ? nil : direction }
+                                } label: {
+                                    Label(direction, systemImage: "arrow.right")
+                                        .font(.caption.weight(.medium))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary),
+                                                    in: Capsule())
+                                        .foregroundStyle(selected ? .white : .primary)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
     }
 
     private func moreButton(_ title: String, systemImage: String, direction: Direction) -> some View {

@@ -115,6 +115,11 @@ struct TripDetailView: View {
                     }
                 }
             }
+
+            // Ganz unten: Kalender und Buchung.
+            if trip.arrival.expectedTime > .now {
+                TripActionsSection(trip: trip)
+            }
         }
         .listSectionSpacing(.compact)
         .listRowSpacing(0) // Zeitleiste ohne Lücken zwischen den Zeilen

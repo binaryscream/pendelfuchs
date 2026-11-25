@@ -224,6 +224,7 @@ struct SavedTripDetailView: View {
                         ForEach(Array(trip.rides.enumerated()), id: \.offset) { _, leg in
                             RideSection(leg: leg, now: now)
                         }
+                        TripActionsSection(trip: trip)
                     }
                 }
 

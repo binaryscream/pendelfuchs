@@ -66,7 +66,13 @@ struct FahrplanXLApp: App {
                 .environment(\.transit, DataSources.router(useVVO: useVVO))
                 .preferredColorScheme(appearance.colorScheme)
                 // Widgets zeigen standardmäßig den ersten Favoriten – nach Änderungen neu laden.
-                .onChange(of: favorites.stops) { WidgetCenter.shared.reloadAllTimelines() }
+                .onChange(of: favorites.stops) {
+                    WidgetCenter.shared.reloadAllTimelines()
+                    FahrplanShortcuts.updateAppShortcutParameters()
+                }
+                // Siri kennt die Favoriten und gemerkten Fahrten als Auswahl in Sätzen.
+                .task { FahrplanShortcuts.updateAppShortcutParameters() }
+                .onChange(of: savedTrips.trips) { FahrplanShortcuts.updateAppShortcutParameters() }
                 .onChange(of: useVVO) { WidgetCenter.shared.reloadAllTimelines() }
                 .environment(\.stopNameStyle, stopNameStyle)
                 .onChange(of: stopNameStyle) { WidgetCenter.shared.reloadAllTimelines() }
