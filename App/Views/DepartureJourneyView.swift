@@ -59,7 +59,7 @@ struct DepartureJourneyView: View {
         return List {
             Section {
                 RideHeader(leg: leg, stopIndex: highlightedIndex(in: leg))
-                ForEach(departure.alerts) { AlertRow(alert: $0) }
+                ForEach(journeyAlerts(leg)) { AlertRow(alert: $0) }
                 TripStatusView(trip: Trip(legs: [leg], interchanges: 0), now: now)
             } footer: {
                 if let source = departure.source {
@@ -76,6 +76,13 @@ struct DepartureJourneyView: View {
         }
         .listSectionSpacing(.compact)
         .listRowSpacing(0) // Zeitleiste ohne Lücken zwischen den Zeilen
+    }
+
+    /// Hinweise für den Weg ab der eigenen Haltestelle.
+    private func journeyAlerts(_ leg: TripLeg) -> [ServiceAlert] {
+        var ahead = leg
+        if let index = highlightedIndex(in: leg) { ahead.stops = Array(leg.stops[index...]) }
+        return AlertDisplay.current.filter(departure.alerts, names: ahead.stopNames)
     }
 
     /// Die Haltestelle, an der man im Abfahrtsmonitor war („Hier“).

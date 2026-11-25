@@ -138,7 +138,21 @@ struct SavedTripDetailView: View {
     @State private var live: LiveState = .idle
     @State private var showSettings = false
 
+    private var liveTrip: Trip? {
+        switch live {
+        case .found(let trip), .rerouted(let trip, _): trip
+        default: nil
+        }
+    }
+
     var body: some View {
+        // Sekündlich neu zeichnen, damit Fortschritt und Fahrzeug in der Zeitleiste laufen.
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            content(now: context.date)
+        }
+    }
+
+    @ViewBuilder private func content(now: Date) -> some View {
         if let saved = store.trip(id: id) {
             Form {
                 Section {
@@ -192,13 +206,22 @@ struct SavedTripDetailView: View {
                     }
 
                     Section {
-                        LiveActivityButton(saved: saved, knownTrip: { switch live { case .found(let t), .rerouted(let t, _): t; default: nil } }())
+                        LiveActivityButton(saved: saved, knownTrip: liveTrip)
                     } footer: {
                         LiveActivityAutomationHint(saved: saved)
+                    }
+
+                    // Verlauf wie im Abfahrtsmonitor: Leiste mit Halten und Fahrzeug (sekündlich).
+                    if let trip = liveTrip {
+                        ForEach(Array(trip.rides.enumerated()), id: \.offset) { _, leg in
+                            RideSection(leg: leg, now: now)
+                        }
                     }
                 }
 
             }
+            .listSectionSpacing(.compact)
+            .listRowSpacing(0)   // Zeitleiste ohne Lücken
             .navigationTitle(saved.title(style: style))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

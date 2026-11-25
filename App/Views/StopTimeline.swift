@@ -124,7 +124,7 @@ struct TimelineStopRow: View {
                      emphasized: emphasized || badge != nil, vehicleSymbol: mode.symbolName)
 
             Group {
-                if let time { TimePointText(point: time) } else { Text("–") }
+                if let time { TimePointText(point: time, cancelled: stop.isCancelled) } else { Text("–") }
             }
             .frame(width: 70, alignment: .leading)
             .font(emphasized ? .body.weight(.semibold) : .subheadline)

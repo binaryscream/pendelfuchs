@@ -257,7 +257,10 @@ struct TripsResponse: Decodable, StatusCarrying {
                     stops: stops,
                     durationMinutes: duration,
                     notes: infos ?? [],
-                    trainNumber: mot.trainNumber.flatMap { $0.isEmpty ? nil : $0 }
+                    // Die VVO liefert auch für Busse und Bahnen eine interne Fahrtnummer – nur bei Zügen ist es eine Zugnummer.
+                    trainNumber: [.suburbanRailway, .train, .longDistance]
+                        .contains(VVODecoding.mode(mot.type, line: mot.name))
+                        ? mot.trainNumber.flatMap { $0.isEmpty ? nil : $0 } : nil
                 )
                 .with { $0.alerts = (mot.changes ?? []).map(ServiceAlert.vvoPlaceholder) }
             }

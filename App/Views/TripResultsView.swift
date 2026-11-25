@@ -105,7 +105,9 @@ struct TripResultsView: View {
             var merged = replace ? [:] : Dictionary(trips.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
             for trip in found { merged[trip.id] = trip }
             // Nach tatsächlicher Abfahrt sortieren – so, wie man sie am Bahnsteig erlebt.
-            trips = merged.values.sorted { $0.departure.expectedTime < $1.departure.expectedTime }
+            trips = merged.values
+                .filter { !CancelledDisplay.hide || !$0.isCancelledForRider }
+                .sorted { $0.departure.expectedTime < $1.departure.expectedTime }
             errorMessage = nil
         } catch is CancellationError {
         } catch let error as URLError where error.code == .cancelled {
@@ -120,15 +122,17 @@ struct TripResultsView: View {
 struct TripRow: View {
     let trip: Trip
     let now: Date
+    @AppStorage(AlertDisplay.storageKey, store: AppGroup.defaults) private var alertDisplay = AlertDisplay.affected
 
-    private var departed: Bool { trip.departure.expectedTime < now.addingTimeInterval(-60) }
+    /// Abgefahren (ausgegraut) – ausgefallene bleiben deutlich sichtbar.
+    private var departed: Bool { !trip.isCancelledForRider && trip.departure.expectedTime < now.addingTimeInterval(-60) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                TimePointText(point: trip.departure)
+                TimePointText(point: trip.departure, cancelled: trip.isCancelledForRider)
                 Image(systemName: "arrow.right").font(.caption).foregroundStyle(.secondary)
-                TimePointText(point: trip.arrival)
+                TimePointText(point: trip.arrival, cancelled: trip.isCancelledForRider)
                 Spacer()
                 Text(durationText(trip.duration))
                     .font(.subheadline.monospacedDigit())
@@ -148,7 +152,7 @@ struct TripRow: View {
                         PlatformText(platform: platform, scheduled: first.scheduledPlatform,
                                      mode: trip.rides.first?.mode ?? .train)
                     }
-                    if !trip.alerts.isEmpty {
+                    if !alertDisplay.filter(trip).isEmpty {
                         Text("·")
                         Label("Hinweis", systemImage: "exclamationmark.triangle.fill")
                             .labelStyle(.titleAndIcon)
@@ -192,9 +196,10 @@ struct TripRow: View {
 /// Zeit mit Verspätung in der Darstellung aus den Einstellungen („06:23 +3“, „06:26“ oder Plan/Ist untereinander).
 struct TimePointText: View {
     let point: TimePoint
+    var cancelled = false
 
     var body: some View {
-        DelayedTimeText(scheduled: point.scheduledTime, actual: point.realTime)
+        DelayedTimeText(scheduled: point.scheduledTime, actual: point.realTime, cancelled: cancelled)
     }
 }
 

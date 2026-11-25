@@ -6,6 +6,9 @@ import SwiftUI
 struct DepartureRow: View {
     let departure: Departure
     let now: Date
+    /// Haltestelle des Abfahrtsmonitors (für „betrifft meinen Abschnitt“ zusammen mit dem Fahrtziel).
+    var stopNames: [String] = []
+    @AppStorage(AlertDisplay.storageKey, store: AppGroup.defaults) private var alertDisplay = AlertDisplay.affected
 
     private var cancelled: Bool { departure.state == .cancelled }
 
@@ -32,11 +35,12 @@ struct DepartureRow: View {
     }
 
     /// Schon abgefahren (mit etwas Toleranz, damit „jetzt“ nicht sofort ausgegraut wird).
-    private var departed: Bool { departure.expectedTime < now.addingTimeInterval(-45) }
+    private var departed: Bool { !cancelled && departure.expectedTime < now.addingTimeInterval(-45) }
 
     @ViewBuilder private var details: some View {
         HStack(spacing: 6) {
             if cancelled {
+                DelayedTimeText(scheduled: departure.scheduledTime, cancelled: true)
                 Text("Fällt aus").foregroundStyle(.red).fontWeight(.semibold)
             } else {
                 DelayedTimeText(scheduled: departure.scheduledTime, actual: departure.realTime)
@@ -49,7 +53,7 @@ struct DepartureRow: View {
                 Text("·")
                 PlatformText(platform: platform, scheduled: departure.scheduledPlatform, mode: departure.mode)
             }
-            if !departure.alerts.isEmpty {
+            if !alertDisplay.filter(departure.alerts, names: stopNames + [departure.direction]).isEmpty {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
                     .accessibilityLabel("Hinweis zur Fahrt")
@@ -67,7 +71,9 @@ struct DepartureRow: View {
         let minutes = departure.minutesUntilDeparture(from: now)
         Group {
             if cancelled {
-                Text("–")
+                Text(departure.scheduledTime, format: .dateTime.hour().minute())
+                    .strikethrough(true, color: .red)
+                    .foregroundStyle(.red)
             } else if departed {
                 Text(departure.expectedTime, format: .dateTime.hour().minute())
             } else if minutes == 0 {

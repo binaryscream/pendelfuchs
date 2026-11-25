@@ -91,6 +91,14 @@ public struct TripActivityState: Codable, Hashable, Sendable {
         }
     }
 
+    /// Nächster Zeitpunkt nach `date`, an dem sich die Anzeige ändert (Abfahrt/Ankunft einer Fahrt, zuletzt
+    /// 5 Minuten nach der Ankunft zum Beenden); `nil`, wenn nichts mehr kommt.
+    public func nextChange(after date: Date) -> Date? {
+        let times = rides.flatMap { [$0.departure.expectedTime, $0.arrival.expectedTime] }
+            + [arrival.expectedTime.addingTimeInterval(5 * 60)]
+        return times.filter { $0 > date }.min()
+    }
+
     /// Zeitpunkt, auf den der Countdown gerade zuläuft.
     public func countdownTarget(at now: Date) -> Date? {
         switch phase(at: now) {

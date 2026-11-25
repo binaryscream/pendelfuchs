@@ -80,3 +80,25 @@ struct ServiceAlertLiveTests {
         #expect(alerts.allSatisfy { !$0.title.isEmpty })
     }
 }
+
+@Suite struct AlertRelevanceTests {
+    private func stops(_ names: [(String, String?)]) -> [String] {
+        TripLeg(kind: .ride, stops: names.map {
+            TripStop(stopID: $0.0, name: $0.0, place: $0.1, platform: nil, arrival: nil, departure: nil)
+        }).stopNames
+    }
+
+    @Test func onlyAlertsForTheTravelledSection() {
+        let alert = ServiceAlert(id: "1", title: "Brückenarbeiten im Bereich Schöna – Bad Schandau")
+        let pirnaDresden = stops([("Bahnhof", "Pirna"), ("Heidenau", nil), ("Hauptbahnhof", "Dresden")])
+        let pirnaSchoena = stops([("Bahnhof", "Pirna"), ("Königstein", nil), ("Bad Schandau", nil), ("Schöna", nil)])
+        #expect(!alert.mentions(anyOf: pirnaDresden))
+        #expect(alert.mentions(anyOf: pirnaSchoena))
+    }
+
+    @Test func genericWordsDoNotMatch() {
+        let alert = ServiceAlert(id: "2", title: "Vollsperrung der Nossener Brücke in Dresden")
+        #expect(!alert.mentions(anyOf: stops([("Hauptbahnhof", "Dresden"), ("Bahnhof Mitte", "Dresden")])))
+        #expect(alert.mentions(anyOf: stops([("Nossener Brücke", "Dresden")])))
+    }
+}

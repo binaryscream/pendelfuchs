@@ -70,17 +70,30 @@ private struct LockScreenView: View {
     var body: some View {
         let info = PhaseInfo(state: state, now: .now)
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
+            HStack(spacing: 8) {
                 Label(saved.title(style: style), systemImage: "tram.fill")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                Spacer()
-                if isStale {
+                Spacer(minLength: 4)
+                // „Veraltet“ wird die Aktivität auch an jedem Phasenwechsel – der Hinweis nur bei wirklich alten Daten.
+                if isStale, state.updatedAt < .now.addingTimeInterval(-15 * 60) {
                     Text("Stand \(state.updatedAt.formatted(date: .omitted, time: .shortened))")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
+                Button(intent: RefreshTripActivityIntent()) {
+                    Image(systemName: "arrow.clockwise").font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Aktualisieren")
+                Button(intent: EndTripActivityIntent(id: saved.id)) {
+                    Image(systemName: "xmark").font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Live-Aktivität beenden")
             }
 
             HStack(alignment: .center, spacing: 12) {
@@ -122,9 +135,66 @@ private struct LockScreenView: View {
                     .minimumScaleFactor(0.8)
             }
 
-            TripProgress(state: state)
+            TripProgressBar(state: state)
+            RideChain(state: state)
         }
     }
+}
+
+/// Fortschrittsbalken über die ganze Fahrt (läuft selbstständig weiter).
+private struct TripProgressBar: View {
+    let state: TripActivityState
+
+    var body: some View {
+        let start = state.departure.expectedTime
+        let end = max(state.arrival.expectedTime, start.addingTimeInterval(60))
+        ProgressView(timerInterval: start...end, countsDown: false) {
+            EmptyView()
+        } currentValueLabel: {
+            EmptyView()
+        }
+        .tint(state.rides.first?.mode.color ?? .accentColor)
+    }
+}
+
+/// Alle Fahrten mit ihren Zeiten, z. B. „S1 07:06 Pirna → 07:28 Dresden Hbf“ und darunter der Bus.
+/// Steht immer vollständig da – so sieht man nach der ersten Fahrt sofort, wann die zweite fährt,
+/// auch wenn iOS die Aktivität gerade nicht neu gezeichnet hat.
+private struct RideChain: View {
+    private let style = StopNameStyle.current
+    let state: TripActivityState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            ForEach(Array(state.rides.prefix(3).enumerated()), id: \.offset) { index, ride in
+                if index > 0, let previous = state.rides[safe: index - 1] {
+                    let minutes = Int((ride.departure.expectedTime.timeIntervalSince(previous.arrival.expectedTime) / 60).rounded())
+                    Text("Umstieg · \(max(0, minutes)) min")
+                        .font(.caption2)
+                        .foregroundStyle(minutes < 0 ? Color.red : Color.secondary)
+                        .padding(.leading, 38)
+                }
+                HStack(spacing: 6) {
+                    LineBadge(line: ride.line, mode: ride.mode, compact: true)
+                        .frame(width: 32)
+                    TimeLabel(prefix: "", point: ride.departure)
+                        .fontWeight(.semibold)
+                    Text(ride.fromLabel(style)).lineLimit(1)
+                    Image(systemName: "arrow.right").font(.caption2).foregroundStyle(.secondary)
+                    TimeLabel(prefix: "", point: ride.arrival)
+                        .fontWeight(.semibold)
+                    Text(ride.toLabel(style)).lineLimit(1)
+                }
+                .font(.caption)
+                .minimumScaleFactor(0.75)
+                .strikethrough(ride.isCancelled, color: .red)
+            }
+        }
+    }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
 }
 
 /// Fortschrittsbalken über die gesamte Fahrt plus Abfahrt/Linienkette/Ankunft.
@@ -171,11 +241,11 @@ private struct TimeLabel: View {
         HStack(spacing: 3) {
             if style == .actual, delay != 0 {
                 // Tatsächliche Zeit, Verspätung eingerechnet
-                Text("\(prefix) \(point.expectedTime.formatted(date: .omitted, time: .shortened))")
+                Text("\(prefix.isEmpty ? "" : prefix + " ")\(point.expectedTime.formatted(date: .omitted, time: .shortened))")
                     .monospacedDigit()
                     .foregroundStyle(delay >= 3 ? .red : .orange)
             } else {
-                Text("\(prefix) \(point.scheduledTime.formatted(date: .omitted, time: .shortened))")
+                Text("\(prefix.isEmpty ? "" : prefix + " ")\(point.scheduledTime.formatted(date: .omitted, time: .shortened))")
                     .monospacedDigit()
                 if delay != 0 {
                     Text(delay > 0 ? "+\(delay)" : "\(delay)")
@@ -221,14 +291,11 @@ private struct CountdownText: View {
 
     var body: some View {
         if let target, target > .now {
+            // Vom System fortgeschriebene Restzeit („2 Std., 19 Min.“, unter einer Minute in Sekunden).
+            // Früher wechselte die Anzeige je nach Zeichenzeitpunkt zwischen Minuten-Text und Uhr und sprang
+            // dadurch; eine Uhr mit Sekunden zeigt auf dem Sperrbildschirm dagegen „––“.
             Group {
-                if target.timeIntervalSinceNow > 120 {
-                    // Nur eine Einheit („23 Stunden“ bzw. „45 Minuten“), damit es in jede Ansicht passt.
-                    Text(.currentDate, format: .offset(to: target, allowedFields: [.hour, .minute],
-                                                       maxFieldCount: 1, sign: .never))
-                } else {
-                    Text(timerInterval: Date.now...target, countsDown: true)
-                }
+                Text(target, style: .relative)
             }
             .monospacedDigit()
             .multilineTextAlignment(.trailing)

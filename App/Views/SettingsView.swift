@@ -43,6 +43,8 @@ struct SettingsView: View {
     @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var delayDisplay = DelayDisplay.badge
     @AppStorage(StopNameStyle.storageKey, store: AppGroup.defaults) private var stopNameStyle = StopNameStyle.withPlace
     @AppStorage(StopListExpansion.storageKey) private var stopListExpansion = StopListExpansion.collapsed
+    @AppStorage(CancelledDisplay.hideKey, store: AppGroup.defaults) private var hideCancelled = false
+    @AppStorage(AlertDisplay.storageKey, store: AppGroup.defaults) private var alertDisplay = AlertDisplay.affected
 
     var body: some View {
         NavigationStack {
@@ -95,6 +97,26 @@ struct SettingsView: View {
                     Text("Verspätungen anzeigen")
                 } footer: {
                     Text("Gilt in der ganzen App, im Widget und in der Live-Aktivität. Die Minuten bis zur Abfahrt enthalten die Verspätung immer schon.")
+                }
+
+                Section {
+                    Picker("Hinweise", selection: $alertDisplay) {
+                        ForEach(AlertDisplay.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                } header: {
+                    Text("Störungen und Bauarbeiten")
+                } footer: {
+                    Text("„Nur für meinen Abschnitt“ zeigt einen Hinweis, wenn seine Überschrift eine Haltestelle deiner Strecke nennt. „Alle zur Linie“ zeigt jeden Hinweis, den der Verkehrsverbund der Linie zuordnet.")
+                }
+
+                Section {
+                    Toggle("Ausgefallene Fahrten ausblenden", isOn: $hideCancelled)
+                } header: {
+                    Text("Ausfälle")
+                } footer: {
+                    Text("Ausgefallene Fahrten erscheinen sonst rot und durchgestrichen – im Abfahrtsmonitor, in der Verbindungssuche und in den Widgets.")
                 }
 
                 Section {

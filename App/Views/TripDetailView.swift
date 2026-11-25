@@ -100,9 +100,9 @@ struct TripDetailView: View {
     private func summary(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                TimePointText(point: trip.departure)
+                TimePointText(point: trip.departure, cancelled: trip.isCancelledForRider)
                 Image(systemName: "arrow.right").font(.caption).foregroundStyle(.secondary)
-                TimePointText(point: trip.arrival)
+                TimePointText(point: trip.arrival, cancelled: trip.isCancelledForRider)
                 Spacer()
                 Text(durationText(trip.duration)).foregroundStyle(.secondary)
             }
@@ -141,16 +141,17 @@ struct TripDetailView: View {
 }
 
 /// Eine Fahrt: Linie, „Nächster Halt“ und die Zeitleiste mit allen Halten.
-private struct RideSection: View {
+struct RideSection: View {
     let leg: TripLeg
     let now: Date
+    @AppStorage(AlertDisplay.storageKey, store: AppGroup.defaults) private var alertDisplay = AlertDisplay.affected
 
     var body: some View {
         let progress = leg.progress(at: now)
         Section {
             RideHeader(leg: leg)
 
-            ForEach(leg.alerts) { AlertRow(alert: $0) }
+            ForEach(alertDisplay.filter(leg)) { AlertRow(alert: $0) }
 
             if case .underway(let passed, let fraction) = progress, passed + 1 < leg.stops.count {
                 NextStopRow(next: leg.stops[passed + 1], fraction: fraction, mode: leg.mode ?? .other, now: now)
@@ -183,7 +184,8 @@ struct RideHeader: View {
                 if let direction = leg.direction {
                     Text("Richtung \(direction)").font(.subheadline.weight(.medium))
                 }
-                let details = [leg.trainNumber.map { "Zug \($0)" }, leg.operatorName].compactMap { $0 }
+                let isTrain = [.suburbanRailway, .train, .longDistance].contains(leg.mode ?? .other)
+                let details = [isTrain ? leg.trainNumber.map { "Zug \($0)" } : nil, leg.operatorName].compactMap { $0 }
                 if !details.isEmpty {
                     Text(details.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
                 }

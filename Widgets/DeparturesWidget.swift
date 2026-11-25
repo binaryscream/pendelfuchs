@@ -106,7 +106,8 @@ struct DeparturesProvider: AppIntentTimelineProvider {
         }
 
         do {
-            let departures = try await DataSources.router().departures(at: stop, limit: 20)
+            let departures = CancellationMemory.process(try await DataSources.router().departures(at: stop, limit: 20), at: stop)
+                .filter { !CancelledDisplay.hide || $0.state != .cancelled }
             // Ein Eintrag pro Minute: bereits abgefahrene Verbindungen fallen heraus.
             let now = Date.now
             let start = Calendar.current.dateInterval(of: .minute, for: now)?.start ?? now

@@ -12,6 +12,7 @@ struct StopDeparturesView: View {
     @Environment(\.transit) private var transit
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.stopNameStyle) private var style
+    @AppStorage(CancelledDisplay.hideKey, store: AppGroup.defaults) private var hideCancelled = false
 
     @State private var departures: [Departure] = []
     @State private var errorMessage: String?
@@ -48,7 +49,8 @@ struct StopDeparturesView: View {
                         NavigationLink(value: DepartureRoute(departure: departure, stop: stop)) {
                             // Countdown jede Viertelminute neu berechnen, ohne neu zu laden.
                             TimelineView(.periodic(from: .now, by: 15)) { context in
-                                DepartureRow(departure: departure, now: context.date)
+                                DepartureRow(departure: departure, now: context.date,
+                                             stopNames: [stop.name, stop.label(.withPlace)])
                             }
                         }
                         .disabled(departure.tripID == nil)
@@ -128,8 +130,9 @@ struct StopDeparturesView: View {
 
     private func load() async {
         do {
-            let result = try await transit.departures(at: stop, limit: limit, from: windowStart)
-            departures = result
+            let result = CancellationMemory.process(
+                try await transit.departures(at: stop, limit: limit, from: windowStart), at: stop)
+            departures = result.filter { !hideCancelled || $0.state != .cancelled }
             errorMessage = nil
             lastUpdate = .now
         } catch is CancellationError {

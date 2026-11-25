@@ -185,7 +185,10 @@ struct RouteProvider: AppIntentTimelineProvider {
             switch loaded[reversed] {
             case .success(let trips):
                 // Bereits abgefahrene Verbindungen fallen mit der Zeit heraus.
-                let upcoming = trips.filter { $0.trip.departure.expectedTime >= date.addingTimeInterval(-30) }
+                let upcoming = trips.filter {
+                    $0.trip.departure.expectedTime >= date.addingTimeInterval(-30)
+                        && (!CancelledDisplay.hide || !$0.trip.isCancelledForRider)
+                }
                 return RouteEntry(date: date == start ? now : date, from: from, to: to, reversed: reversed, turnTime: turn,
                                   swap: swap, content: upcoming.isEmpty ? .message("Keine Verbindungen gefunden.") : .trips(upcoming))
             default:
@@ -373,7 +376,7 @@ private struct RouteTripRow: View {
                             Text("Gl. \(platform)")
                         }
                     }
-                    if !trip.alerts.isEmpty {
+                    if !AlertDisplay.current.filter(trip).isEmpty {
                         Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                     }
                     if trip.interchanges > 0 {

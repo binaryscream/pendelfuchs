@@ -150,3 +150,49 @@ extension [ServiceAlert] {
         }
     }
 }
+
+// MARK: - Betrifft die Meldung meinen Abschnitt?
+
+extension ServiceAlert {
+    /// Allgemeine Wörter, die allein nichts über den Ort sagen.
+    private static let genericWords: Set<String> = [
+        "bahnhof", "hbf", "hauptbahnhof", "sbahnhof", "sbf", "bf", "busbahnhof", "zob", "markt", "post", "rathaus",
+        "kirche", "schule", "zentrum", "mitte", "platz", "strasse", "straße", "friedhof", "gleis", "steig", "ost",
+        "west", "nord", "süd", "sued", "dresden", "leipzig", "berlin",
+    ]
+
+    static func normalize(_ text: String) -> String {
+        let lowered = text.lowercased()
+            .replacingOccurrences(of: "hauptbahnhof", with: "hbf")
+            .replacingOccurrences(of: "s-bahnhof", with: "bahnhof")
+            .replacingOccurrences(of: "s-bf.", with: "bahnhof")
+        let mapped = lowered.map { $0.isLetter || $0.isNumber ? $0 : " " }
+        return String(mapped).split(separator: " ").joined(separator: " ")
+    }
+
+    /// Suchbegriffe zu Haltestellennamen: der ganze Name und der Name ohne allgemeine Wörter („Pirna Bahnhof“ → „pirna“).
+    static func searchTerms(for names: [String]) -> Set<String> {
+        var terms = Set<String>()
+        for name in names {
+            let full = normalize(name)
+            if full.count >= 4, !genericWords.contains(full) { terms.insert(full) }
+            let specific = full.split(separator: " ").filter { !genericWords.contains(String($0)) }.joined(separator: " ")
+            if specific.count >= 4 { terms.insert(specific) }
+        }
+        return terms
+    }
+
+    /// Nennt die Überschrift einen der Halte? (Die Überschrift beschreibt den betroffenen Bereich, der Text listet
+    /// dagegen oft den ganzen Linienweg auf – deshalb zählt nur die Überschrift.)
+    public func mentions(anyOf names: [String]) -> Bool {
+        let title = " " + Self.normalize(title) + " "
+        return Self.searchTerms(for: names).contains { title.contains(" \($0) ") }
+    }
+}
+
+extension TripLeg {
+    /// Namen der gefahrenen Halte (mit und ohne Ort) – für die Frage, ob eine Meldung den Abschnitt betrifft.
+    public var stopNames: [String] {
+        stops.flatMap { stop in [stop.name] + (stop.place.map { ["\($0) \(stop.name)", $0] } ?? []) }
+    }
+}

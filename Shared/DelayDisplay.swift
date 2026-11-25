@@ -45,6 +45,8 @@ struct DelayedTimeText: View {
     var actual: Date?
     /// Geplante und tatsächliche Zeit nebeneinander statt untereinander (für Widgets mit festem Platz).
     var inline = false
+    /// Fällt aus: Planzeit rot und durchgestrichen.
+    var cancelled = false
 
     @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var style = DelayDisplay.badge
 
@@ -57,7 +59,11 @@ struct DelayedTimeText: View {
 
     var body: some View {
         Group {
-            if delay == 0 {
+            if cancelled {
+                time(scheduled)
+                    .foregroundStyle(.red)
+                    .strikethrough(true, color: .red)
+            } else if delay == 0 {
                 time(scheduled)
             } else {
                 switch style {

@@ -60,3 +60,20 @@ import Testing
         #expect(data.count < 4096)
     }
 }
+
+@Suite struct TripActivityNextChangeTests {
+    @Test func nextChangeWalksThroughAllPhases() {
+        let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+        func ride(_ dep: Double, _ arr: Double) -> TripActivityState.Ride {
+            TripActivityState.Ride(line: "S1", mode: .suburbanRailway, direction: nil, fromName: "A", fromPlace: nil,
+                                   fromPlatform: nil, toName: "B", toPlace: nil, toPlatform: nil,
+                                   departure: TimePoint(scheduledTime: t0 + dep * 60),
+                                   arrival: TimePoint(scheduledTime: t0 + arr * 60), isCancelled: false)
+        }
+        let state = TripActivityState(rides: [ride(10, 30), ride(35, 50)], updatedAt: t0)
+        #expect(state.nextChange(after: t0) == t0 + 10 * 60)
+        #expect(state.nextChange(after: t0 + 31 * 60) == t0 + 35 * 60)
+        #expect(state.nextChange(after: t0 + 51 * 60) == t0 + 55 * 60, "5 Minuten nach Ankunft: beenden")
+        #expect(state.nextChange(after: t0 + 56 * 60) == nil)
+    }
+}

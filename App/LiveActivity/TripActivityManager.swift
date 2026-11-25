@@ -95,9 +95,9 @@ final class TripActivityManager {
             let saved = SavedTripsStore(defaults: AppGroup.defaults).trip(id: activity.attributes.saved.id)
                 ?? activity.attributes.saved
 
-            // 10 Minuten nach Ankunft beenden, noch eine Weile auf dem Sperrbildschirm stehen lassen.
-            if now > current.arrival.expectedTime.addingTimeInterval(10 * 60) {
-                await activity.end(activity.content, dismissalPolicy: .after(now.addingTimeInterval(15 * 60)))
+            // 5 Minuten nach der Ankunft beenden (und kurz darauf vom Sperrbildschirm nehmen).
+            if now > current.arrival.expectedTime.addingTimeInterval(5 * 60) {
+                await activity.end(activity.content, dismissalPolicy: .after(now.addingTimeInterval(5 * 60)))
                 continue
             }
 
@@ -112,16 +112,25 @@ final class TripActivityManager {
         if !activities.isEmpty { scheduleBackgroundRefresh() }
     }
 
+    /// Nächster Phasenwechsel aller laufenden Aktivitäten – dann soll iOS die App möglichst wecken.
+    private var nextChange: Date? {
+        activities.compactMap { $0.content.state.nextChange(after: .now) }.min()
+    }
+
     private func content(for state: TripActivityState) -> ActivityContent<TripActivityState> {
-        // Nach 15 Minuten ohne Aktualisierung gelten die Daten als veraltet.
-        ActivityContent(state: state, staleDate: state.updatedAt.addingTimeInterval(15 * 60),
-                        relevanceScore: 100)
+        // „Veraltet“ spätestens nach 15 Minuten – oder schon beim nächsten Phasenwechsel (Abfahrt, Ankunft,
+        // Umstieg): Dann zeichnet iOS die Aktivität neu, und sie zeigt die neue Phase auch ohne geöffnete App.
+        let fifteen = state.updatedAt.addingTimeInterval(15 * 60)
+        let next = state.nextChange(after: .now).map { $0.addingTimeInterval(1) } ?? fifteen
+        return ActivityContent(state: state, staleDate: min(fifteen, next), relevanceScore: 100)
     }
 
     /// Bittet iOS, die App in ein paar Minuten kurz im Hintergrund zu wecken.
     func scheduleBackgroundRefresh() {
         let request = BGAppRefreshTaskRequest(identifier: Self.refreshTaskID)
-        request.earliestBeginDate = .now.addingTimeInterval(5 * 60)
+        // Zum nächsten Phasenwechsel (höchstens 5 Minuten warten, mindestens 1 Minute) – iOS entscheidet selbst.
+        let wanted = nextChange ?? .now.addingTimeInterval(5 * 60)
+        request.earliestBeginDate = min(max(wanted, .now.addingTimeInterval(60)), .now.addingTimeInterval(5 * 60))
         try? BGTaskScheduler.shared.submit(request)
     }
 }
