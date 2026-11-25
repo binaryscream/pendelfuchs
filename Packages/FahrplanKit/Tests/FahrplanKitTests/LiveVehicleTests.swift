@@ -67,18 +67,18 @@ import Testing
     }
 
     @Test func similarDelayBreaksTies() throws {
-        let now = t0 + 150
-        let vehicles = [
-            vehicle(run: 1, lon: 13.719, at: now - 10, delay: 0),
-            vehicle(run: 2, lon: 13.721, at: now - 10, delay: 240),
-        ]
-        #expect(leg(delay: 240).liveMatch(in: vehicles, at: now)?.vehicle.run == 2)
-        #expect(leg(delay: 0).liveMatch(in: vehicles, at: now)?.vehicle.run == 1)
+        // Zwei Bahnen fast an derselben Stelle – die mit der passenden Verspätung gewinnt.
+        func vehicles(at now: Date) -> [LiveVehicle] {
+            [vehicle(run: 1, lon: 13.719, at: now - 10, delay: 0),
+             vehicle(run: 2, lon: 13.721, at: now - 10, delay: 240)]
+        }
+        #expect(leg(delay: 240).liveMatch(in: vehicles(at: t0 + 390), at: t0 + 390)?.vehicle.run == 2)
+        #expect(leg(delay: 0).liveMatch(in: vehicles(at: t0 + 150), at: t0 + 150)?.vehicle.run == 1)
     }
 
     @Test func keepsThePreferredVehicle() {
         let now = t0 + 150
-        let vehicles = [vehicle(run: 1, lon: 13.720, at: now - 10), vehicle(run: 2, lon: 13.735, at: now - 10)]
+        let vehicles = [vehicle(run: 1, lon: 13.720, at: now - 10), vehicle(run: 2, lon: 13.712, at: now - 10)]
         #expect(leg().liveMatch(in: vehicles, at: now)?.vehicle.run == 1)
         #expect(leg().liveMatch(in: vehicles, at: now, preferredRun: 2)?.vehicle.run == 2)
     }
@@ -86,11 +86,21 @@ import Testing
     @Test func usesOnlyTheNewestReportPerVehicle() throws {
         let now = t0 + 150
         let vehicles = [
-            vehicle(run: 1, lon: 13.735, at: now - 10),   // neueste Meldung von Umlauf 1
-            vehicle(run: 1, lon: 13.716, at: now - 170),  // ältere Meldung, passt scheinbar besser
+            vehicle(run: 1, lon: 13.712, at: now - 10),   // neueste Meldung von Umlauf 1
+            vehicle(run: 1, lon: 13.719, at: now - 170),  // ältere Meldung, passt scheinbar besser
         ]
         let match = try #require(leg().liveMatch(in: vehicles, at: now, preferredRun: 1))
         #expect(match.vehicle.reportedAt == now - 10)
+    }
+
+    @Test func ignoresThePreviousTramAheadOfUs() {
+        // Die Fahrt beginnt erst in 4 Minuten; die Bahn 1 km hinter dem ersten Halt ist die vorige Fahrt.
+        let now = t0 - 240
+        let previous = vehicle(run: 7, lon: 13.714, at: now - 20)
+        #expect(leg().liveMatch(in: [previous], at: now) == nil)
+        #expect(leg().liveMatch(in: [previous], at: now, preferredRun: 7) == nil)
+        // Steht die Bahn dagegen am ersten Halt, ist sie es.
+        #expect(leg().liveMatch(in: [vehicle(run: 8, lon: 13.7005, at: now - 20)], at: now)?.vehicle.run == 8)
     }
 
     @Test func noMatchOutsideTheRideTime() {

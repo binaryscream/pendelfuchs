@@ -85,6 +85,7 @@ extension TripLeg {
     ///
     /// Kandidaten sind Fahrzeuge derselben Linie, die nah am Streckenverlauf gemeldet wurden. Gewählt wird das,
     /// dessen Lage am besten zu Fahrplan/Echtzeit passt (Abstand zur geschätzten Lage, ähnliche Verspätung).
+    /// Fahrzeuge deutlich vor der erwarteten Lage gelten nicht – das ist in der Regel die vorige Fahrt.
     /// `preferredRun` hält ein einmal gefundenes Fahrzeug fest, solange es plausibel bleibt.
     public func liveMatch(in vehicles: [LiveVehicle], at now: Date, preferredRun: Int? = nil) -> LiveVehicleMatch? {
         guard let line = tlmsLine, !isFullyCancelled,
@@ -110,8 +111,12 @@ extension TripLeg {
             else { continue }
 
             let expected = geometry.expectedOffset(of: self, at: vehicle.reportedAt)
-            let gap = abs(projection.offset - expected)
+            // Hinter der erwarteten Lage darf ein Fahrzeug weit sein (Verspätung), davor kaum: Weiter vorn ist
+            // meist die vorige Fahrt derselben Linie – etwa wenn diese Fahrt noch gar nicht losgefahren ist.
+            let ahead = projection.offset - expected
+            let gap = abs(ahead)
             let match = LiveVehicleMatch(vehicle: vehicle, offset: projection.offset)
+            guard ahead <= 500 else { continue }
             if vehicle.run == preferredRun, gap <= 3000 { return match }
             guard gap <= 2000 else { continue }
 
