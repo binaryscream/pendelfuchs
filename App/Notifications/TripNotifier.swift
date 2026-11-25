@@ -118,6 +118,8 @@ final class TripNotifier {
         content.body = notice.body
         content.sound = .default
         content.threadIdentifier = saved.id.uuidString
+        // Antippen öffnet die Fahrt (siehe `NotificationPresenter`).
+        content.userInfo = [NotificationRouter.savedTripKey: saved.id.uuidString]
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         try? await center.add(request)
     }
@@ -145,7 +147,7 @@ final class TripNotifier {
     }
 }
 
-/// Zeigt Benachrichtigungen auch an, während die App offen ist.
+/// Zeigt Benachrichtigungen auch an, während die App offen ist, und öffnet beim Antippen die Fahrt.
 final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate, Sendable {
     static let shared = NotificationPresenter()
 
@@ -153,4 +155,19 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate, S
         async -> UNNotificationPresentationOptions {
         [.banner, .list, .sound]
     }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        guard let text = response.notification.request.content.userInfo[NotificationRouter.savedTripKey] as? String,
+              let id = UUID(uuidString: text) else { return }
+        await MainActor.run { NotificationRouter.shared.savedTripToOpen = id }
+    }
+}
+
+/// Welche gemerkte Fahrt nach dem Antippen einer Benachrichtigung geöffnet werden soll.
+@MainActor @Observable
+final class NotificationRouter {
+    static let shared = NotificationRouter()
+    nonisolated static let savedTripKey = "savedTripID"
+
+    var savedTripToOpen: UUID?
 }

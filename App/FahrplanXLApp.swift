@@ -18,6 +18,8 @@ struct FahrplanXLApp: App {
     @State private var selectedTab = AppTab.departures
     @State private var openStop: Stop?
     @State private var openRoute: RouteLink?
+    @State private var openSavedTrip: UUID?
+    @State private var notificationRouter = NotificationRouter.shared
 
     init() {
         // Daten liegen in der App Group, damit das Widget die Favoriten sieht.
@@ -37,7 +39,7 @@ struct FahrplanXLApp: App {
                 Tab("Abfahrten", systemImage: "clock", value: AppTab.departures) { HomeView(openStop: $openStop) }
                 Tab("Verbindungen", systemImage: "point.topleft.down.to.point.bottomright.curvepath",
                     value: AppTab.trips) { TripSearchView(openRoute: $openRoute) }
-                Tab("Meine Fahrten", systemImage: "star", value: AppTab.saved) { MyTripsView() }
+                Tab("Meine Fahrten", systemImage: "star", value: AppTab.saved) { MyTripsView(openSavedTrip: $openSavedTrip) }
                 Tab("Einstellungen", systemImage: "gearshape", value: AppTab.settings) { SettingsView() }
             }
                 // Antippen des Widgets öffnet die Haltestelle.
@@ -50,6 +52,13 @@ struct FahrplanXLApp: App {
                         selectedTab = .trips
                         openRoute = RouteLink(query: TripQuery(origin: route.from, destination: route.to), trip: route.trip)
                     }
+                }
+                // Angetippte Benachrichtigung: die betroffene Fahrt unter „Meine Fahrten“ öffnen.
+                .onChange(of: notificationRouter.savedTripToOpen, initial: true) { _, id in
+                    guard let id else { return }
+                    selectedTab = .saved
+                    openSavedTrip = id
+                    notificationRouter.savedTripToOpen = nil
                 }
                 .environment(favorites)
                 .environment(savedTrips)

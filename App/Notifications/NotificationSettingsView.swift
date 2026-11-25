@@ -87,6 +87,11 @@ struct NotificationSettingsView: View {
         content.title = "Test: Zur Arbeit"
         content.body = "So sieht eine Meldung aus – z. B. „Abfahrt S1 +6 min, jetzt 7:42.“"
         content.sound = .default
+        // Wie echte Meldungen: Antippen öffnet die erste regelmäßige Fahrt, falls es eine gibt.
+        if let saved = SavedTripsStore(defaults: AppGroup.defaults).regular().first {
+            content.title = "Test: \(saved.title)"
+            content.userInfo = [NotificationRouter.savedTripKey: saved.id.uuidString]
+        }
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
         try? await center.add(UNNotificationRequest(identifier: "test-\(UUID().uuidString)", content: content,
                                                     trigger: trigger))

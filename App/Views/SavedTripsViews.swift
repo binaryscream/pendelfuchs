@@ -11,6 +11,8 @@ enum MyTripsRoute: Hashable {
 }
 
 struct MyTripsView: View {
+    /// Von außen zu öffnende Fahrt (z. B. aus einer Benachrichtigung).
+    @Binding var openSavedTrip: UUID?
     @Environment(SavedTripsStore.self) private var store
     @State private var path: [MyTripsRoute] = []
 
@@ -26,6 +28,12 @@ struct MyTripsView: View {
                 case .detail(let trip, let query): TripDetailView(trip: trip, query: query)
                 }
             }
+        }
+        .onChange(of: openSavedTrip, initial: true) { _, id in
+            guard let id else { return }
+            openSavedTrip = nil
+            // Gelöschte Fahrt: nur „Meine Fahrten“ zeigen.
+            path = store.trip(id: id) != nil ? [.saved(id)] : []
         }
     }
 
