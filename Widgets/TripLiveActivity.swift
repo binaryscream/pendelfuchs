@@ -13,7 +13,9 @@ struct TripLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TripActivityAttributes.self) { context in
             LockScreenView(saved: context.attributes.saved, state: context.state, isStale: context.isStale)
-                .padding(16)
+                .padding(.horizontal, 16)
+                .padding(.top, 14)
+                .padding(.bottom, 12)
                 .activitySystemActionForegroundColor(.primary)
         } dynamicIsland: { context in
             let info = PhaseInfo(state: context.state, now: .now)
@@ -69,7 +71,7 @@ private struct LockScreenView: View {
 
     var body: some View {
         let info = PhaseInfo(state: state, now: .now)
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
                 Label(saved.title(style: style), systemImage: "tram.fill")
                     .font(.caption.weight(.medium))
@@ -83,18 +85,26 @@ private struct LockScreenView: View {
                         .foregroundStyle(.secondary)
                 }
                 Button(intent: RefreshTripActivityIntent()) {
-                    Image(systemName: "arrow.clockwise").font(.caption.weight(.semibold))
+                    Image(systemName: "arrow.clockwise")
+                        .font(.footnote.weight(.bold))
+                        .frame(width: 30, height: 30)
+                        .background(Color.secondary.opacity(0.2), in: Circle())
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .accessibilityLabel("Aktualisieren")
                 Button(intent: EndTripActivityIntent(id: saved.id)) {
-                    Image(systemName: "xmark").font(.caption.weight(.semibold))
+                    Image(systemName: "xmark")
+                        .font(.footnote.weight(.bold))
+                        .frame(width: 30, height: 30)
+                        .background(Color.secondary.opacity(0.2), in: Circle())
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .accessibilityLabel("Live-Aktivität beenden")
             }
+            // Die Knöpfe ragen über die Textzeile hinaus, ohne die Aktivität höher zu machen.
+            .frame(height: 18)
 
             HStack(alignment: .center, spacing: 12) {
                 if let ride = info.ride {
