@@ -154,9 +154,24 @@ Ein `ProviderRouter` wählt je nach Region und Verfügbarkeit die Quelle:
 - **oepnv.dresden.lol** (Community-Doku von kiliankoe, Quellcode: github.com/kiliankoe/vvo, Lizenz nicht angegeben):
   beschreibt WebAPI, TRIAS (`efa.vvo-online.de/std3/trias`), OJP, EFA-JSON, GTFS/GTFS-RT und SIRI. Kein eigener
   Server, nur Dokumentation.
-- **TLMS** (`wss://socket.tlm.solutions`): ehrenamtlicher Live-Feed mit Fahrzeugpositionen und Verspätungen aus
-  R09-Funktelegrammen (Dresden). Kandidat für echte Fahrzeugpositionen statt der geschätzten – Abdeckung hängt von
-  Empfängern ab, Nutzungsbedingungen noch nicht geprüft.
+- **TLMS** (tlm.solutions): ehrenamtlicher Live-Feed mit Fahrzeugpositionen und Verspätungen aus
+  R09-Funktelegrammen (Dresden). **Wird für die Karte genutzt**, siehe unten. Nutzungsbedingungen sind nirgends
+  veröffentlicht – vor einer Veröffentlichung der App beim Projekt nachfragen (Matrix/GitHub `tlm-solutions`).
+
+## TLMS-Fahrzeugpositionen (Karte)
+
+- **Abfrage:** `GET https://lizard.tlm.solutions/v1/vehicles/0` (Region 0 = Dresden, CORS offen, ohne Schlüssel).
+  Antwort: Liste mit `line`, `run` (Umlauf), `lat`/`lon`, `time` (ms seit 1970), `delayed` (Sekunden).
+  Einträge älter als ca. 3 Minuten fallen serverseitig heraus. Daneben gibt es `/v1/gtfs/0` (GTFS-RT-ähnlich, JSON)
+  und den Websocket `wss://socket.tlm.solutions` (Filter per JSON: `lines`, `regions`).
+- **Abdeckung (Stichprobe 25.11.2026, 16:45):** rund 460 Fahrzeuge, Straßenbahn 1–13 und DVB-Stadtbusse; keine
+  S-Bahn, keine Regionalbusse. Positionen kommen nur an R09-Meldepunkten (Ampeln, Haltestellen), nicht als GPS-Spur.
+- **Zuordnung in der App** (`LiveVehicles.swift`): nur Straßenbahn/Stadtbus mit rein numerischer Linie und einem Halt
+  im Raum Dresden. Kandidaten: gleiche Linie, höchstens 120 m neben dem Streckenverlauf. Gewählt wird das Fahrzeug,
+  dessen Lage am besten zu Fahrplan/Echtzeit passt (Abstand höchstens 2 km, ähnliche Verspätung); der Umlauf
+  wird danach festgehalten. Zwischen zwei Meldungen rückt der Marker mit der Fahrplan-Geschwindigkeit weiter,
+  höchstens bis zum nächsten Halt. Ohne Treffer bleibt die geschätzte Position.
+- **Last:** abgefragt wird nur bei offener Karte und nur, wenn eine Fahrt infrage kommt – alle 15 Sekunden.
 - **VVO-Störungsmeldungen** (`POST /rc`): Baustellen und Störungen je Linie (Antwort > 200 kB).
 
 ## Wagenreihung und DB-Auslastung (vorerst entfernt)

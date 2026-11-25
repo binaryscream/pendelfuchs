@@ -5,9 +5,13 @@ import MapLibre
 import SwiftUI
 
 /// Karte einer Verbindung: Streckenverlauf in Linienfarben, Halte, Umstiege, eigener Standort und
-/// geschätzte Fahrzeugposition. Kartendarstellung: MapLibre (Open Source), Kartendaten: OpenFreeMap/OpenStreetMap.
+/// Fahrzeugposition – in Dresden live aus TLMS, sonst geschätzt.
+/// Kartendarstellung: MapLibre (Open Source), Kartendaten: OpenFreeMap/OpenStreetMap.
 struct TripMapView: View {
     let trip: Trip
+
+    /// Zuletzt geladene Live-Positionen (nur für Straßenbahnen/Stadtbusse in Dresden).
+    @State private var liveVehicles: [LiveVehicle] = []
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -15,7 +19,8 @@ struct TripMapView: View {
     var body: some View {
         ZStack(alignment: .top) {
             TimelineView(.periodic(from: .now, by: 1)) { context in
-                TripMapRepresentable(trip: trip, now: context.date, dark: colorScheme == .dark)
+                TripMapRepresentable(trip: trip, now: context.date, dark: colorScheme == .dark,
+                                     liveVehicles: liveVehicles)
                     .ignoresSafeArea()
             }
 
@@ -37,6 +42,18 @@ struct TripMapView: View {
         }
         .overlay(alignment: .bottomLeading) {
             attribution
+        }
+        .task { await pollLiveVehicles() }
+    }
+
+    /// Lädt die TLMS-Positionen alle 15 Sekunden, solange die Karte offen ist – aber nur, wenn eine Fahrt der
+    /// Verbindung überhaupt im Feed vorkommen kann (ehrenamtlicher Dienst, keine unnötigen Abfragen).
+    private func pollLiveVehicles() async {
+        guard trip.legs.contains(where: { $0.tlmsLine != nil }) else { return }
+        let client = TLMSClient()
+        while !Task.isCancelled {
+            if let vehicles = try? await client.vehicles() { liveVehicles = vehicles }
+            try? await Task.sleep(for: .seconds(15))
         }
     }
 
@@ -63,6 +80,9 @@ struct TripMapView: View {
             Link("OpenFreeMap", destination: URL(string: "https://openfreemap.org")!)
             Link("© OpenMapTiles", destination: URL(string: "https://www.openmaptiles.org/")!)
             Link("© OpenStreetMap", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
+            if !liveVehicles.isEmpty {
+                Link("Live: TLMS", destination: URL(string: "https://tlm.solutions")!)
+            }
         }
         .font(.caption2)
         .padding(.horizontal, 8)
@@ -79,6 +99,7 @@ private struct TripMapRepresentable: UIViewRepresentable {
     let trip: Trip
     let now: Date
     let dark: Bool
+    let liveVehicles: [LiveVehicle]
 
     static func styleURL(dark: Bool) -> URL {
         URL(string: "https://tiles.openfreemap.org/styles/\(dark ? "dark" : "positron")")!
@@ -104,6 +125,7 @@ private struct TripMapRepresentable: UIViewRepresentable {
             coordinator.dark = dark
             map.styleURL = Self.styleURL(dark: dark)
         }
+        coordinator.liveVehicles = liveVehicles
         coordinator.updateVehicles(on: map, now: now)
     }
 
@@ -111,6 +133,9 @@ private struct TripMapRepresentable: UIViewRepresentable {
     final class Coordinator: NSObject, @preconcurrency MLNMapViewDelegate {
         let trip: Trip
         var dark = false
+        var liveVehicles: [LiveVehicle] = []
+        /// Einmal gefundenes Live-Fahrzeug (Umlauf) pro Abschnitt – damit der Marker nicht zwischen Fahrzeugen springt.
+        private var liveRuns: [Int: Int] = [:]
         /// Ein Fahrzeug-Marker pro gerade befahrenem Abschnitt.
         private var vehicles: [Int: VehicleAnnotation] = [:]
         private var didFitCamera = false
@@ -221,18 +246,38 @@ private struct TripMapRepresentable: UIViewRepresentable {
             style.addLayer(labels)
         }
 
-        /// Geschätzte Fahrzeugposition(en) anhand von Fahrplan/Echtzeit setzen oder entfernen.
+        /// Fahrzeugposition(en) setzen oder entfernen: live aus TLMS, wenn ein passendes Fahrzeug gemeldet ist,
+        /// sonst geschätzt anhand von Fahrplan/Echtzeit.
         func updateVehicles(on map: MLNMapView, now: Date) {
             for (index, leg) in trip.legs.enumerated() where leg.kind == .ride {
-                if let position = leg.estimatedPosition(at: now) {
+                var position: Coordinate?
+                var live: LiveVehicle?
+                if let match = leg.liveMatch(in: liveVehicles, at: now, preferredRun: liveRuns[index]),
+                   let livePosition = leg.livePosition(of: match, at: now) {
+                    liveRuns[index] = match.vehicle.run
+                    position = livePosition
+                    live = match.vehicle
+                } else {
+                    position = leg.estimatedPosition(at: now)
+                }
+
+                // Wechsel zwischen live und geschätzt: Marker neu anlegen (anderes Aussehen).
+                if let existing = vehicles[index], existing.isLive != (live != nil) {
+                    map.removeAnnotation(existing)
+                    vehicles[index] = nil
+                }
+
+                if let position {
                     if let existing = vehicles[index] {
+                        existing.update(live: live, now: now)
                         // Ein Schritt pro Sekunde, linear über eine Sekunde ausgeführt → gleichmäßige Fahrt statt Sprünge.
                         UIView.animate(withDuration: 1, delay: 0,
                                        options: [.curveLinear, .allowUserInteraction, .beginFromCurrentState]) {
                             existing.coordinate = position.clCoordinate
                         }
                     } else {
-                        let annotation = VehicleAnnotation(leg: leg)
+                        let annotation = VehicleAnnotation(leg: leg, isLive: live != nil)
+                        annotation.update(live: live, now: now)
                         annotation.coordinate = position.clCoordinate
                         vehicles[index] = annotation
                         map.addAnnotation(annotation)
@@ -245,9 +290,9 @@ private struct TripMapRepresentable: UIViewRepresentable {
 
         func mapView(_ mapView: MLNMapView, viewFor annotation: MLNAnnotation) -> MLNAnnotationView? {
             guard let vehicle = annotation as? VehicleAnnotation else { return nil }
-            let id = "vehicle-\(vehicle.leg.mode?.rawValue ?? "other")"
+            let id = "vehicle-\(vehicle.leg.mode?.rawValue ?? "other")-\(vehicle.isLive ? "live" : "estimated")"
             if let view = mapView.dequeueReusableAnnotationView(withIdentifier: id) { return view }
-            return VehicleAnnotationView(reuseIdentifier: id, mode: vehicle.leg.mode ?? .other)
+            return VehicleAnnotationView(reuseIdentifier: id, mode: vehicle.leg.mode ?? .other, isLive: vehicle.isLive)
         }
 
         func mapView(_ mapView: MLNMapView, annotationCanShowCallout annotation: MLNAnnotation) -> Bool {
@@ -256,22 +301,33 @@ private struct TripMapRepresentable: UIViewRepresentable {
     }
 }
 
-/// Geschätzte Position eines Fahrzeugs (aus Fahrplan/Echtzeit interpoliert, kein GPS des Fahrzeugs).
+/// Position eines Fahrzeugs: live (TLMS-Meldung, bis zum nächsten Halt weitergerückt) oder geschätzt
+/// (aus Fahrplan/Echtzeit interpoliert). Beides ist kein GPS des Fahrzeugs.
 private final class VehicleAnnotation: MLNPointAnnotation {
     let leg: TripLeg
+    let isLive: Bool
 
-    init(leg: TripLeg) {
+    init(leg: TripLeg, isLive: Bool) {
         self.leg = leg
+        self.isLive = isLive
         super.init()
         title = "\(leg.line ?? "") \(leg.direction.map { "→ \($0)" } ?? "")"
         subtitle = "Geschätzte Position"
+    }
+
+    func update(live: LiveVehicle?, now: Date) {
+        guard let live else { return }
+        let seconds = max(0, Int(now.timeIntervalSince(live.reportedAt)))
+        let age = seconds < 60 ? "vor \(seconds) s" : "vor \(seconds / 60) min"
+        let newSubtitle = "Live-Position (TLMS), gemeldet \(age)"
+        if subtitle != newSubtitle { subtitle = newSubtitle }
     }
 
     required init?(coder: NSCoder) { fatalError("nicht unterstützt") }
 }
 
 private final class VehicleAnnotationView: MLNAnnotationView {
-    init(reuseIdentifier: String, mode: TransportMode) {
+    init(reuseIdentifier: String, mode: TransportMode, isLive: Bool) {
         super.init(reuseIdentifier: reuseIdentifier)
         frame = CGRect(x: 0, y: 0, width: 34, height: 34)
         let circle = UIView(frame: bounds)
@@ -291,7 +347,22 @@ private final class VehicleAnnotationView: MLNAnnotationView {
         icon.contentMode = .center
         icon.frame = bounds
         addSubview(icon)
-        accessibilityLabel = "Geschätzte Position \(mode.displayName)"
+        if isLive {
+            // Kleines grünes „LIVE“-Schild unter dem Kreis.
+            let badge = UILabel()
+            badge.text = "LIVE"
+            badge.font = .systemFont(ofSize: 9, weight: .heavy)
+            badge.textColor = .white
+            badge.textAlignment = .center
+            badge.backgroundColor = .systemGreen
+            badge.layer.cornerRadius = 6
+            badge.layer.masksToBounds = true
+            badge.frame = CGRect(x: 4, y: bounds.height - 6, width: bounds.width - 8, height: 12)
+            addSubview(badge)
+        } else {
+            circle.alpha = 0.85
+        }
+        accessibilityLabel = isLive ? "Live-Position \(mode.displayName)" : "Geschätzte Position \(mode.displayName)"
     }
 
     required init?(coder: NSCoder) { fatalError("nicht unterstützt") }

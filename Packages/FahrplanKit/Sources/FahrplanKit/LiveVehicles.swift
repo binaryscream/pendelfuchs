@@ -1,0 +1,234 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+import Foundation
+
+/// Zuletzt gemeldete Position eines Fahrzeugs aus dem TLMS-Live-Feed (Dresden).
+///
+/// TLMS (tlm.solutions) empfängt die R09-Funktelegramme, die Straßenbahnen und Busse der DVB an Meldepunkten
+/// (Ampeln, Haltestellen) senden. Positionen gibt es also nur punktweise, nicht als GPS-Spur.
+public struct LiveVehicle: Sendable, Hashable {
+    public var line: Int
+    /// Umlaufnummer – zusammen mit der Linie eindeutig für ein Fahrzeug.
+    public var run: Int
+    public var coordinate: Coordinate
+    public var reportedAt: Date
+    /// Verspätung in Sekunden (negativ: zu früh), falls gemeldet.
+    public var delay: TimeInterval?
+
+    public init(line: Int, run: Int, coordinate: Coordinate, reportedAt: Date, delay: TimeInterval? = nil) {
+        self.line = line
+        self.run = run
+        self.coordinate = coordinate
+        self.reportedAt = reportedAt
+        self.delay = delay
+    }
+}
+
+/// Liest die Fahrzeugpositionen von TLMS (`lizard.tlm.solutions`, Region 0 = Dresden).
+public struct TLMSClient: Sendable {
+    private let url: URL
+    private let session: URLSession
+
+    public init(baseURL: URL = URL(string: "https://lizard.tlm.solutions")!, region: Int = 0,
+                session: URLSession = .shared) {
+        self.url = baseURL.appending(path: "v1/vehicles/\(region)")
+        self.session = session
+    }
+
+    public func vehicles() async throws -> [LiveVehicle] {
+        var request = URLRequest(url: url, timeoutInterval: 10)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let (data, response) = try await session.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw URLError(.badServerResponse)
+        }
+        return try Self.decode(data)
+    }
+
+    static func decode(_ data: Data) throws -> [LiveVehicle] {
+        struct Waypoint: Decodable {
+            var time: Double
+            var lat: Double
+            var lon: Double
+            var line: Int?
+            var run: Int?
+            var delayed: Double?
+        }
+        return try JSONDecoder().decode([Waypoint].self, from: data).compactMap { point in
+            guard let line = point.line, let run = point.run else { return nil }
+            return LiveVehicle(line: line, run: run,
+                               coordinate: Coordinate(latitude: point.lat, longitude: point.lon),
+                               reportedAt: Date(timeIntervalSince1970: point.time / 1000),
+                               delay: point.delayed)
+        }
+    }
+}
+
+/// Ein Fahrzeug aus dem Live-Feed, das zu einer Fahrt passt, samt seiner Lage auf deren Strecke.
+public struct LiveVehicleMatch: Sendable, Hashable {
+    public var vehicle: LiveVehicle
+    /// Meter entlang des Streckenverlaufs der Fahrt, an denen das Fahrzeug gemeldet wurde.
+    public var offset: Double
+}
+
+extension TripLeg {
+    /// Liniennummer im TLMS-Feed, wenn diese Fahrt dort vorkommen kann (Straßenbahn/Stadtbus in Dresden).
+    public var tlmsLine: Int? {
+        guard kind == .ride, mode == .tram || mode == .cityBus,
+              let line, let number = Int(line.trimmingCharacters(in: .whitespaces)),
+              stops.contains(where: { $0.coordinate.map(TLMSArea.contains) ?? false })
+        else { return nil }
+        return number
+    }
+
+    /// Sucht das Fahrzeug, das diese Fahrt gerade fährt.
+    ///
+    /// Kandidaten sind Fahrzeuge derselben Linie, die nah am Streckenverlauf gemeldet wurden. Gewählt wird das,
+    /// dessen Lage am besten zu Fahrplan/Echtzeit passt (Abstand zur geschätzten Lage, ähnliche Verspätung).
+    /// `preferredRun` hält ein einmal gefundenes Fahrzeug fest, solange es plausibel bleibt.
+    public func liveMatch(in vehicles: [LiveVehicle], at now: Date, preferredRun: Int? = nil) -> LiveVehicleMatch? {
+        guard let line = tlmsLine, !isFullyCancelled,
+              let start = departure?.expectedTime, let end = arrival?.expectedTime,
+              now >= start - 10 * 60, now <= end + 10 * 60
+        else { return nil }
+        let geometry = LegGeometry(self)
+        guard geometry.length > 0 else { return nil }
+
+        var best: (match: LiveVehicleMatch, score: Double)?
+        for vehicle in vehicles where vehicle.line == line && now.timeIntervalSince(vehicle.reportedAt) <= 180 {
+            guard let projection = Geo.project(vehicle.coordinate, onto: geometry.path),
+                  projection.distance <= 120,
+                  projection.offset >= geometry.stopOffsets[0] - 200,
+                  projection.offset <= geometry.stopOffsets[geometry.stopOffsets.count - 1] + 50
+            else { continue }
+
+            let expected = geometry.expectedOffset(of: self, at: vehicle.reportedAt)
+            let gap = abs(projection.offset - expected)
+            let match = LiveVehicleMatch(vehicle: vehicle, offset: projection.offset)
+            if vehicle.run == preferredRun, gap <= 3000 { return match }
+            guard gap <= 2000 else { continue }
+
+            var score = gap
+            if let reported = vehicle.delay, let known = currentDelay(at: vehicle.reportedAt) {
+                // Eine Minute Unterschied in der Verspätung wiegt so viel wie 300 m Abstand.
+                score += abs(reported - known) * 5
+            }
+            if best == nil || score < best!.score { best = (match, score) }
+        }
+        return best?.match
+    }
+
+    /// Position eines gefundenen Fahrzeugs jetzt: die gemeldete Lage, seitdem mit der Fahrplan-Geschwindigkeit
+    /// des Abschnitts weitergerückt – höchstens bis zum nächsten Halt (dort könnte es warten).
+    public func livePosition(of match: LiveVehicleMatch, at now: Date) -> Coordinate? {
+        let geometry = LegGeometry(self)
+        guard geometry.length > 0 else { return nil }
+        let offsets = geometry.stopOffsets
+        let elapsed = max(0, now.timeIntervalSince(match.vehicle.reportedAt))
+
+        var offset = match.offset
+        if let next = offsets.firstIndex(where: { $0 > match.offset + 1 }) {
+            var speed = 0.0
+            if next > 0, let from = stops[next - 1].passTime,
+               let to = (stops[next].arrival ?? stops[next].departure)?.expectedTime, to > from {
+                speed = (offsets[next] - offsets[next - 1]) / to.timeIntervalSince(from)
+            }
+            offset = min(offsets[next], match.offset + speed * elapsed)
+        }
+        return Geo.point(along: geometry.path, fraction: offset / geometry.length)
+    }
+
+    /// Verspätung (Sekunden) laut Echtzeit am nächsten Halt nach `date`, falls bekannt.
+    func currentDelay(at date: Date) -> TimeInterval? {
+        let upcoming = stops.first { ($0.passTime ?? .distantPast) >= date } ?? stops.last
+        guard let point = upcoming?.departure ?? upcoming?.arrival, let realTime = point.realTime else { return nil }
+        return realTime.timeIntervalSince(point.scheduledTime)
+    }
+}
+
+/// Grobes Rechteck um das Gebiet, das TLMS in Region 0 abdeckt (Dresden und direkte Umgebung).
+enum TLMSArea {
+    static func contains(_ coordinate: Coordinate) -> Bool {
+        (50.95...51.15).contains(coordinate.latitude) && (13.55...13.95).contains(coordinate.longitude)
+    }
+}
+
+/// Streckenverlauf einer Fahrt mit der Lage (Meter entlang der Strecke) jedes Halts.
+struct LegGeometry {
+    let path: [Coordinate]
+    let length: Double
+    /// Pro Halt die Meter entlang der Strecke (aufsteigend; Halte ohne Koordinate erben den vorigen Wert).
+    let stopOffsets: [Double]
+
+    init(_ leg: TripLeg) {
+        path = leg.drawablePath
+        length = zip(path, path.dropFirst()).reduce(0) { $0 + Geo.meters($1.0, $1.1) }
+        var offsets: [Double] = []
+        var segment = 0
+        for stop in leg.stops {
+            let previous = offsets.last ?? 0
+            if let coordinate = stop.coordinate,
+               let projection = Geo.project(coordinate, onto: path, fromSegment: segment) {
+                segment = projection.segment
+                offsets.append(max(previous, projection.offset))
+            } else {
+                offsets.append(previous)
+            }
+        }
+        stopOffsets = offsets.isEmpty ? [0] : offsets
+    }
+
+    /// Wo das Fahrzeug laut Fahrplan/Echtzeit zu `date` sein sollte (Meter entlang der Strecke).
+    func expectedOffset(of leg: TripLeg, at date: Date) -> Double {
+        switch leg.progress(at: date) {
+        case .notStarted: return stopOffsets[0]
+        case .finished: return stopOffsets[stopOffsets.count - 1]
+        case .underway(let passed, let fraction):
+            let from = stopOffsets[passed]
+            let to = stopOffsets[min(passed + 1, stopOffsets.count - 1)]
+            return from + (to - from) * fraction
+        }
+    }
+}
+
+extension Geo {
+    struct PathProjection {
+        /// Meter vom Anfang der Linie bis zum Lotfußpunkt.
+        var offset: Double
+        /// Abstand des Punkts von der Linie in Metern.
+        var distance: Double
+        /// Index des Liniensegments mit dem Lotfußpunkt.
+        var segment: Int
+    }
+
+    /// Projiziert einen Punkt auf die nächstgelegene Stelle einer Linie (ab Segment `fromSegment`).
+    static func project(_ point: Coordinate, onto line: [Coordinate], fromSegment: Int = 0) -> PathProjection? {
+        guard line.count >= 2, fromSegment < line.count - 1 else { return nil }
+        // Lokale ebene Näherung in Metern um den Punkt – für Stadtgebiete genau genug.
+        let metersPerDegreeLat = 111_195.0
+        let metersPerDegreeLon = metersPerDegreeLat * cos(point.latitude * .pi / 180)
+        func xy(_ c: Coordinate) -> (x: Double, y: Double) {
+            ((c.longitude - point.longitude) * metersPerDegreeLon, (c.latitude - point.latitude) * metersPerDegreeLat)
+        }
+
+        var best: PathProjection?
+        var travelled = 0.0
+        for index in 0..<(line.count - 1) {
+            let a = xy(line[index]), b = xy(line[index + 1])
+            let dx = b.x - a.x, dy = b.y - a.y
+            let lengthSquared = dx * dx + dy * dy
+            // Längen wie im Rest der App (Kugelnäherung), damit Offsets zu `Geo.point(along:)` passen.
+            let length = meters(line[index], line[index + 1])
+            if index >= fromSegment {
+                let t = lengthSquared > 0 ? min(1, max(0, -(a.x * dx + a.y * dy) / lengthSquared)) : 0
+                let px = a.x + dx * t, py = a.y + dy * t
+                let distance = (px * px + py * py).squareRoot()
+                if best == nil || distance < best!.distance {
+                    best = PathProjection(offset: travelled + length * t, distance: distance, segment: index)
+                }
+            }
+            travelled += length
+        }
+        return best
+    }
+}
