@@ -112,6 +112,13 @@ final class TripActivityManager {
         if !activities.isEmpty { scheduleBackgroundRefresh() }
     }
 
+    /// Hintergrundabfrage für Live-Aktivitäten und Benachrichtigungen: alles aktualisieren, dann neu planen.
+    func backgroundRefresh() async {
+        await refreshAll()
+        await TripNotifier.shared.checkAll()
+        scheduleBackgroundRefresh()
+    }
+
     /// Nächster Phasenwechsel aller laufenden Aktivitäten – dann soll iOS die App möglichst wecken.
     private var nextChange: Date? {
         activities.compactMap { $0.content.state.nextChange(after: .now) }.min()
@@ -125,12 +132,18 @@ final class TripActivityManager {
         return ActivityContent(state: state, staleDate: min(fifteen, next), relevanceScore: 100)
     }
 
-    /// Bittet iOS, die App in ein paar Minuten kurz im Hintergrund zu wecken.
+    /// Bittet iOS, die App bald kurz im Hintergrund zu wecken – für laufende Live-Aktivitäten und für
+    /// Benachrichtigungen zu anstehenden Fahrten. iOS entscheidet selbst, ob und wann.
     func scheduleBackgroundRefresh() {
+        var wanted: [Date] = []
+        // Live-Aktivität: zum nächsten Phasenwechsel, höchstens 5 Minuten warten.
+        if !activities.isEmpty {
+            wanted.append(min(nextChange ?? .now.addingTimeInterval(5 * 60), .now.addingTimeInterval(5 * 60)))
+        }
+        if let check = TripNotifier.shared.nextCheck() { wanted.append(check) }
+        guard let earliest = wanted.min() else { return }
         let request = BGAppRefreshTaskRequest(identifier: Self.refreshTaskID)
-        // Zum nächsten Phasenwechsel (höchstens 5 Minuten warten, mindestens 1 Minute) – iOS entscheidet selbst.
-        let wanted = nextChange ?? .now.addingTimeInterval(5 * 60)
-        request.earliestBeginDate = min(max(wanted, .now.addingTimeInterval(60)), .now.addingTimeInterval(5 * 60))
+        request.earliestBeginDate = max(earliest, .now.addingTimeInterval(60))
         try? BGTaskScheduler.shared.submit(request)
     }
 }

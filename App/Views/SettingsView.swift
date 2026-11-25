@@ -50,6 +50,14 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
+                    NavigationLink {
+                        NotificationSettingsView()
+                    } label: {
+                        Label("Benachrichtigungen", systemImage: "bell.badge")
+                    }
+                }
+
+                Section {
                     Picker("Erscheinungsbild", selection: $appearance) {
                         ForEach(AppearanceSetting.allCases) { option in
                             Label(option.title, systemImage: option.systemImage).tag(option)
@@ -151,6 +159,9 @@ struct SettingsView: View {
                     }
                     Link(destination: URL(string: "https://maplibre.org")!) {
                         LabeledContent("Kartendarstellung", value: "MapLibre (BSD-Lizenz)")
+                    }
+                    Link(destination: URL(string: "https://tlm.solutions")!) {
+                        LabeledContent("Live-Fahrzeuge Dresden", value: "TLMS")
                     }
                     if useVVO {
                         LabeledContent("VVO-Gebiet", value: "Verkehrsverbund Oberelbe")

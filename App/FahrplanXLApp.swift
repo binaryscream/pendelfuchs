@@ -2,6 +2,7 @@
 
 import FahrplanKit
 import SwiftUI
+import UserNotifications
 import WidgetKit
 
 @main
@@ -26,6 +27,8 @@ struct FahrplanXLApp: App {
         // Knöpfe in der Live-Aktivität („Aktualisieren“, „Beenden“) laufen im App-Prozess.
         TripActivityActions.refresh = { await TripActivityManager.shared.refreshAll() }
         TripActivityActions.end = { await TripActivityManager.shared.end($0) }
+        // Benachrichtigungen auch zeigen, während die App offen ist.
+        UNUserNotificationCenter.current().delegate = NotificationPresenter.shared
     }
 
     var body: some Scene {
@@ -59,18 +62,24 @@ struct FahrplanXLApp: App {
                 .environment(\.stopNameStyle, stopNameStyle)
                 .onChange(of: stopNameStyle) { WidgetCenter.shared.reloadAllTimelines() }
                 .onChange(of: hideCancelled) { WidgetCenter.shared.reloadAllTimelines() }
-                // Live-Aktivitäten aktuell halten, solange die App offen ist (jede Minute).
+                // Live-Aktivitäten und Benachrichtigungen aktuell halten, solange die App offen ist (jede Minute).
                 .task(id: scenePhase) {
-                    guard scenePhase == .active else { return }
+                    guard scenePhase == .active else {
+                        // Beim Wechsel in den Hintergrund die nächste Hintergrundabfrage planen.
+                        if scenePhase == .background { TripActivityManager.shared.scheduleBackgroundRefresh() }
+                        return
+                    }
+                    await TripNotifier.shared.requestAuthorizationIfNeeded()
                     while !Task.isCancelled {
                         await TripActivityManager.shared.refreshAll()
+                        await TripNotifier.shared.checkAll()
                         try? await Task.sleep(for: .seconds(60))
                     }
                 }
         }
         // Im Hintergrund: iOS weckt die App gelegentlich kurz (nicht garantiert).
         .backgroundTask(.appRefresh(TripActivityManager.refreshTaskID)) {
-            await TripActivityManager.shared.refreshAll()
+            await TripActivityManager.shared.backgroundRefresh()
         }
     }
 }
