@@ -15,6 +15,7 @@ struct NotificationSettingsView: View {
 
     @Environment(\.scenePhase) private var scenePhase
     @State private var status: UNAuthorizationStatus?
+    @State private var testSent = false
 
     var body: some View {
         Form {
@@ -54,6 +55,18 @@ struct NotificationSettingsView: View {
                 } footer: {
                     Text("Ohne eigenen Server prüft die App selbst: jede Minute, solange sie offen ist, und im Hintergrund, wenn iOS sie kurz weckt. Das ist nicht garantiert und oft nur etwa alle 15 Minuten – eine Meldung kann also später kommen.")
                 }
+
+                Section {
+                    Button {
+                        Task { await sendTest() }
+                    } label: {
+                        Label(testSent ? "Kommt in 5 Sekunden …" : "Testbenachrichtigung senden",
+                              systemImage: testSent ? "checkmark.circle" : "bell.and.waves.left.and.right")
+                    }
+                    .disabled(testSent || status == .denied)
+                } footer: {
+                    Text("Kommt nach 5 Sekunden – so bleibt Zeit, das iPhone zu sperren oder die App zu verlassen.")
+                }
             }
         }
         .navigationTitle("Benachrichtigungen")
@@ -61,6 +74,25 @@ struct NotificationSettingsView: View {
         .onChange(of: enabled) { _, isOn in
             if isOn { Task { await requestAuthorization() } }
         }
+    }
+
+    /// Beispielmeldung, wie sie bei einer Verspätung käme – nach 5 Sekunden.
+    private func sendTest() async {
+        let center = UNUserNotificationCenter.current()
+        if status != .authorized && status != .provisional && status != .ephemeral {
+            await requestAuthorization()
+            guard status == .authorized || status == .provisional || status == .ephemeral else { return }
+        }
+        let content = UNMutableNotificationContent()
+        content.title = "Test: Zur Arbeit"
+        content.body = "So sieht eine Meldung aus – z. B. „Abfahrt S1 +6 min, jetzt 7:42.“"
+        content.sound = .default
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+        try? await center.add(UNNotificationRequest(identifier: "test-\(UUID().uuidString)", content: content,
+                                                    trigger: trigger))
+        testSent = true
+        try? await Task.sleep(for: .seconds(6))
+        testSent = false
     }
 
     private func requestAuthorization() async {
