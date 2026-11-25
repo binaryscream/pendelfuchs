@@ -156,7 +156,8 @@ Ein `ProviderRouter` wählt je nach Region und Verfügbarkeit die Quelle:
   Server, nur Dokumentation.
 - **TLMS** (tlm.solutions): ehrenamtlicher Live-Feed mit Fahrzeugpositionen und Verspätungen aus
   R09-Funktelegrammen (Dresden). **Wird für die Karte genutzt**, siehe unten. Nutzungsbedingungen sind nirgends
-  veröffentlicht – vor einer Veröffentlichung der App beim Projekt nachfragen (Matrix/GitHub `tlm-solutions`).
+  veröffentlicht – vor einer Veröffentlichung der App beim Projekt nachfragen (hello@tlm.solutions oder Matrix
+  `#tlm-solutions:matrix.org`; Entwurf: `docs/TLMS-ANFRAGE.md`).
 
 ## TLMS-Fahrzeugpositionen (Karte)
 

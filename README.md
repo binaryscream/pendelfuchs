@@ -41,7 +41,7 @@ Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingung
     - Anfrage an den VVO versenden (Entwurf: `docs/VVO-ANFRAGE.md`)
     - Live-Aktivität endet nach der Ankunft nur, wenn iOS die App aufweckt – sonst erst nach bis zu 8 h (später ggf. kürzere Wartezeit oder Push-Server, siehe 12)
     - Offizielle VVO-Schnittstellen prüfen (TRIAS, SIRI-ET) statt der inoffiziellen WebAPI; Erlaubnis bei opendata@vvo-online.de klären
-    - TLMS-Nutzungsbedingungen klären, bevor die App veröffentlicht wird (Live-Fahrzeugpositionen in Dresden sind eingebaut)
+    - TLMS-Nutzungsbedingungen klären, bevor die App veröffentlicht wird (Entwurf: `docs/TLMS-ANFRAGE.md`)
     - Kurzbefehle-Automation testen
 
 ### Hinweise zur Live-Aktivität
