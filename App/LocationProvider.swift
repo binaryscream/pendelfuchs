@@ -49,8 +49,10 @@ final class LocationProvider {
                 // Zwischengespeicherte, alte Positionen ignorieren (z. B. vom letzten Ort vor Stunden).
                 if let location = update.location, location.horizontalAccuracy < 500,
                    location.timestamp.timeIntervalSinceNow > -120 {
-                    status = .located(Coordinate(latitude: location.coordinate.latitude,
-                                                 longitude: location.coordinate.longitude))
+                    let coordinate = Coordinate(latitude: location.coordinate.latitude,
+                                                longitude: location.coordinate.longitude)
+                    status = .located(coordinate)
+                    LastLocation.save(coordinate)
                     return
                 }
             }

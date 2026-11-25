@@ -46,12 +46,13 @@ struct StopEntityQuery: EntityStringQuery {
         FavoritesStore(defaults: AppGroup.defaults).stops.compactMap(StopEntity.init)
     }
 
-    /// Mit Suchtext: Treffer der Datenquelle, nach Nähe zu den Favoriten sortiert. Treffer weit weg von allen
-    /// Favoriten (ganz Europa) fallen weg, solange es nähere gibt.
+    /// Mit Suchtext: Treffer der Datenquelle, nach Nähe zu den Favoriten und zum zuletzt bekannten Standort
+    /// sortiert. Treffer weit weg davon (ganz Europa) fallen weg, solange es nähere gibt.
     func entities(matching string: String) async throws -> [StopEntity] {
         let found = try await DataSources.router().searchStops(query: string)
         let anchors = await MainActor.run {
-            FavoritesStore(defaults: AppGroup.defaults).stops.compactMap(\.coordinate)
+            [LastLocation.coordinate].compactMap { $0 }
+                + FavoritesStore(defaults: AppGroup.defaults).stops.compactMap(\.coordinate)
         }
         return StopSearchRegion.narrow(found, around: anchors).prefix(20).compactMap(StopEntity.init)
     }

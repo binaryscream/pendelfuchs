@@ -20,3 +20,19 @@ enum StopSearchRegion {
         return near.isEmpty ? stops : near
     }
 }
+
+/// Zuletzt bekannter Standort der App – für die Widget-Erweiterung, die selbst keinen Standort abfragt.
+/// Auf zwei Nachkommastellen (ca. 1 km) gerundet: Für die Suche in einem Umkreis von 100 km genügt das.
+enum LastLocation {
+    private static let key = "lastLocation.v1"
+
+    static func save(_ coordinate: Coordinate) {
+        func rounded(_ value: Double) -> Double { (value * 100).rounded() / 100 }
+        AppGroup.defaults.set([rounded(coordinate.latitude), rounded(coordinate.longitude)], forKey: key)
+    }
+
+    static var coordinate: Coordinate? {
+        guard let values = AppGroup.defaults.array(forKey: key) as? [Double], values.count == 2 else { return nil }
+        return Coordinate(latitude: values[0], longitude: values[1])
+    }
+}
