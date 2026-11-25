@@ -344,6 +344,20 @@ extension VVODecoding {
     }
 }
 
+extension VVODecoding {
+    /// `/dm/trip` teilt die Strecke am abgefragten Halt in Abschnitte („Undefined“ davor, dann z. B. „Tram“).
+    /// Zusammengesetzt ergibt das den ganzen Verlauf – sonst fehlt alles vor dem eigenen Halt.
+    static func path(fromMapDataSegments segments: [String]) -> [Coordinate] {
+        var joined: [Coordinate] = []
+        for segment in segments {
+            var points = path(fromMapData: segment)
+            if let last = joined.last, let first = points.first, Geo.meters(last, first) < 1 { points.removeFirst() }
+            joined += points
+        }
+        return joined
+    }
+}
+
 extension Array {
     subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
 }
@@ -407,6 +421,6 @@ struct JourneyResponse: Decodable, StatusCarrying {
     func leg(line: String, direction: String, mode: TransportMode) -> TripLeg {
         TripLeg(kind: .ride, mode: mode, line: line, direction: direction,
                 stops: stops.compactMap(\.tripStop),
-                path: mapData?.first.map(VVODecoding.path(fromMapData:)) ?? [])
+                path: VVODecoding.path(fromMapDataSegments: mapData ?? []))
     }
 }

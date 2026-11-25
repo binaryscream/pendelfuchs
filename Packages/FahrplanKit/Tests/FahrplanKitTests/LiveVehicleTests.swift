@@ -83,6 +83,16 @@ import Testing
         #expect(leg().liveMatch(in: vehicles, at: now, preferredRun: 2)?.vehicle.run == 2)
     }
 
+    @Test func usesOnlyTheNewestReportPerVehicle() throws {
+        let now = t0 + 150
+        let vehicles = [
+            vehicle(run: 1, lon: 13.735, at: now - 10),   // neueste Meldung von Umlauf 1
+            vehicle(run: 1, lon: 13.716, at: now - 170),  // ältere Meldung, passt scheinbar besser
+        ]
+        let match = try #require(leg().liveMatch(in: vehicles, at: now, preferredRun: 1))
+        #expect(match.vehicle.reportedAt == now - 10)
+    }
+
     @Test func noMatchOutsideTheRideTime() {
         let vehicles = [vehicle(run: 1, lon: 13.70, at: t0 - 3600)]
         #expect(leg().liveMatch(in: vehicles, at: t0 - 3600) == nil)

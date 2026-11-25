@@ -94,8 +94,15 @@ extension TripLeg {
         let geometry = LegGeometry(self)
         guard geometry.length > 0 else { return nil }
 
-        var best: (match: LiveVehicleMatch, score: Double)?
+        // Der Feed enthält mehrere Meldungen je Fahrzeug (die letzten Minuten) – nur die neueste zählt.
+        var latest: [Int: LiveVehicle] = [:]
         for vehicle in vehicles where vehicle.line == line && now.timeIntervalSince(vehicle.reportedAt) <= 180 {
+            if let known = latest[vehicle.run], known.reportedAt >= vehicle.reportedAt { continue }
+            latest[vehicle.run] = vehicle
+        }
+
+        var best: (match: LiveVehicleMatch, score: Double)?
+        for vehicle in latest.values.sorted(by: { $0.run < $1.run }) {
             guard let projection = Geo.project(vehicle.coordinate, onto: geometry.path),
                   projection.distance <= 120,
                   projection.offset >= geometry.stopOffsets[0] - 200,

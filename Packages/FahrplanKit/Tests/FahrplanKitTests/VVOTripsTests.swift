@@ -45,6 +45,17 @@ import Testing
         #expect(journey.stops.compactMap(\.tripStop).contains { $0.occupancy == .manySeats })
     }
 
+    @Test func journeyPathCoversTheWholeRun() throws {
+        // `/dm/trip` liefert die Strecke in zwei Abschnitten (vor und nach dem abgefragten Halt).
+        let url = try #require(Bundle.module.url(forResource: "vvo-dmtrip", withExtension: "json", subdirectory: "Fixtures"))
+        let journey = try VVODecoding.decode(JourneyResponse.self, from: Data(contentsOf: url))
+        let leg = journey.leg(line: "7", direction: "Weixdorf", mode: .tram)
+        let first = try #require(leg.stops.first?.coordinate)
+        let last = try #require(leg.stops.last?.coordinate)
+        #expect(Geo.meters(try #require(leg.path.first), first) < 300, "beginnt am ersten Halt")
+        #expect(Geo.meters(try #require(leg.path.last), last) < 300, "endet am letzten Halt")
+    }
+
     @Test func stairsAndFootpathsBecomeOneWalk() throws {
         let trip = try #require(try trips().first)
         // S-Bahn, Treppe + Fußweg (zusammengefasst), Straßenbahn
