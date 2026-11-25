@@ -171,7 +171,13 @@ Ein `ProviderRouter` wählt je nach Region und Verfügbarkeit die Quelle:
   dessen Lage am besten zu Fahrplan/Echtzeit passt (Abstand höchstens 2 km, ähnliche Verspätung); der Umlauf
   wird danach festgehalten. Zwischen zwei Meldungen rückt der Marker mit der Fahrplan-Geschwindigkeit weiter,
   höchstens bis zum nächsten Halt. Ohne Treffer bleibt die geschätzte Position.
-- **Last:** abgefragt wird nur bei offener Karte und nur, wenn eine Fahrt infrage kommt – alle 15 Sekunden.
+- **Anzeige:** Karte, Zeitleiste und „Nächster Halt“ (Fahrtdetails und Abfahrtsmonitor) nutzen die Live-Position,
+  mit grünem LIVE-Schild. Für Fahrten aus der Verbindungssuche lädt die App ab 30 Minuten vor der Abfahrt jede
+  Minute den ganzen Lauf der Bahn (`fullRun(of:source:)`) – so wird auch die Bahn erkannt, die noch zum Einstieg
+  unterwegs ist („noch 3 Halte bis zum Einstieg“). Die Live-Aktivität nutzt TLMS nicht: Sie zeigt keine Position,
+  und ohne Push-Server ließe sie sich im Hintergrund ohnehin nicht laufend nachführen.
+- **Last:** abgefragt wird nur, solange eine dieser Ansichten offen ist und eine Fahrt infrage kommt – höchstens
+  alle 12–15 Sekunden, gemeinsam für alle Ansichten (`LiveVehicleFeed`).
 - **VVO-Störungsmeldungen** (`POST /rc`): Baustellen und Störungen je Linie (Antwort > 200 kB).
 
 ## Wagenreihung und DB-Auslastung (vorerst entfernt)

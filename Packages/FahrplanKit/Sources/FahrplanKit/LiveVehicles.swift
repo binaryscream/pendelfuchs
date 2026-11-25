@@ -71,6 +71,17 @@ public struct LiveVehicleMatch: Sendable, Hashable {
     public var offset: Double
 }
 
+/// Live-Zustand einer Fahrt laut TLMS.
+public struct LiveRideState: Sendable, Hashable {
+    public var vehicle: LiveVehicle
+    /// Vermutete Position jetzt (gemeldete Lage, bis zum nächsten Halt weitergerückt).
+    public var position: Coordinate
+    /// Fortschritt auf der Fahrt (vor dem Einstieg: `.notStarted`).
+    public var progress: RideProgress
+    /// Noch nicht am Einstieg: so viele Halte ist das Fahrzeug noch entfernt (0: kommt gleich / steht am Start).
+    public var stopsAway: Int?
+}
+
 extension TripLeg {
     /// Liniennummer im TLMS-Feed, wenn diese Fahrt dort vorkommen kann (Straßenbahn/Stadtbus in Dresden).
     public var tlmsLine: Int? {
@@ -135,19 +146,91 @@ extension TripLeg {
     public func livePosition(of match: LiveVehicleMatch, at now: Date) -> Coordinate? {
         let geometry = LegGeometry(self)
         guard geometry.length > 0 else { return nil }
+        return Geo.point(along: geometry.path, fraction: liveOffset(of: match, at: now, geometry: geometry) / geometry.length)
+    }
+
+    /// Meter entlang der Strecke, an denen das Fahrzeug jetzt vermutlich ist (siehe `livePosition`).
+    func liveOffset(of match: LiveVehicleMatch, at now: Date, geometry: LegGeometry) -> Double {
         let offsets = geometry.stopOffsets
         let elapsed = max(0, now.timeIntervalSince(match.vehicle.reportedAt))
-
-        var offset = match.offset
-        if let next = offsets.firstIndex(where: { $0 > match.offset + 1 }) {
-            var speed = 0.0
-            if next > 0, let from = stops[next - 1].passTime,
-               let to = (stops[next].arrival ?? stops[next].departure)?.expectedTime, to > from {
-                speed = (offsets[next] - offsets[next - 1]) / to.timeIntervalSince(from)
-            }
-            offset = min(offsets[next], match.offset + speed * elapsed)
+        guard let next = offsets.firstIndex(where: { $0 > match.offset + 1 }) else { return match.offset }
+        var speed = 0.0
+        if next > 0, let from = stops[next - 1].passTime,
+           let to = (stops[next].arrival ?? stops[next].departure)?.expectedTime, to > from {
+            speed = (offsets[next] - offsets[next - 1]) / to.timeIntervalSince(from)
         }
-        return Geo.point(along: geometry.path, fraction: offset / geometry.length)
+        return min(offsets[next], match.offset + speed * elapsed)
+    }
+
+    /// Fortschritt, wenn das Fahrzeug bei `offset` Metern entlang der Strecke steht.
+    func progress(atOffset offset: Double, geometry: LegGeometry) -> RideProgress {
+        let offsets = geometry.stopOffsets
+        // Bis 15 m Abstand zählt ein Halt als erreicht (Meldepunkte liegen nicht genau am Haltepunkt).
+        let tolerance = 15.0
+        guard offsets.count >= 2, offset >= offsets[0] - tolerance else { return .notStarted }
+        if offset >= offsets[offsets.count - 1] - tolerance { return .finished }
+        var passed = 0
+        for (index, stopOffset) in offsets.enumerated() where stopOffset <= offset + tolerance { passed = index }
+        passed = min(passed, offsets.count - 2)
+        let span = offsets[passed + 1] - offsets[passed]
+        let fraction = span > 0 ? min(1, max(0, (offset - offsets[passed]) / span)) : 0
+        return .underway(passed: passed, fraction: fraction)
+    }
+
+    /// Live-Zustand dieser Fahrt: wo das Fahrzeug ist und wie weit es auf der Fahrt ist.
+    ///
+    /// - Parameter run: der ganze Lauf des Fahrzeugs (Endhalt bis Endhalt), falls bekannt. Damit wird auch eine
+    ///   Bahn erkannt, die noch zum Einstieg unterwegs ist; sonst nur ab dem Einstieg.
+    public func liveState(in vehicles: [LiveVehicle], at now: Date, run: TripLeg? = nil,
+                          preferredRun: Int? = nil) -> LiveRideState? {
+        let boardIndex = run.flatMap(boardingIndex(in:))
+        let tracked = boardIndex != nil ? run! : self
+        let offsetInRun = boardIndex ?? 0
+
+        guard let match = tracked.liveMatch(in: vehicles, at: now, preferredRun: preferredRun) else { return nil }
+        let geometry = LegGeometry(tracked)
+        guard geometry.length > 0 else { return nil }
+        let offset = tracked.liveOffset(of: match, at: now, geometry: geometry)
+        guard let position = Geo.point(along: geometry.path, fraction: offset / geometry.length) else { return nil }
+
+        // Fortschritt auf dem ganzen Lauf in den Abschnitt dieser Fahrt umrechnen.
+        let progress: RideProgress
+        var stopsAway: Int?
+        switch tracked.progress(atOffset: offset, geometry: geometry) {
+        case .notStarted:
+            progress = .notStarted
+            if offsetInRun == 0 { stopsAway = 0 }
+        case .finished:
+            progress = .finished
+        case .underway(let passed, let fraction):
+            let relative = passed - offsetInRun
+            if relative < 0 {
+                progress = .notStarted
+                stopsAway = -relative
+            } else if relative >= stops.count - 1 {
+                progress = .finished
+            } else {
+                progress = .underway(passed: relative, fraction: fraction)
+            }
+        }
+        return LiveRideState(vehicle: match.vehicle, position: position, progress: progress, stopsAway: stopsAway)
+    }
+
+    /// Wo diese Fahrt im ganzen Lauf beginnt (gleicher Halt, gleiche Planzeit); `nil`, wenn nicht gefunden.
+    func boardingIndex(in run: TripLeg) -> Int? {
+        guard let first = stops.first, let scheduled = departure?.scheduledTime else { return nil }
+        return run.stops.firstIndex { stop in
+            guard let time = (stop.departure ?? stop.arrival)?.scheduledTime,
+                  abs(time.timeIntervalSince(scheduled)) < 90 else { return false }
+            return stop.stopID == first.stopID || stop.name == first.name
+                || stop.name.hasSuffix(first.name) || first.name.hasSuffix(stop.name)
+                || stop.coordinate.flatMap { a in first.coordinate.map { Geo.meters(a, $0) < 150 } } == true
+        }
+    }
+
+    /// Stabiler Schlüssel einer Fahrt, um das einmal gefundene Fahrzeug festzuhalten.
+    public var liveKey: String {
+        "\(line ?? "")|\(stops.first?.name ?? "")|\(Int(departure?.scheduledTime.timeIntervalSince1970 ?? 0))"
     }
 
     /// Verspätung (Sekunden) laut Echtzeit am nächsten Halt nach `date`, falls bekannt.

@@ -236,11 +236,13 @@ struct RideTimeline: View {
     let now: Date
     /// Haltestelle, die hervorgehoben wird (Abfahrtsmonitor) – dann immer aufgeklappt.
     var highlightedStopIndex: Int?
+    /// Fortschritt aus der Live-Position (TLMS); sonst aus Fahrplan/Echtzeit berechnet.
+    var liveProgress: RideProgress?
     @State private var expanded: Bool?
     @AppStorage(StopListExpansion.storageKey) private var expansion = StopListExpansion.collapsed
 
     var body: some View {
-        let progress = leg.progress(at: now)
+        let progress = liveProgress ?? leg.progress(at: now)
         let mode = leg.mode ?? .other
         let count = leg.stops.count
         // Vorgabe aus den Einstellungen; mit hervorgehobenem Halt („Hier“) immer aufgeklappt. Antippen überstimmt beides.
@@ -313,6 +315,8 @@ struct NextStopRow: View {
     let fraction: Double
     let mode: TransportMode
     let now: Date
+    /// Fortschritt stammt aus der Live-Position (TLMS).
+    var isLive = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -320,12 +324,57 @@ struct NextStopRow: View {
                 Image(systemName: "location.fill").foregroundStyle(mode.color)
                 Text("Nächster Halt: \(next.label(style))").font(.subheadline.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 4)
+                if isLive { LivePositionBadge() }
                 if let time = (next.arrival ?? next.departure)?.expectedTime {
                     Text(minutesUntil(time, now: now)).font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
                 }
             }
             ProgressView(value: fraction).tint(mode.color)
                 .animation(.linear(duration: 1), value: fraction)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Grünes „LIVE“-Schild: Angabe beruht auf der gemeldeten Fahrzeugposition (TLMS).
+struct LivePositionBadge: View {
+    var body: some View {
+        Text("LIVE")
+            .font(.caption2.weight(.heavy))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(.green, in: Capsule())
+            .accessibilityLabel("Live-Position")
+    }
+}
+
+enum LiveText {
+    /// „noch 3 Halte entfernt“ usw. für eine Bahn, die zum Einstieg unterwegs ist.
+    static func approaching(stopsAway: Int) -> String {
+        switch stopsAway {
+        case ...0: "gleich da"
+        case 1: "nächster Halt ist dein Einstieg"
+        default: "noch \(stopsAway) Halte bis zum Einstieg"
+        }
+    }
+}
+
+/// „Bahn noch 3 Halte entfernt“ – die eigene Bahn ist laut TLMS schon unterwegs zum Einstieg.
+struct ApproachingRow: View {
+    let state: LiveRideState
+    let mode: TransportMode
+    let now: Date
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: mode.symbolName).foregroundStyle(mode.color)
+            Text("\(mode.displayName): \(LiveText.approaching(stopsAway: state.stopsAway ?? 0))")
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(2)
+            Spacer(minLength: 4)
+            LivePositionBadge()
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)

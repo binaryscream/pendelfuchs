@@ -103,6 +103,44 @@ import Testing
         #expect(leg().liveMatch(in: [vehicle(run: 8, lon: 13.7005, at: now - 20)], at: now)?.vehicle.run == 8)
     }
 
+    /// Ganzer Lauf der Bahn: zwei Halte vor dem Einstieg A, danach wie `leg()`.
+    private var run: TripLeg {
+        var run = leg()
+        func stop(_ name: String, lon: Double, minutes: Double) -> TripStop {
+            let time = TimePoint(scheduledTime: t0 + minutes * 60)
+            return TripStop(stopID: "run-" + name, name: name, place: nil, platform: nil, arrival: time,
+                            departure: time, coordinate: Coordinate(latitude: 51.05, longitude: lon))
+        }
+        run.stops.insert(contentsOf: [stop("P", lon: 13.62, minutes: -10), stop("Q", lon: 13.66, minutes: -5)], at: 0)
+        return run
+    }
+
+    @Test func approachingTramIsFoundOnTheFullRun() throws {
+        let now = t0 - 120
+        let approaching = vehicle(run: 3, lon: 13.684, at: now - 5)
+        #expect(leg().liveState(in: [approaching], at: now) == nil, "ohne ganzen Lauf liegt sie vor der Strecke")
+
+        let state = try #require(leg().liveState(in: [approaching], at: now, run: run))
+        #expect(state.progress == .notStarted)
+        #expect(state.stopsAway == 1, "nächster Halt ist der Einstieg")
+        #expect(abs(state.position.longitude - 13.684) < 0.002)
+    }
+
+    @Test func liveProgressFollowsTheReportedPosition() throws {
+        // Laut Fahrplan erst kurz nach A – gemeldet ist die Bahn aber schon kurz vor B (wenig später als erwartet).
+        let now = t0 + 270
+        let state = try #require(leg().liveState(in: [vehicle(run: 3, lon: 13.735, at: now - 5)], at: now, run: run))
+        guard case .underway(let passed, let fraction) = state.progress else {
+            Issue.record("sollte unterwegs sein"); return
+        }
+        #expect(passed == 0)
+        #expect(fraction > 0.85 && fraction < 1)
+        #expect(state.stopsAway == nil)
+
+        let atEnd = try #require(leg().liveState(in: [vehicle(run: 3, lon: 13.78, at: t0 + 600)], at: t0 + 610))
+        #expect(atEnd.progress == .finished)
+    }
+
     @Test func noMatchOutsideTheRideTime() {
         let vehicles = [vehicle(run: 1, lon: 13.70, at: t0 - 3600)]
         #expect(leg().liveMatch(in: vehicles, at: t0 - 3600) == nil)

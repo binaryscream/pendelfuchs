@@ -44,6 +44,11 @@ struct DepartureJourneyView: View {
         .fullScreenCover(isPresented: $showMap) {
             if let leg { TripMapView(trip: Trip(legs: [leg], interchanges: 0, source: departure.source)) }
         }
+        // Live-Positionen (TLMS), sobald klar ist, dass die Fahrt dafür infrage kommt.
+        .task(id: leg?.tlmsLine) {
+            guard leg?.tlmsLine != nil else { return }
+            await LiveVehicleFeed.shared.keepUpdated()
+        }
         // Echtzeit alle 30 Sekunden neu laden, solange die App sichtbar ist.
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
@@ -55,7 +60,8 @@ struct DepartureJourneyView: View {
     }
 
     private func content(leg: TripLeg, now: Date) -> some View {
-        let progress = leg.progress(at: now)
+        let live = LiveVehicleFeed.shared.state(for: leg, at: now)
+        let progress = live?.progress ?? leg.progress(at: now)
         return List {
             Section {
                 RideHeader(leg: leg, stopIndex: highlightedIndex(in: leg))
@@ -69,9 +75,11 @@ struct DepartureJourneyView: View {
 
             Section {
                 if case .underway(let passed, let fraction) = progress, passed + 1 < leg.stops.count {
-                    NextStopRow(next: leg.stops[passed + 1], fraction: fraction, mode: leg.mode ?? .other, now: now)
+                    NextStopRow(next: leg.stops[passed + 1], fraction: fraction, mode: leg.mode ?? .other, now: now,
+                                isLive: live != nil)
                 }
-                RideTimeline(leg: leg, now: now, highlightedStopIndex: highlightedIndex(in: leg))
+                RideTimeline(leg: leg, now: now, highlightedStopIndex: highlightedIndex(in: leg),
+                             liveProgress: live?.progress)
             }
         }
         .listSectionSpacing(.compact)

@@ -9,9 +9,10 @@ import SwiftUI
 /// Kartendarstellung: MapLibre (Open Source), Kartendaten: OpenFreeMap/OpenStreetMap.
 struct TripMapView: View {
     let trip: Trip
+    /// Ganzer Lauf je Fahrt (Index in `trip.legs`), falls bekannt – dann ist auch die anrollende Bahn zu sehen.
+    var runs: [Int: TripLeg] = [:]
 
-    /// Zuletzt geladene Live-Positionen (nur für Straßenbahnen/Stadtbusse in Dresden).
-    @State private var liveVehicles: [LiveVehicle] = []
+    private var feed: LiveVehicleFeed { .shared }
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -20,7 +21,7 @@ struct TripMapView: View {
         ZStack(alignment: .top) {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 TripMapRepresentable(trip: trip, now: context.date, dark: colorScheme == .dark,
-                                     liveVehicles: liveVehicles)
+                                     live: liveStates(at: context.date))
                     .ignoresSafeArea()
             }
 
@@ -43,18 +44,17 @@ struct TripMapView: View {
         .overlay(alignment: .bottomLeading) {
             attribution
         }
-        .task { await pollLiveVehicles() }
+        // TLMS nur abfragen, wenn eine Fahrt der Verbindung überhaupt im Feed vorkommen kann.
+        .task { if trip.mayHaveLiveVehicles { await feed.keepUpdated() } }
     }
 
-    /// Lädt die TLMS-Positionen alle 15 Sekunden, solange die Karte offen ist – aber nur, wenn eine Fahrt der
-    /// Verbindung überhaupt im Feed vorkommen kann (ehrenamtlicher Dienst, keine unnötigen Abfragen).
-    private func pollLiveVehicles() async {
-        guard trip.legs.contains(where: { $0.tlmsLine != nil }) else { return }
-        let client = TLMSClient()
-        while !Task.isCancelled {
-            if let vehicles = try? await client.vehicles() { liveVehicles = vehicles }
-            try? await Task.sleep(for: .seconds(15))
+    /// Live-Zustand je Fahrt (Index in `trip.legs`), soweit TLMS ein passendes Fahrzeug meldet.
+    private func liveStates(at now: Date) -> [Int: LiveRideState] {
+        var states: [Int: LiveRideState] = [:]
+        for (index, leg) in trip.legs.enumerated() where leg.kind == .ride {
+            states[index] = feed.state(for: leg, run: runs[index], at: now)
         }
+        return states
     }
 
     private var legend: some View {
@@ -80,7 +80,7 @@ struct TripMapView: View {
             Link("OpenFreeMap", destination: URL(string: "https://openfreemap.org")!)
             Link("© OpenMapTiles", destination: URL(string: "https://www.openmaptiles.org/")!)
             Link("© OpenStreetMap", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
-            if !liveVehicles.isEmpty {
+            if trip.mayHaveLiveVehicles, !feed.vehicles.isEmpty {
                 Link("Live: TLMS", destination: URL(string: "https://tlm.solutions")!)
             }
         }
@@ -99,7 +99,7 @@ private struct TripMapRepresentable: UIViewRepresentable {
     let trip: Trip
     let now: Date
     let dark: Bool
-    let liveVehicles: [LiveVehicle]
+    let live: [Int: LiveRideState]
 
     static func styleURL(dark: Bool) -> URL {
         URL(string: "https://tiles.openfreemap.org/styles/\(dark ? "dark" : "positron")")!
@@ -125,7 +125,7 @@ private struct TripMapRepresentable: UIViewRepresentable {
             coordinator.dark = dark
             map.styleURL = Self.styleURL(dark: dark)
         }
-        coordinator.liveVehicles = liveVehicles
+        coordinator.live = live
         coordinator.updateVehicles(on: map, now: now)
     }
 
@@ -133,9 +133,7 @@ private struct TripMapRepresentable: UIViewRepresentable {
     final class Coordinator: NSObject, @preconcurrency MLNMapViewDelegate {
         let trip: Trip
         var dark = false
-        var liveVehicles: [LiveVehicle] = []
-        /// Einmal gefundenes Live-Fahrzeug (Umlauf) pro Abschnitt – damit der Marker nicht zwischen Fahrzeugen springt.
-        private var liveRuns: [Int: Int] = [:]
+        var live: [Int: LiveRideState] = [:]
         /// Ein Fahrzeug-Marker pro gerade befahrenem Abschnitt.
         private var vehicles: [Int: VehicleAnnotation] = [:]
         private var didFitCamera = false
@@ -250,16 +248,8 @@ private struct TripMapRepresentable: UIViewRepresentable {
         /// sonst geschätzt anhand von Fahrplan/Echtzeit.
         func updateVehicles(on map: MLNMapView, now: Date) {
             for (index, leg) in trip.legs.enumerated() where leg.kind == .ride {
-                var position: Coordinate?
-                var live: LiveVehicle?
-                if let match = leg.liveMatch(in: liveVehicles, at: now, preferredRun: liveRuns[index]),
-                   let livePosition = leg.livePosition(of: match, at: now) {
-                    liveRuns[index] = match.vehicle.run
-                    position = livePosition
-                    live = match.vehicle
-                } else {
-                    position = leg.estimatedPosition(at: now)
-                }
+                let live = self.live[index]
+                let position = live?.position ?? leg.estimatedPosition(at: now)
 
                 // Wechsel zwischen live und geschätzt: Marker neu anlegen (anderes Aussehen).
                 if let existing = vehicles[index], existing.isLive != (live != nil) {
@@ -315,12 +305,13 @@ private final class VehicleAnnotation: MLNPointAnnotation {
         subtitle = "Geschätzte Position"
     }
 
-    func update(live: LiveVehicle?, now: Date) {
+    func update(live: LiveRideState?, now: Date) {
         guard let live else { return }
-        let seconds = max(0, Int(now.timeIntervalSince(live.reportedAt)))
+        let seconds = max(0, Int(now.timeIntervalSince(live.vehicle.reportedAt)))
         let age = seconds < 60 ? "vor \(seconds) s" : "vor \(seconds / 60) min"
-        let newSubtitle = "Live-Position (TLMS), gemeldet \(age)"
-        if subtitle != newSubtitle { subtitle = newSubtitle }
+        var text = "Live-Position (TLMS), gemeldet \(age)"
+        if let away = live.stopsAway { text += " · \(LiveText.approaching(stopsAway: away))" }
+        if subtitle != text { subtitle = text }
     }
 
     required init?(coder: NSCoder) { fatalError("nicht unterstützt") }

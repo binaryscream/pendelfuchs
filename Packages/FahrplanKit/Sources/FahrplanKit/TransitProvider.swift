@@ -51,9 +51,15 @@ extension TransitProvider {
     /// also auch die Halte vor dem Einstieg und nach dem Ausstieg. `nil`, wenn die Quelle ihn nicht liefert.
     /// Findet die Fahrt über die Abfahrtstafel am Einstieg, weil Verbindungsabfragen keine Fahrt-Kennung enthalten.
     public func fullRun(of trip: Trip) async -> TripLeg? {
-        guard trip.rides.count == 1, let ride = trip.rides.first, let board = ride.stops.first,
+        guard trip.rides.count == 1, let ride = trip.rides.first else { return nil }
+        return await fullRun(of: ride, source: trip.source)
+    }
+
+    /// Der komplette Lauf des Fahrzeugs für eine einzelne Fahrt einer Verbindung (siehe `fullRun(of:)`).
+    public func fullRun(of ride: TripLeg, source: ProviderID?) async -> TripLeg? {
+        guard ride.kind == .ride, let board = ride.stops.first,
               let scheduled = ride.departure?.scheduledTime, !ride.isCancelled else { return nil }
-        let stop = Stop(provider: trip.source ?? .transitous, stopID: board.stopID, name: board.name, place: board.place)
+        let stop = Stop(provider: source ?? .transitous, stopID: board.stopID, name: board.name, place: board.place)
         do {
             let departures = try await departures(at: stop, limit: 12, from: scheduled > .now ? scheduled : nil)
             guard let match = departures.first(where: {

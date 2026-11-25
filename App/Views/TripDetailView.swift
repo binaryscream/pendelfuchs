@@ -10,7 +10,10 @@ struct TripDetailView: View {
     let query: TripQuery
 
     @Environment(SavedTripsStore.self) private var savedTrips
+    @Environment(\.transit) private var transit
     @State private var editing: SavedTrip?
+    /// Ganzer Lauf je Fahrt (Index in `trip.legs`) – damit die Live-Position auch vor dem Einstieg passt.
+    @State private var runs: [Int: TripLeg] = [:]
     /// Für die Live-Aktivität einer nicht gemerkten Fahrt – einmal erzeugt, damit die ID stabil bleibt.
     @State private var adHoc: SavedTrip
     @State private var showMap = false
@@ -55,7 +58,26 @@ struct TripDetailView: View {
                 }
             }
             .sheet(item: $editing) { SavedTripSheet(id: $0.id, isNew: sheetIsNew) }
-            .fullScreenCover(isPresented: $showMap) { TripMapView(trip: trip) }
+            .fullScreenCover(isPresented: $showMap) { TripMapView(trip: trip, runs: runs) }
+            // Live-Positionen (TLMS) nur für Straßenbahnen/Stadtbusse in Dresden und nur bis zur Ankunft.
+            .task {
+                guard trip.mayHaveLiveVehicles, trip.arrival.expectedTime > .now else { return }
+                await LiveVehicleFeed.shared.keepUpdated()
+            }
+            .task { await loadRuns() }
+    }
+
+    /// Lädt den ganzen Lauf jeder Fahrt, die live verfolgt werden kann (jede Minute neu, wegen der Echtzeit).
+    private func loadRuns() async {
+        while !Task.isCancelled, trip.arrival.expectedTime > .now {
+            for (index, leg) in trip.legs.enumerated() where leg.tlmsLine != nil {
+                // Erst kurz vor der Abfahrt interessant (anrollende Bahn).
+                guard let start = leg.departure?.expectedTime, start.timeIntervalSinceNow < 30 * 60,
+                      let end = leg.arrival?.expectedTime, end > .now else { continue }
+                if let run = await transit.fullRun(of: leg, source: trip.source) { runs[index] = run }
+            }
+            try? await Task.sleep(for: .seconds(60))
+        }
     }
 
     private var content: some View {
@@ -80,10 +102,11 @@ struct TripDetailView: View {
                 }
             }
 
-            ForEach(Array(trip.legs.enumerated()), id: \.offset) { _, leg in
+            ForEach(Array(trip.legs.enumerated()), id: \.offset) { index, leg in
                 switch leg.kind {
                 case .ride:
-                    RideSection(leg: leg, now: now)
+                    RideSection(leg: leg, now: now,
+                                live: LiveVehicleFeed.shared.state(for: leg, run: runs[index], at: now))
                 case .walk:
                     Section {
                         Label(walkText(leg), systemImage: "figure.walk")
@@ -144,20 +167,26 @@ struct TripDetailView: View {
 struct RideSection: View {
     let leg: TripLeg
     let now: Date
+    /// Live-Zustand laut TLMS, falls ein passendes Fahrzeug gemeldet ist.
+    var live: LiveRideState?
     @AppStorage(AlertDisplay.storageKey, store: AppGroup.defaults) private var alertDisplay = AlertDisplay.affected
 
     var body: some View {
-        let progress = leg.progress(at: now)
+        let progress = live?.progress ?? leg.progress(at: now)
         Section {
             RideHeader(leg: leg)
 
             ForEach(alertDisplay.filter(leg)) { AlertRow(alert: $0) }
 
+            if let live, live.stopsAway != nil {
+                ApproachingRow(state: live, mode: leg.mode ?? .other, now: now)
+            }
             if case .underway(let passed, let fraction) = progress, passed + 1 < leg.stops.count {
-                NextStopRow(next: leg.stops[passed + 1], fraction: fraction, mode: leg.mode ?? .other, now: now)
+                NextStopRow(next: leg.stops[passed + 1], fraction: fraction, mode: leg.mode ?? .other, now: now,
+                            isLive: live != nil)
             }
 
-            RideTimeline(leg: leg, now: now)
+            RideTimeline(leg: leg, now: now, liveProgress: live?.progress)
         } footer: {
             if !leg.notes.isEmpty {
                 Text(leg.notes.joined(separator: " · "))

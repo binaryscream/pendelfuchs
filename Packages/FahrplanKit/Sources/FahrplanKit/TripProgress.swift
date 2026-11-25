@@ -3,7 +3,7 @@
 import Foundation
 
 /// Wo befindet sich eine Fahrt gerade? Berechnet aus Plan-/Echtzeitdaten und der aktuellen Uhrzeit.
-public enum RideProgress: Equatable, Sendable {
+public enum RideProgress: Hashable, Sendable {
     case notStarted
     /// Zwischen Halt `passed` und `passed + 1`; `fraction` 0…1 auf dem Abschnitt.
     case underway(passed: Int, fraction: Double)
