@@ -46,7 +46,8 @@ Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingung
 ### Hinweise zur Live-Aktivität
 
 - Countdown und Fortschrittsbalken laufen auf dem Gerät selbst weiter (kein Server nötig).
-- Alle Fahrten stehen mit ihren Zeiten in der Aktivität (z. B. S1 18:36–18:58, Umstieg, 7 19:04–19:10).
+- Die noch offenen Fahrten stehen mit ihren Zeiten in der Aktivität (z. B. S1 18:36–18:58, Umstieg, 7 19:04–19:10);
+  erledigte fallen heraus.
 - An jedem Phasenwechsel (Abfahrt, Umstieg, Ankunft) zeichnet iOS die Aktivität neu; Knöpfe „↻“ (Echtzeit holen)
   und „✕“ (beenden) direkt in der Aktivität. Ohne Push-Server endet sie automatisch nur, wenn die App läuft.
 - Echtzeitdaten (Verspätungen) werden aktualisiert, solange die App offen ist (jede Minute) und im

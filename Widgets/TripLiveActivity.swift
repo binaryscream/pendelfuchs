@@ -157,17 +157,20 @@ private struct TripProgressBar: View {
     }
 }
 
-/// Alle Fahrten mit ihren Zeiten, z. B. „S1 07:06 Pirna → 07:28 Dresden Hbf“ und darunter der Bus.
-/// Steht immer vollständig da – so sieht man nach der ersten Fahrt sofort, wann die zweite fährt,
-/// auch wenn iOS die Aktivität gerade nicht neu gezeichnet hat.
+/// Die noch offenen Fahrten mit ihren Zeiten, z. B. „S1 07:06 Pirna → 07:28 Dresden Hbf“ und darunter der Bus –
+/// so sieht man nach der ersten Fahrt sofort, wann die zweite fährt.
 private struct RideChain: View {
     private let style = StopNameStyle.current
     let state: TripActivityState
 
     var body: some View {
+        // Erledigte Fahrten fallen heraus (iOS zeichnet die Aktivität an jedem Phasenwechsel neu);
+        // nach der Ankunft bleibt die letzte Fahrt stehen.
+        let open = state.rides.filter { $0.arrival.expectedTime > .now }
+        let shown = Array((open.isEmpty ? Array(state.rides.suffix(1)) : open).prefix(3))
         VStack(alignment: .leading, spacing: 3) {
-            ForEach(Array(state.rides.prefix(3).enumerated()), id: \.offset) { index, ride in
-                if index > 0, let previous = state.rides[safe: index - 1] {
+            ForEach(Array(shown.enumerated()), id: \.offset) { index, ride in
+                if index > 0, let previous = shown[safe: index - 1] {
                     let minutes = Int((ride.departure.expectedTime.timeIntervalSince(previous.arrival.expectedTime) / 60).rounded())
                     Text("Umstieg · \(max(0, minutes)) min")
                         .font(.caption2)
