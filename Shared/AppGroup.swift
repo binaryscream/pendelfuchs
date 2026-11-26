@@ -57,6 +57,21 @@ enum DeepLink {
         return components.url
     }
 
+    /// Gemerkte Fahrt: `fahrplanxl://saved?id=<UUID>`.
+    static func url(forSavedTrip id: UUID) -> URL? {
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = "saved"
+        components.queryItems = [URLQueryItem(name: "id", value: id.uuidString)]
+        return components.url
+    }
+
+    static func savedTrip(from url: URL) -> UUID? {
+        guard url.scheme == scheme, url.host == "saved" else { return nil }
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "id" })?.value.flatMap(UUID.init(uuidString:))
+    }
+
     static func route(from url: URL) -> (from: Stop, to: Stop, trip: TripTarget?)? {
         guard url.scheme == scheme, url.host == "route",
               let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,

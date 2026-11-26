@@ -9,6 +9,7 @@ struct FahrplanWidgets: WidgetBundle {
     var body: some Widget {
         DeparturesWidget()
         RouteWidget()
+        NextTripWidget()
         TripLiveActivity()
     }
 }

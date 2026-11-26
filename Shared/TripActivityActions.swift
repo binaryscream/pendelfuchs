@@ -8,6 +8,28 @@ import Foundation
 enum TripActivityActions {
     @MainActor static var refresh: (() async -> Void)?
     @MainActor static var end: ((UUID) async -> Void)?
+    @MainActor static var start: ((UUID) async -> Void)?
+}
+
+/// Knopf „Live“ im Widget „Meine nächste Fahrt“: startet die Live-Aktivität dieser gemerkten Fahrt.
+struct StartSavedTripActivityIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Live-Aktivität dieser Fahrt starten"
+    static let isDiscoverable = false
+
+    @Parameter(title: "Fahrt")
+    var tripID: String
+
+    init() {}
+
+    init(id: UUID) {
+        tripID = id.uuidString
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        if let id = UUID(uuidString: tripID) { await TripActivityActions.start?(id) }
+        return .result()
+    }
 }
 
 /// Knopf „Aktualisieren“ in der Live-Aktivität: holt Echtzeitdaten und schaltet auf die aktuelle Phase.

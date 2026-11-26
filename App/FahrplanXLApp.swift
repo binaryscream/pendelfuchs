@@ -30,6 +30,10 @@ struct FahrplanXLApp: App {
         // Knöpfe in der Live-Aktivität („Aktualisieren“, „Beenden“) laufen im App-Prozess.
         TripActivityActions.refresh = { await TripActivityManager.shared.refreshAll() }
         TripActivityActions.end = { await TripActivityManager.shared.end($0) }
+        TripActivityActions.start = { id in
+            guard let saved = SavedTripsStore(defaults: AppGroup.defaults).trip(id: id) else { return }
+            try? await TripActivityManager.shared.start(saved)
+        }
         // Benachrichtigungen auch zeigen, während die App offen ist.
         UNUserNotificationCenter.current().delegate = NotificationPresenter.shared
     }
@@ -52,6 +56,10 @@ struct FahrplanXLApp: App {
                         // Strecken-Widget: Verbindungssuche mit dieser Strecke öffnen.
                         selectedTab = .trips
                         openRoute = RouteLink(query: TripQuery(origin: route.from, destination: route.to), trip: route.trip)
+                    } else if let id = DeepLink.savedTrip(from: url) {
+                        // Widget „Meine nächste Fahrt“: die Fahrt unter „Meine Fahrten“ öffnen.
+                        selectedTab = .saved
+                        openSavedTrip = id
                     }
                 }
                 // Angetippte Benachrichtigung: die betroffene Fahrt unter „Meine Fahrten“ öffnen.
@@ -75,6 +83,8 @@ struct FahrplanXLApp: App {
                 .task { FahrplanShortcuts.updateAppShortcutParameters() }
                 .onChange(of: savedTrips.trips) {
                     FahrplanShortcuts.updateAppShortcutParameters()
+                    // Das Widget „Meine nächste Fahrt“ zeigt gemerkte Fahrten.
+                    WidgetCenter.shared.reloadTimelines(ofKind: "de.fahrplanxl.nexttrip")
                     // Gleich nach dem Anlegen der ersten regelmäßigen Fahrt um Erlaubnis fragen – nicht erst
                     // beim nächsten Öffnen der App.
                     Task { await TripNotifier.shared.requestAuthorizationIfNeeded() }
