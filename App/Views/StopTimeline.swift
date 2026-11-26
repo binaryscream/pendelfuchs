@@ -396,7 +396,7 @@ struct TripStatusView: View {
         case .alightingCancelled(_, let stop):
             "Ausstieg entfällt: \(stop.label(style))"
         case .connectionMissed(let line, let stop):
-            "Anschluss \(line ?? "") verpasst in \(stop.label(style))"
+            "\(line.map { "Anschluss \($0)" } ?? "Anschluss") verpasst in \(stop.label(style))"
         }
     }
 
@@ -433,7 +433,7 @@ struct TripStatusView: View {
 /// „5 min“, „1 h 20 min“ (aufgerundet, mindestens 1 min).
 func remaining(until date: Date, now: Date) -> String {
     let minutes = max(1, Int((date.timeIntervalSince(now) / 60).rounded(.up)))
-    return minutes < 60 ? "\(minutes) min" : "\(minutes / 60) h \(minutes % 60) min"
+    return minutes < 60 ? "\(minutes) min" : String(format: "%d h %02d min", minutes / 60, minutes % 60)
 }
 
 /// „in 5 min“ bzw. „jetzt“.
@@ -448,7 +448,7 @@ extension TripDisruption {
         case .rideCancelled(let line): "\(line ?? "Fahrt") fällt aus"
         case .boardingCancelled: "Einstieg entfällt"
         case .alightingCancelled: "Ausstieg entfällt"
-        case .connectionMissed(let line, _): "Anschluss \(line ?? "") verpasst"
+        case .connectionMissed(let line, _): "\(line.map { "Anschluss \($0)" } ?? "Anschluss") verpasst"
         }
     }
 

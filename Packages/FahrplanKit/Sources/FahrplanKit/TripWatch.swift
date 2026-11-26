@@ -83,7 +83,7 @@ public enum TripWatch {
             case .alightingCancelled(let line, let stop):
                 add(.cancellation, "\(line ?? "Fahrt"): Halt \(stop.name) entfällt – dort kein Ausstieg.\(replacementText)")
             case .connectionMissed(let line, let stop):
-                add(.connection, "Anschluss \(line ?? "") in \(stop.name) ist nicht zu schaffen.\(replacementText)")
+                add(.connection, "\(line.map { "Anschluss \($0)" } ?? "Anschluss") in \(stop.name) ist nicht zu schaffen.\(replacementText)")
             }
         }
         memory.notifiedDisruption = disruptionKey
@@ -94,7 +94,7 @@ public enum TripWatch {
         if let tight = tightConnection(in: trip, limit: settings.tightConnectionMinutes) {
             if !memory.notifiedTightConnection {
                 let minutes = tight.minutes == 0 ? "keine Minute" : tight.minutes == 1 ? "nur 1 Minute" : "nur \(tight.minutes) Minuten"
-                add(.connection, "Anschluss \(tight.line ?? "") in \(tight.stop): \(minutes) zum Umsteigen.")
+                add(.connection, "\(tight.line.map { "Anschluss \($0)" } ?? "Anschluss") in \(tight.stop): \(minutes) zum Umsteigen.")
                 memory.notifiedTightConnection = true
             }
         } else {
@@ -113,19 +113,20 @@ public enum TripWatch {
                 + "statt \(word) \(stop.scheduledPlatform ?? "?").")
         }
 
-        // Verspätung: vor der Abfahrt die Abfahrt, danach die Ankunft. Erneut gemeldet, wenn sie um
-        // mindestens 5 Minuten wächst – oder wieder unter die Schwelle fällt.
+        // Verspätung: vor der Abfahrt die Abfahrt, danach die Ankunft. Erneut gemeldet, wenn sie sich um
+        // mindestens 5 Minuten ändert – oder deutlich (2 Minuten) unter die Schwelle fällt. Der Abstand
+        // verhindert, dass eine um die Schwelle pendelnde Verspätung immer neue Meldungen auslöst.
         let started = trip.departure.expectedTime <= now
         let point = started ? trip.arrival : trip.departure
         let delay = point.delayMinutes ?? 0
         if delay >= settings.delayThreshold {
-            if memory.notifiedDelay == nil || delay >= (memory.notifiedDelay ?? 0) + 5 {
+            if memory.notifiedDelay == nil || abs(delay - (memory.notifiedDelay ?? 0)) >= 5 {
                 let time = point.expectedTime.formatted(.dateTime.hour().minute())
                 let what = started ? "Ankunft" : "Abfahrt \(trip.rides.first?.line ?? "")".trimmingCharacters(in: .whitespaces)
                 add(.delay, "\(what) +\(delay) min, jetzt \(time).")
                 memory.notifiedDelay = delay
             }
-        } else if let notified = memory.notifiedDelay, delay < settings.delayThreshold {
+        } else if let notified = memory.notifiedDelay, delay <= max(settings.delayThreshold - 2, 0) {
             if !started {
                 add(.delay, "Wieder fast pünktlich: Abfahrt \(trip.departure.expectedTime.formatted(.dateTime.hour().minute())) (statt +\(notified) min).")
             }

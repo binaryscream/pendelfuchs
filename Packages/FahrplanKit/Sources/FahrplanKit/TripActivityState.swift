@@ -59,7 +59,7 @@ public struct TripActivityState: Codable, Hashable, Sendable {
             return Ride(line: leg.line ?? "?", mode: leg.mode ?? .other, direction: leg.direction,
                         fromName: first.name, fromPlace: first.place, fromPlatform: first.platform,
                         toName: last.name, toPlace: last.place, toPlatform: last.platform,
-                        departure: dep, arrival: arr, isCancelled: leg.isCancelled)
+                        departure: dep, arrival: arr, isCancelled: leg.isUnusable)
                 .with { $0.fromScheduledPlatform = first.platformChanged ? first.scheduledPlatform : nil }
         }
         self.init(rides: rides, updatedAt: updatedAt, note: note)

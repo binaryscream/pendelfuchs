@@ -74,6 +74,8 @@ struct TripOptionsSheet: View {
             }
         }
         .presentationDetents([.large])
+        // Ohne Verkehrsmittel fände die Suche nichts – dann auch nicht per Wischen schließen.
+        .interactiveDismissDisabled(options.allowedModes.isEmpty)
     }
 
     private func modeBinding(_ group: ModeGroup) -> Binding<Bool> {

@@ -57,16 +57,22 @@ struct DeparturesProvider: AppIntentTimelineProvider {
         }
 
         do {
-            let departures = CancellationMemory.process(try await DataSources.router().departures(at: stop, limit: 20), at: stop)
+            let departures = CancellationMemory.process(try await DataSources.router().departures(at: stop, limit: 40), at: stop)
                 .filter { !CancelledDisplay.hide || $0.state != .cancelled }
             // Ein Eintrag pro Minute: bereits abgefahrene Verbindungen fallen heraus.
             let now = Date.now
             let start = Calendar.current.dateInterval(of: .minute, for: now)?.start ?? now
-            return (0..<15).map { minute in
+            // Für 45 Minuten vorausplanen: iOS lädt oft später neu als gewünscht, und ohne Einträge bliebe
+            // die Anzeige mit alten Minuten stehen.
+            let entries = (0..<45).compactMap { minute -> DeparturesEntry? in
                 let date = start.addingTimeInterval(Double(minute) * 60)
                 let upcoming = departures.filter { $0.expectedTime >= date.addingTimeInterval(-30) }
-                return DeparturesEntry(date: minute == 0 ? now : date, stop: stop, content: .departures(upcoming))
+                // Geht nur die geladene Liste zu Ende, nicht „Keine Abfahrten“ behaupten – lieber hier aufhören.
+                if minute > 0, upcoming.isEmpty, !departures.isEmpty { return nil }
+                return DeparturesEntry(date: minute == 0 ? now : date, stop: stop,
+                                       content: .departures(Array(upcoming.prefix(12))))
             }
+            return entries
         } catch {
             return [DeparturesEntry(date: .now, stop: stop, content: .message("Keine Verbindung zum Fahrplandienst."))]
         }

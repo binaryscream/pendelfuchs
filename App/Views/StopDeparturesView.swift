@@ -44,7 +44,9 @@ struct StopDeparturesView: View {
                     moreButton("Später", systemImage: "chevron.down", direction: .later)
                 }
             } else if !departures.isEmpty {
-                if lines.count > 1 {
+                // Auch bei nur noch einer Linie zeigen, solange ein Filter gesetzt ist – sonst lässt er sich
+                // nicht mehr aufheben.
+                if lines.count > 1 || !lineFilter.isEmpty || directionFilter != nil {
                     Section { filterBar }
                 }
                 Section {
@@ -79,6 +81,11 @@ struct StopDeparturesView: View {
                         }
                     }
                 } footer: {
+                    if errorMessage != nil {
+                        Label("Aktualisieren fehlgeschlagen – die Liste kann veraltet sein.",
+                              systemImage: "wifi.exclamationmark")
+                            .foregroundStyle(.orange)
+                    }
                     if let lastUpdate {
                         Text("Stand \(lastUpdate.formatted(date: .omitted, time: .shortened)) · Daten: \(departures.first?.source?.displayName ?? "–")")
                     }

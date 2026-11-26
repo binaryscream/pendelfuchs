@@ -12,12 +12,15 @@ struct HomeView: View {
     @Environment(LocationProvider.self) private var location
     @Environment(\.transit) private var transit
     @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var query = ""
     @State private var searchResults: [Stop] = []
     @State private var searchError: String?
     @State private var nearby: [Stop] = []
     @State private var nearbyError: String?
+    /// Erst nach der ersten Antwort darf „Keine Haltestellen gefunden“ erscheinen.
+    @State private var nearbyLoaded = false
     @State private var path = NavigationPath()
 
     var body: some View {
@@ -36,7 +39,8 @@ struct HomeView: View {
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: "Haltestelle suchen")
             .task(id: query) { await search() }
-            .task { await loadNearby() }
+            // Auch bei der Rückkehr in die App: neuer Ort, oder die Standortfreigabe wurde gerade erteilt.
+            .task(id: scenePhase) { if scenePhase == .active { await loadNearby() } }
             .refreshable { await loadNearby() }
             .toolbar {
                 if !favorites.stops.isEmpty && query.isEmpty {
@@ -81,11 +85,16 @@ struct HomeView: View {
                         if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                     }
                 }
-            case .failed:
-                Text("Standort konnte nicht ermittelt werden.").foregroundStyle(.secondary)
+            case .failed where nearby.isEmpty:
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Standort konnte nicht ermittelt werden.").foregroundStyle(.secondary)
+                    Button("Erneut versuchen") { Task { await loadNearby() } }
+                }
             case .idle:
                 locatingRow
             case .locating where nearby.isEmpty:
+                locatingRow
+            case .located where !nearbyLoaded:
                 locatingRow
             default:
                 if let nearbyError {
@@ -133,8 +142,9 @@ struct HomeView: View {
             let anchors = [location.coordinate].compactMap { $0 } + favorites.stops.compactMap(\.coordinate)
             searchResults = StopSearchRegion.narrow(try await transit.searchStops(query: q), around: anchors)
             searchError = searchResults.isEmpty ? "Keine Haltestelle gefunden." : nil
-        } catch is CancellationError {
         } catch {
+            // Beim Weitertippen wird die laufende Suche abgebrochen – das ist kein Fehler.
+            guard !Task.isCancelled, !(error is CancellationError) else { return }
             searchError = error.localizedDescription
         }
     }
@@ -145,9 +155,11 @@ struct HomeView: View {
         do {
             nearby = try await transit.nearbyStops(around: coordinate)
             nearbyError = nil
-        } catch is CancellationError {
+            nearbyLoaded = true
         } catch {
+            guard !Task.isCancelled, !(error is CancellationError) else { return }
             nearbyError = error.localizedDescription
+            nearbyLoaded = true
         }
     }
 }

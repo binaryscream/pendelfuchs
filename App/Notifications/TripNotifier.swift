@@ -52,10 +52,11 @@ final class TripNotifier {
     /// Prüft alle Fahrten, die gerade anstehen oder unterwegs sind, und verschickt neue Meldungen.
     func checkAll(now: Date = .now) async {
         guard isEnabled, !isChecking else { return }
-        let status = await center.notificationSettings().authorizationStatus
-        guard status == .authorized || status == .provisional || status == .ephemeral else { return }
+        // Vor dem ersten `await` setzen – sonst kommen zwei gleichzeitige Aufrufe beide durch und melden doppelt.
         isChecking = true
         defer { isChecking = false }
+        let status = await center.notificationSettings().authorizationStatus
+        guard status == .authorized || status == .provisional || status == .ephemeral else { return }
 
         let settings = settings
         var memories = loadMemories(now: now)
@@ -74,11 +75,12 @@ final class TripNotifier {
     }
 
     /// Wann die nächste Prüfung im Hintergrund sinnvoll ist (Beginn des nächsten Beobachtungsfensters oder,
-    /// wenn eins läuft, bald); `nil`, wenn in den nächsten 24 Stunden nichts ansteht.
+    /// wenn eins läuft, bald); `nil`, wenn keine Fahrt beobachtet wird. Bewusst ohne Obergrenze: Sonst plant
+    /// die App am Freitagabend nichts mehr und verschläft den Montag.
     func nextCheck(now: Date = .now) -> Date? {
         guard isEnabled else { return nil }
         if !watchedTrips(now: now, horizon: Self.leadTime).isEmpty { return now.addingTimeInterval(5 * 60) }
-        let starts = watchedTrips(now: now, horizon: 24 * 3600).map { $0.day.addingTimeInterval(-Self.leadTime) }
+        let starts = watchedTrips(now: now, horizon: 8 * 24 * 3600).map { $0.day.addingTimeInterval(-Self.leadTime) }
         return starts.min()
     }
 
@@ -89,23 +91,28 @@ final class TripNotifier {
         var result: [(SavedTrip, Date)] = []
         let store = SavedTripsStore(defaults: defaults)
 
-        func consider(_ saved: SavedTrip, departure: Date) {
-            guard !seen.contains(saved.id) else { return }
-            // Ende: geplante Ankunft (falls bekannt) plus Reserve für Verspätungen.
+        // Beobachtet bis zur geplanten Ankunft (falls bekannt) plus Reserve für Verspätungen.
+        func span(_ saved: SavedTrip) -> TimeInterval {
             let duration = saved.arrival.map { arrival -> TimeInterval in
                 let minutes = (arrival.minutesSinceMidnight - saved.departure.minutesSinceMidnight + 24 * 60) % (24 * 60)
                 return TimeInterval(minutes * 60)
             } ?? 90 * 60
-            let end = departure.addingTimeInterval(duration + 30 * 60)
+            return duration + 30 * 60
+        }
+
+        func consider(_ saved: SavedTrip, departure: Date) {
+            guard !seen.contains(saved.id) else { return }
+            let end = departure.addingTimeInterval(span(saved))
             guard departure.timeIntervalSince(now) <= horizon, end > now else { return }
             seen.insert(saved.id)
             result.append((saved, departure))
         }
 
         for saved in store.trips where saved.isRegular && saved.usesNotifications {
-            if let next = saved.nextOccurrence(after: now, grace: 3 * 3600) { consider(saved, departure: next) }
+            // Der laufende Termin zählt genau so lange, wie er beobachtet wird – danach ist der nächste dran.
+            if let next = saved.nextOccurrence(after: now, grace: span(saved)) { consider(saved, departure: next) }
         }
-        for activity in Activity<TripActivityAttributes>.activities where activity.activityState == .active {
+        for activity in TripActivityManager.running {
             let saved = store.trip(id: activity.attributes.saved.id) ?? activity.attributes.saved
             guard saved.usesNotifications else { continue }
             consider(saved, departure: activity.content.state.departure.scheduledTime)

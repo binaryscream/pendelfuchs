@@ -14,6 +14,7 @@ struct FahrplanXLApp: App {
     @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
     @AppStorage(StopNameStyle.storageKey, store: AppGroup.defaults) private var stopNameStyle = StopNameStyle.withPlace
     @AppStorage(CancelledDisplay.hideKey, store: AppGroup.defaults) private var hideCancelled = false
+    @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var delayDisplay = DelayDisplay.badge
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab = AppTab.departures
     @State private var openStop: Stop?
@@ -77,6 +78,7 @@ struct FahrplanXLApp: App {
                 .environment(\.stopNameStyle, stopNameStyle)
                 .onChange(of: stopNameStyle) { WidgetCenter.shared.reloadAllTimelines() }
                 .onChange(of: hideCancelled) { WidgetCenter.shared.reloadAllTimelines() }
+                .onChange(of: delayDisplay) { WidgetCenter.shared.reloadAllTimelines() }
                 // Live-Aktivitäten und Benachrichtigungen aktuell halten, solange die App offen ist (jede Minute).
                 .task(id: scenePhase) {
                     guard scenePhase == .active else {

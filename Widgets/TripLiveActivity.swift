@@ -50,10 +50,10 @@ struct TripLiveActivity: Widget {
                 }
             } compactTrailing: {
                 // Kreis, der sich bis zum Ziel der aktuellen Phase (Abfahrt bzw. Ankunft) schließt.
-                PhaseRing(info: info)
+                PhaseRing(info: info, hasProblem: context.state.isCancelled)
                     .frame(width: 22, height: 22)
             } minimal: {
-                PhaseRing(info: info)
+                PhaseRing(info: info, hasProblem: context.state.isCancelled)
                     .frame(width: 22, height: 22)
             }
             .keylineTint(info.ride?.mode.color ?? .accentColor)
@@ -78,12 +78,13 @@ private struct LockScreenView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Spacer(minLength: 4)
-                // „Veraltet“ wird die Aktivität auch an jedem Phasenwechsel – der Hinweis nur bei wirklich alten Daten.
-                if isStale, state.updatedAt < .now.addingTimeInterval(-15 * 60) {
-                    Text("Stand \(state.updatedAt.formatted(date: .omitted, time: .shortened))")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+                // Immer sichtbar, damit „Aktualisieren“ eine Wirkung zeigt; orange, wenn die Daten alt sind.
+                Text("Stand \(state.updatedAt.formatted(date: .omitted, time: .shortened))")
+                    .font(.caption2)
+                    .monospacedDigit()
+                    .foregroundStyle(state.updatedAt < .now.addingTimeInterval(-15 * 60) ? Color.orange : Color.secondary)
+                    .lineLimit(1)
+                    .layoutPriority(1)
                 Button(intent: RefreshTripActivityIntent()) {
                     Image(systemName: "arrow.clockwise")
                         .font(.footnote.weight(.bold))
@@ -274,10 +275,15 @@ private struct TimeLabel: View {
 /// Verkehrsmittel; fehlt ein Ziel (angekommen), ist der Ring voll mit Haken.
 private struct PhaseRing: View {
     let info: PhaseInfo
+    /// Eine Fahrt fällt aus – dann warnt auch die kleine Ansicht, statt einen normalen Ring zu zeigen.
+    var hasProblem = false
 
     var body: some View {
         let tint = info.ride?.mode.color ?? Color.accentColor
-        if let range = info.ringRange, range.upperBound > .now {
+        if hasProblem {
+            Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 16)).foregroundStyle(.red)
+                .accessibilityLabel("Fahrt fällt aus")
+        } else if let range = info.ringRange, range.upperBound > .now {
             ProgressView(timerInterval: range, countsDown: false) {
                 EmptyView()
             } currentValueLabel: {
@@ -285,6 +291,7 @@ private struct PhaseRing: View {
             }
             .progressViewStyle(.circular)
             .tint(tint)
+            .accessibilityLabel(info.isRiding ? "Unterwegs" : "Bis zur Abfahrt")
             .overlay {
                 Image(systemName: info.isRiding ? "tram.fill" : "clock.fill")
                     .font(.system(size: 8, weight: .bold))
@@ -292,24 +299,22 @@ private struct PhaseRing: View {
             }
         } else {
             Image(systemName: "checkmark.circle.fill").font(.system(size: 20)).foregroundStyle(tint)
+                .accessibilityLabel("Angekommen")
         }
     }
 }
 
-/// Selbstständig weiterlaufender Countdown.
-/// Über zwei Minuten „18 Min.“ (eine Uhr wie „17:57“ würde man für eine Uhrzeit halten),
-/// in den letzten zwei Minuten sekundengenau „1:59“.
+/// Selbstständig weiterlaufender Countdown: „in 18 Min.“ – und nach dem Zeitpunkt „vor 2 Min.“.
+///
+/// iOS zeichnet die Aktivität ohne App nur einmal neu (zum `staleDate`). Bleibt sie danach in einer Phase
+/// stehen, zählte die frühere Anzeige (`.relative`) nach dem Ziel unbemerkt wieder hoch; „vor … Min.“ zeigt
+/// dagegen klar, dass der Zeitpunkt vorbei ist. Eine Uhr mit Sekunden zeigt auf dem Sperrbildschirm „––“.
 private struct CountdownText: View {
     let target: Date?
 
     var body: some View {
         if let target, target > .now {
-            // Vom System fortgeschriebene Restzeit („2 Std., 19 Min.“, unter einer Minute in Sekunden).
-            // Früher wechselte die Anzeige je nach Zeichenzeitpunkt zwischen Minuten-Text und Uhr und sprang
-            // dadurch; eine Uhr mit Sekunden zeigt auf dem Sperrbildschirm dagegen „––“.
-            Group {
-                Text(target, style: .relative)
-            }
+            Text(.currentDate, format: .reference(to: target, allowedFields: [.hour, .minute], maxFieldCount: 2))
             .monospacedDigit()
             .multilineTextAlignment(.trailing)
             .minimumScaleFactor(0.6)
@@ -378,15 +383,15 @@ private struct PhaseInfo {
         case .waiting:
             headline = "\(ride.fromLabel(style))\(platform)"
             subline = direction
-            countdownLabel = "bis Abfahrt"
+            countdownLabel = "Abfahrt"
         case .transfer:
             headline = "Umstieg in \(ride.line)"
             subline = "\(ride.fromLabel(style))\(platform)"
-            countdownLabel = "bis Abfahrt"
+            countdownLabel = "Abfahrt"
         case .riding:
             headline = "Bis \(ride.toLabel(style))"
             subline = direction
-            countdownLabel = "bis Ausstieg"
+            countdownLabel = "Ausstieg"
         case .arrived:
             headline = "Angekommen"
             subline = ride.toLabel(style)

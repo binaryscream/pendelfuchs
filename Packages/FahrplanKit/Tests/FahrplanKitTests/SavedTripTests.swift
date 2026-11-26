@@ -90,6 +90,38 @@ private func trip(_ lines: [String], at dep: Date) -> Trip {
         #expect(saved([.monday]).nextOccurrence(after: date(23, 9, 0), calendar: berlin) == date(30, 6, 30))
     }
 
+    @Test func nextOccurrenceKeepsTripAcrossMidnight() {
+        // Montag 23:50 abgefahren, jetzt Dienstag 00:05 → gilt innerhalb der Kulanzzeit noch als aktuell
+        let late = saved(Weekday.workdays, at: 23, 50)
+        #expect(late.nextOccurrence(after: date(24, 0, 5), calendar: berlin) == date(23, 23, 50))
+        // … danach ist der Dienstagabend dran.
+        #expect(late.nextOccurrence(after: date(24, 0, 30), calendar: berlin) == date(24, 23, 50))
+    }
+
+    @Test func replacementSurvivesDepartureTimeOfCancelledRide() throws {
+        // S1 um 06:30 fällt aus, Ersatz 06:40. Auch um 06:35 (nach der geplanten Abfahrt) gilt der Ersatz.
+        let s = SavedTrip(trip: trip(["S1"], at: date(23, 6, 30)), query: query, weekdays: Weekday.workdays, calendar: berlin)
+        var cancelled = trip(["S1"], at: date(23, 6, 30))
+        for index in cancelled.legs[0].stops.indices { cancelled.legs[0].stops[index].isCancelled = true }
+        let next = trip(["S1"], at: date(23, 6, 40))
+        let resolved = try #require(s.resolve(in: [cancelled, next], now: date(23, 6, 35), calendar: berlin))
+        #expect(resolved.trip.id == next.id)
+        #expect(resolved.note != nil)
+    }
+
+    @Test func skippedIntermediateStopDoesNotMakeRideUnusable() {
+        var leg = TripLeg(kind: .ride, mode: .tram, line: "7", stops: ["a", "b", "c"].map {
+            TripStop(stopID: $0, name: $0, place: nil, platform: nil, arrival: TimePoint(scheduledTime: date(23, 6, 0)),
+                     departure: TimePoint(scheduledTime: date(23, 6, 0)))
+        })
+        leg.stops[1].isCancelled = true
+        #expect(leg.isCancelled)
+        #expect(!leg.isUnusable)
+        #expect(!TripActivityState(trip: Trip(legs: [leg], interchanges: 0)).isCancelled)
+        leg.stops[0].isCancelled = true
+        #expect(leg.isUnusable)
+    }
+
     @Test func bookmarkHasNoOccurrence() {
         #expect(saved([]).nextOccurrence(after: date(23, 5, 0), calendar: berlin) == nil)
     }

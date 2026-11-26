@@ -316,7 +316,7 @@ struct StopPickerSheet: View {
                                 Text("Ohne Standortfreigabe keine Haltestellen in der Nähe – oben suchen.")
                                     .foregroundStyle(.secondary)
                             case .failed:
-                                Text("Standort konnte nicht ermittelt werden.").foregroundStyle(.secondary)
+                                Text("Standort konnte nicht ermittelt werden – oben suchen.").foregroundStyle(.secondary)
                             case .located where nearbyLoaded:
                                 Text("Keine Haltestellen in der Nähe gefunden.").foregroundStyle(.secondary)
                             default:
@@ -369,8 +369,9 @@ struct StopPickerSheet: View {
             let anchors = [location.coordinate].compactMap { $0 } + favorites.stops.compactMap(\.coordinate)
             results = StopSearchRegion.narrow(try await transit.searchStops(query: q), around: anchors)
             message = results.isEmpty ? "Keine Haltestelle gefunden." : nil
-        } catch is CancellationError {
         } catch {
+            // Beim Weitertippen wird die laufende Suche abgebrochen – das ist kein Fehler.
+            guard !Task.isCancelled, !(error is CancellationError) else { return }
             message = error.localizedDescription
         }
     }

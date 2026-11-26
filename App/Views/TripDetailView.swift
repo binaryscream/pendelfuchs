@@ -5,7 +5,9 @@ import SwiftUI
 
 /// Einzelne Verbindung mit allen Fahrten, Umstiegen und Zwischenhalten.
 struct TripDetailView: View {
-    let trip: Trip
+    /// Startet mit dem Stand aus der Suche und wird danach laufend mit Echtzeitdaten aufgefrischt.
+    @State private var trip: Trip
+    @State private var lastUpdate: Date?
     /// Die Suche, aus der die Verbindung stammt (Start/Ziel/Zwischenhalt zum Merken).
     let query: TripQuery
 
@@ -20,7 +22,7 @@ struct TripDetailView: View {
     @State private var sheetIsNew = true
 
     init(trip: Trip, query: TripQuery) {
-        self.trip = trip
+        _trip = State(initialValue: trip)
         self.query = query
         _adHoc = State(initialValue: SavedTrip(trip: trip, query: query))
     }
@@ -41,6 +43,7 @@ struct TripDetailView: View {
                         }
                         Button("Nicht mehr merken", systemImage: "star.slash", role: .destructive) {
                             savedTrips.remove(id: saved.id)
+                            Task { await TripActivityManager.shared.end(saved.id) }
                         }
                     } label: {
                         Image(systemName: "star.fill")
@@ -65,6 +68,24 @@ struct TripDetailView: View {
                 await LiveVehicleFeed.shared.keepUpdated()
             }
             .task { await loadRuns() }
+            .task { await keepFresh() }
+    }
+
+    /// Holt die Verbindung regelmäßig neu, damit Verspätungen, Gleiswechsel und Ausfälle auch dann erscheinen,
+    /// wenn die Ansicht offen bleibt. Wird sie nicht wiedergefunden, bleibt der letzte Stand stehen.
+    private func keepFresh() async {
+        while !Task.isCancelled, trip.arrival.expectedTime.addingTimeInterval(10 * 60) > .now {
+            try? await Task.sleep(for: .seconds(45))
+            guard !Task.isCancelled else { return }
+            var fresh = query
+            // Etwas früher suchen: Eine Minute Fahrplanabweichung soll die Verbindung nicht aus dem Ergebnis werfen.
+            fresh.time = trip.departure.scheduledTime.addingTimeInterval(-3 * 60)
+            fresh.isArrivalTime = false
+            if let found = try? await transit.trips(fresh), let match = found.first(where: { $0.id == trip.id }) {
+                trip = match
+                lastUpdate = .now
+            }
+        }
     }
 
     /// Lädt den ganzen Lauf jeder Fahrt, die live verfolgt werden kann (jede Minute neu, wegen der Echtzeit).
@@ -143,7 +164,8 @@ struct TripDetailView: View {
             TripStatusView(trip: trip, now: now)
 
             if let source = trip.source {
-                Text("Daten: \(source.displayName)")
+                Text("Daten: \(source.displayName)"
+                     + (lastUpdate.map { " · Stand \($0.formatted(date: .omitted, time: .shortened))" } ?? ""))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }

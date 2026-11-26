@@ -42,6 +42,11 @@ struct TripResultsView: View {
                     moreButton("Später", systemImage: "chevron.down", direction: .later)
                 } header: {
                     header
+                } footer: {
+                    if errorMessage != nil {
+                        Label("Laden fehlgeschlagen – die Liste kann veraltet sein.", systemImage: "wifi.exclamationmark")
+                            .foregroundStyle(.orange)
+                    }
                 }
             }
         }
@@ -50,6 +55,9 @@ struct TripResultsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await load(initialQuery, replace: true) }
         .task {
+            // Nur beim ersten Erscheinen: Bei der Rückkehr aus einer Verbindung bleiben nachgeladene
+            // („Früher“/„Später“) Verbindungen und die Position in der Liste erhalten.
+            guard trips.isEmpty else { return }
             await load(initialQuery, replace: true)
             if let autoOpen, let trip = trips.first(where: autoOpen.matches) { onAutoOpen?(trip) }
         }

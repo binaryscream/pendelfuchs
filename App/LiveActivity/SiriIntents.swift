@@ -68,7 +68,9 @@ struct SavedTripStatusIntent: AppIntent {
             let today = saved.departure.date(on: now) ?? now
             return today > now.addingTimeInterval(-15 * 60) ? today : today.addingTimeInterval(24 * 3600)
         }()
-        let title = saved.title(style: .current)
+        // Den Tag nennen, wenn es nicht heute ist – sonst klingt die Montagsfahrt am Freitagabend wie eine von heute.
+        let name = saved.title(style: .current)
+        let title = Calendar.current.isDate(day, inSameDayAs: now) ? name : "\(name), \(relativeDay(day, now: now))"
         switch await LiveState.load(saved, on: day, using: DataSources.router()) {
         case .found(let trip):
             return .result(dialog: "\(title): \(SiriText.trip(trip, now: now))")

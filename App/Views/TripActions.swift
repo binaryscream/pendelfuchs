@@ -81,8 +81,9 @@ struct CalendarEventSheet: UIViewControllerRepresentable {
         let to = destination.map { StopNameStyle.label(name: $0.name, place: $0.place, style: style) } ?? ""
 
         event.title = "\(from) → \(to)"
-        event.startDate = trip.departure.expectedTime
-        event.endDate = trip.arrival.expectedTime
+        // Wie in den Notizen: Fahrplanzeiten. Eine momentane Verspätung gehört nicht in den Kalender.
+        event.startDate = trip.departure.scheduledTime
+        event.endDate = max(trip.arrival.scheduledTime, trip.departure.scheduledTime)
         event.location = from
         event.notes = notes(for: rides)
         event.addAlarm(EKAlarm(relativeOffset: -10 * 60))

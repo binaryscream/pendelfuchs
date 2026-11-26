@@ -72,7 +72,10 @@ struct MyTripsView: View {
             SavedTripRow(saved: saved, now: now)
         }
         .swipeActions {
-            Button("Löschen", systemImage: "trash", role: .destructive) { store.remove(id: saved.id) }
+            Button("Löschen", systemImage: "trash", role: .destructive) {
+                store.remove(id: saved.id)
+                Task { await TripActivityManager.shared.end(saved.id) }
+            }
         }
     }
 }
@@ -158,6 +161,8 @@ struct SavedTripDetailView: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             content(now: context.date)
         }
+        // Außerhalb des Inhalts: Mit der gelöschten Fahrt verschwindet der Inhalt – und alles, was daran hängt.
+        .onChange(of: store.trip(id: id) == nil) { _, removed in if removed { dismiss() } }
     }
 
     @ViewBuilder private func content(now: Date) -> some View {
@@ -237,7 +242,6 @@ struct SavedTripDetailView: View {
                 Button("Einstellungen", systemImage: "slider.horizontal.3") { showSettings = true }
             }
             .sheet(isPresented: $showSettings) { SavedTripSheet(id: id, isNew: false) }
-            .onChange(of: store.trip(id: id) == nil) { _, removed in if removed { dismiss() } }
         } else {
             ContentUnavailableView("Fahrt gelöscht", systemImage: "trash")
         }
@@ -274,6 +278,7 @@ struct SavedTripSheet: View {
                     Section {
                         Button("Nicht mehr merken", role: .destructive) {
                             store.remove(id: id)
+                            Task { await TripActivityManager.shared.end(id) }
                             dismiss()
                         }
                     }
@@ -432,9 +437,10 @@ private struct LiveBadge: View {
         case .found(let trip):
             if let disruption = trip.disruption {
                 badge(disruption.badgeText, .red)
-            } else if let stop = trip.rides.first(where: { $0.stops.first?.platformChanged == true })?.stops.first,
-                      let platform = stop.platform {
-                badge("Gleis \(platform)!", .orange)
+            } else if let ride = trip.rides.first(where: { $0.stops.first?.platformChanged == true }),
+                      let platform = ride.stops.first?.platform {
+                // „Gl. 2!“ bei Zügen, „Steig 2!“ bei Bahn und Bus.
+                badge("\((ride.mode ?? .other).platformLabel(platform))!", .orange)
             } else if let delay = trip.departure.delayMinutes, delay > 0 {
                 badge("+\(delay)", delay >= 3 ? .red : .orange)
             } else if trip.departure.realTime != nil {

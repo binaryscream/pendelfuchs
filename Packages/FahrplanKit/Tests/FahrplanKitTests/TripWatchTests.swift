@@ -52,6 +52,21 @@ import Testing
         #expect(better.memory.notifiedDelay == nil)
     }
 
+    @Test func delayAroundThresholdDoesNotFlap() {
+        let first = check(trip(busDelay: 5))
+        #expect(first.notices.count == 1)
+        // 4 min liegt knapp unter der Schwelle: weder Entwarnung noch – beim Zurückpendeln – eine neue Meldung.
+        let dip = check(trip(busDelay: 4), memory: first.memory)
+        #expect(dip.notices.isEmpty)
+        #expect(check(trip(busDelay: 5), memory: dip.memory).notices.isEmpty)
+    }
+
+    @Test func shrinkingDelayIsReported() {
+        let first = check(trip(busDelay: 20))
+        let less = check(trip(busDelay: 8), memory: first.memory)
+        #expect(less.notices.first?.body.contains("+8 min") == true)
+    }
+
     @Test func belowThresholdIsQuiet() {
         #expect(check(trip(busDelay: 4)).notices.isEmpty)
         #expect(check(trip(busDelay: 4), settings: TripWatchSettings(delayThreshold: 3)).notices.count == 1)

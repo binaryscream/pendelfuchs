@@ -42,8 +42,15 @@ final class TripActivityManager {
 
     private var activities: [Activity<TripActivityAttributes>] { Activity<TripActivityAttributes>.activities }
 
+    /// Aktivitäten, die noch zu sehen sind und aktualisiert werden können. Dazu gehört auch `.stale`: So heißt
+    /// eine laufende Aktivität, sobald ihr `staleDate` vorbei ist – und das setzen wir bewusst auf den nächsten
+    /// Phasenwechsel. Wer nur `.active` prüft, aktualisiert sie danach nie wieder.
+    static var running: [Activity<TripActivityAttributes>] {
+        Activity<TripActivityAttributes>.activities.filter { $0.activityState == .active || $0.activityState == .stale }
+    }
+
     func isRunning(_ savedID: UUID) -> Bool {
-        activities.contains { $0.attributes.saved.id == savedID && $0.activityState == .active }
+        Self.running.contains { $0.attributes.saved.id == savedID }
     }
 
     /// Startet die Live-Aktivität für den nächsten Termin einer Fahrt.
@@ -64,12 +71,13 @@ final class TripActivityManager {
             note = resolved.note
         }
 
+        // Erst prüfen, dann die alte Aktivität beenden – sonst verschwindet sie, ohne dass eine neue kommt.
+        guard trip.disruption == nil else { throw StartError.cancelled }
+
         // Pro Fahrt nur eine Aktivität.
         for activity in activities where activity.attributes.saved.id == saved.id {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
-
-        guard trip.disruption == nil else { throw StartError.cancelled }
 
         let state = TripActivityState(trip: trip, note: note)
         _ = try Activity.request(
@@ -89,27 +97,34 @@ final class TripActivityManager {
     /// Holt für alle laufenden Aktivitäten frische Echtzeitdaten; beendet abgeschlossene Fahrten.
     func refreshAll() async {
         let now = Date.now
-        for activity in activities where activity.activityState == .active {
+        for activity in Self.running {
             let current = activity.content.state
             // Aktuelle Einstellungen der gemerkten Fahrt (z. B. Verpass-Assistent), falls sie noch gespeichert ist.
             let saved = SavedTripsStore(defaults: AppGroup.defaults).trip(id: activity.attributes.saved.id)
                 ?? activity.attributes.saved
 
-            // 5 Minuten nach der Ankunft beenden (und kurz darauf vom Sperrbildschirm nehmen).
-            if now > current.arrival.expectedTime.addingTimeInterval(5 * 60) {
-                await activity.end(activity.content, dismissalPolicy: .after(now.addingTimeInterval(5 * 60)))
-                continue
+            // Erst frische Daten holen: Die alte Ankunftszeit kann durch eine neue Verspätung überholt sein.
+            var state = current
+            var isFresh = false
+            if let trips = try? await transit.trips(saved.query(on: current.departure.scheduledTime)),
+               let resolved = saved.resolve(in: trips) {
+                state = TripActivityState(trip: resolved.trip, note: resolved.note)
+                isFresh = true
             }
 
-            do {
-                let trips = try await transit.trips(saved.query(on: current.departure.scheduledTime))
-                guard let resolved = saved.resolve(in: trips) else { continue }
-                await activity.update(content(for: TripActivityState(trip: resolved.trip, note: resolved.note)))
-            } catch {
-                // Netzwerkfehler: alte Daten bleiben stehen, die Aktivität zeigt „Stand …“, sobald sie veraltet.
+            // 5 Minuten nach der Ankunft beenden (und kurz darauf vom Sperrbildschirm nehmen). Ohne frische
+            // Daten großzügiger, damit eine unbemerkte Verspätung die Aktivität nicht unterwegs beendet.
+            let reserve: TimeInterval = isFresh ? 5 * 60 : 30 * 60
+            if now > state.arrival.expectedTime.addingTimeInterval(reserve) {
+                await activity.end(content(for: state), dismissalPolicy: .after(now.addingTimeInterval(5 * 60)))
+                continue
             }
+            // Auch ohne neue Daten (kein Netz, Verbindung nicht gefunden) neu setzen: iOS zeichnet die Aktivität
+            // dann in der aktuellen Phase und bekommt den Zeitpunkt des nächsten Phasenwechsels. „Stand …“ zeigt
+            // weiter die Zeit der letzten erfolgreichen Abfrage.
+            await activity.update(content(for: state))
         }
-        if !activities.isEmpty { scheduleBackgroundRefresh() }
+        if !Self.running.isEmpty { scheduleBackgroundRefresh() }
     }
 
     /// Hintergrundabfrage für Live-Aktivitäten und Benachrichtigungen: alles aktualisieren, dann neu planen.
@@ -121,13 +136,13 @@ final class TripActivityManager {
 
     /// Nächster Phasenwechsel aller laufenden Aktivitäten – dann soll iOS die App möglichst wecken.
     private var nextChange: Date? {
-        activities.compactMap { $0.content.state.nextChange(after: .now) }.min()
+        Self.running.compactMap { $0.content.state.nextChange(after: .now) }.min()
     }
 
     private func content(for state: TripActivityState) -> ActivityContent<TripActivityState> {
         // „Veraltet“ spätestens nach 15 Minuten – oder schon beim nächsten Phasenwechsel (Abfahrt, Ankunft,
         // Umstieg): Dann zeichnet iOS die Aktivität neu, und sie zeigt die neue Phase auch ohne geöffnete App.
-        let fifteen = state.updatedAt.addingTimeInterval(15 * 60)
+        let fifteen = Date.now.addingTimeInterval(15 * 60)
         let next = state.nextChange(after: .now).map { $0.addingTimeInterval(1) } ?? fifteen
         return ActivityContent(state: state, staleDate: min(fifteen, next), relevanceScore: 100)
     }
@@ -137,7 +152,7 @@ final class TripActivityManager {
     func scheduleBackgroundRefresh() {
         var wanted: [Date] = []
         // Live-Aktivität: zum nächsten Phasenwechsel, höchstens 5 Minuten warten.
-        if !activities.isEmpty {
+        if !Self.running.isEmpty {
             wanted.append(min(nextChange ?? .now.addingTimeInterval(5 * 60), .now.addingTimeInterval(5 * 60)))
         }
         if let check = TripNotifier.shared.nextCheck() { wanted.append(check) }

@@ -179,7 +179,8 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
                                calendar: Calendar = .current) -> Date? {
         guard isRegular else { return nil }
         let today = calendar.startOfDay(for: now)
-        for offset in 0...7 {
+        // Ab gestern: Eine Fahrt kurz vor Mitternacht zählt nach 0 Uhr noch `grace` lang als aktuell.
+        for offset in -1...7 {
             guard let day = calendar.date(byAdding: .day, value: offset, to: today),
                   weekdays.contains(Weekday(date: day, calendar: calendar)),
                   let candidate = departure.date(on: day, calendar: calendar)
@@ -211,7 +212,9 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
 
         let usable = trips.filter { $0.disruption == nil }
         let first = match.rides.first
-        let started = (first?.departure?.expectedTime ?? .distantFuture) <= now
+        // Eine ausgefallene erste Fahrt (oder ein entfallener Einstieg) hat man nicht angetreten – dann gilt
+        // der Ersatz auch nach der geplanten Abfahrtszeit weiter.
+        let started = first?.isUnusable != true && (first?.departure?.expectedTime ?? .distantFuture) <= now
 
         var replacement = usable
             .filter { $0.rides.first?.line == first?.line

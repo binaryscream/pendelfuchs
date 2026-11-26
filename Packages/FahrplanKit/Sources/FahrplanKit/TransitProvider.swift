@@ -58,7 +58,7 @@ extension TransitProvider {
     /// Der komplette Lauf des Fahrzeugs für eine einzelne Fahrt einer Verbindung (siehe `fullRun(of:)`).
     public func fullRun(of ride: TripLeg, source: ProviderID?) async -> TripLeg? {
         guard ride.kind == .ride, let board = ride.stops.first,
-              let scheduled = ride.departure?.scheduledTime, !ride.isCancelled else { return nil }
+              let scheduled = ride.departure?.scheduledTime, !ride.isUnusable else { return nil }
         let stop = Stop(provider: source ?? .transitous, stopID: board.stopID, name: board.name, place: board.place)
         do {
             let departures = try await departures(at: stop, limit: 12, from: scheduled > .now ? scheduled : nil)

@@ -158,7 +158,8 @@ struct RouteProvider: AppIntentTimelineProvider {
         // Ein Eintrag pro Minute; die Richtung wird je Eintrag bestimmt (kann innerhalb der 15 Minuten wechseln).
         let now = Date.now
         let start = Calendar.current.dateInterval(of: .minute, for: now)?.start ?? now
-        let dates = (0..<15).map { start.addingTimeInterval(Double($0) * 60) }
+        // Für 45 Minuten vorausplanen: iOS lädt oft später neu als gewünscht.
+        let dates = (0..<45).map { start.addingTimeInterval(Double($0) * 60) }
         let directions = dates.map { RouteDirection.isReversed(at: $0, turnAt: turn, state: state) }
 
         let options = TripOptions(deutschlandTicketOnly: configuration.deutschlandTicketOnly)
@@ -179,7 +180,7 @@ struct RouteProvider: AppIntentTimelineProvider {
             } catch { loaded[reversed] = .failure(error) }
         }
 
-        return zip(dates, directions).map { date, reversed in
+        return zip(dates, directions).compactMap { date, reversed -> RouteEntry? in
             let from = reversed ? destination : origin
             let to = reversed ? origin : destination
             switch loaded[reversed] {
@@ -189,6 +190,8 @@ struct RouteProvider: AppIntentTimelineProvider {
                     $0.trip.departure.expectedTime >= date.addingTimeInterval(-30)
                         && (!CancelledDisplay.hide || !$0.trip.isCancelledForRider)
                 }
+                // Geht nur die geladene Liste zu Ende, nicht „Keine Verbindungen“ behaupten – lieber hier aufhören.
+                if date != start, upcoming.isEmpty, !trips.isEmpty { return nil }
                 return RouteEntry(date: date == start ? now : date, from: from, to: to, reversed: reversed, turnTime: turn,
                                   swap: swap, content: upcoming.isEmpty ? .message("Keine Verbindungen gefunden.") : .trips(upcoming))
             default:

@@ -66,7 +66,7 @@ public struct ProviderRouter: TransitProvider {
             return try await transitous.searchStops(query: query)
         } catch {
             // Ausfallsicherung: Transitous nicht erreichbar → VVO (nur VVO-Gebiet).
-            guard let vvo, !(error is CancellationError) else { throw error }
+            guard let vvo, !(error is CancellationError), !Task.isCancelled else { throw error }
             return try await vvo.searchStops(query: query)
         }
     }
@@ -75,7 +75,7 @@ public struct ProviderRouter: TransitProvider {
         do {
             return try await transitous.nearbyStops(around: coordinate)
         } catch {
-            guard let vvo, !(error is CancellationError) else { throw error }
+            guard let vvo, !(error is CancellationError), !Task.isCancelled else { throw error }
             return try await vvo.nearbyStops(around: coordinate)
         }
     }

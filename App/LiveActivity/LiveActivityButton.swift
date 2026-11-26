@@ -26,7 +26,13 @@ struct LiveActivityButton: View {
         }
         .disabled(isWorking)
         .tint(isRunning ? .red : .accentColor)
-        .onAppear { isRunning = TripActivityManager.shared.isRunning(saved.id) }
+        // Laufend nachsehen: Die Aktivität kann auch vom Sperrbildschirm aus oder von selbst enden.
+        .task(id: saved.id) {
+            while !Task.isCancelled {
+                if !isWorking { isRunning = TripActivityManager.shared.isRunning(saved.id) }
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
         .alert("Live-Aktivität", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {

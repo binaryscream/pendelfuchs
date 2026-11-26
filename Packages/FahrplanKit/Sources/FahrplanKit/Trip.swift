@@ -160,6 +160,12 @@ public struct TripLeg: Codable, Sendable, Hashable {
     /// Die ganze Fahrt fällt aus (alle Halte). Dann gibt es keinen Fortschritt und kein Fahrzeug.
     public var isFullyCancelled: Bool { !stops.isEmpty && stops.allSatisfy(\.isCancelled) }
 
+    /// So nicht nutzbar: Die Fahrt fällt ganz aus oder ihr Ein- bzw. Ausstieg entfällt. Ein entfallener
+    /// Zwischenhalt zählt nicht – die Bahn fährt trotzdem.
+    public var isUnusable: Bool {
+        isFullyCancelled || stops.first?.isCancelled == true || stops.last?.isCancelled == true
+    }
+
     /// Auslastung beim Einstieg (erste bekannte Angabe ab dem ersten Halt).
     public var boardingOccupancy: Occupancy? { stops.dropLast().lazy.compactMap(\.occupancy).first }
 }
