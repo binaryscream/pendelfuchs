@@ -83,15 +83,25 @@ struct TripSearchView: View {
                     .pickerStyle(.segmented)
                     .listRowSeparator(.hidden)
 
-                    DatePicker("Datum", selection: timeBinding, displayedComponents: .date)
-                    DatePicker("Uhrzeit", selection: timeBinding, displayedComponents: .hourAndMinute)
-                } footer: {
-                    if !timeIsNow {
-                        Button("Auf jetzt zurücksetzen") {
-                            time = .now
-                            timeIsNow = true
+                    // Eine Zeile: „Jetzt“ steht ausdrücklich da – erst nach „Zeit wählen“ erscheinen Datum und Uhrzeit.
+                    HStack {
+                        if timeIsNow {
+                            Label("Jetzt", systemImage: "clock")
+                            Spacer()
+                            Button("Zeit wählen") {
+                                time = .now
+                                withAnimation { timeIsNow = false }
+                            }
+                            .buttonStyle(.borderless)
+                        } else {
+                            DatePicker("Datum und Uhrzeit", selection: $time, displayedComponents: [.date, .hourAndMinute])
+                                .labelsHidden()
+                            Spacer()
+                            Button("Jetzt") {
+                                withAnimation { timeIsNow = true }
+                            }
+                            .buttonStyle(.borderless)
                         }
-                        .font(.footnote)
                     }
                 }
 
@@ -122,9 +132,13 @@ struct TripSearchView: View {
                             .padding(.vertical, 6)
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(origin == nil || destination == nil)
+                    .disabled(origin == nil || destination == nil || origin?.id == destination?.id)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
+                } footer: {
+                    if let origin, origin.id == destination?.id {
+                        Text("Start und Ziel sind gleich.")
+                    }
                 }
             }
             .navigationTitle("Verbindungen")
@@ -187,6 +201,7 @@ struct TripSearchView: View {
                         swap(&originData, &destinationData)
                     }
                     .disabled(origin == nil && destination == nil)
+                    .sensoryFeedback(.selection, trigger: originData)
                 }
             }
             // Eigene Höhe für die Knöpfe: Die Linie liegt in der Mitte, die Namen darüber und darunter
@@ -210,13 +225,6 @@ struct TripSearchView: View {
         }
         .buttonStyle(.borderless)
         .accessibilityLabel(label)
-    }
-
-    private var timeBinding: Binding<Date> {
-        Binding(
-            get: { timeIsNow ? .now : time },
-            set: { time = $0; timeIsNow = false }
-        )
     }
 
     private func search() {

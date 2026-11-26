@@ -38,13 +38,7 @@ enum AppearanceSetting: String, CaseIterable, Identifiable {
 }
 
 struct SettingsView: View {
-    @AppStorage(AppearanceSetting.storageKey) private var appearance: AppearanceSetting = .system
     @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
-    @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var delayDisplay = DelayDisplay.badge
-    @AppStorage(StopNameStyle.storageKey, store: AppGroup.defaults) private var stopNameStyle = StopNameStyle.withPlace
-    @AppStorage(StopListExpansion.storageKey) private var stopListExpansion = StopListExpansion.collapsed
-    @AppStorage(CancelledDisplay.hideKey, store: AppGroup.defaults) private var hideCancelled = false
-    @AppStorage(AlertDisplay.storageKey, store: AppGroup.defaults) private var alertDisplay = AlertDisplay.affected
 
     var body: some View {
         NavigationStack {
@@ -55,88 +49,13 @@ struct SettingsView: View {
                     } label: {
                         Label("Benachrichtigungen", systemImage: "bell.badge")
                     }
-                }
-
-                Section {
-                    Picker("Erscheinungsbild", selection: $appearance) {
-                        ForEach(AppearanceSetting.allCases) { option in
-                            Label(option.title, systemImage: option.systemImage).tag(option)
-                        }
+                    NavigationLink {
+                        DisplaySettingsView()
+                    } label: {
+                        Label("Anzeige", systemImage: "textformat.size")
                     }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                } header: {
-                    Text("Erscheinungsbild")
                 } footer: {
-                    Text("„System“ folgt der Einstellung deines iPhones und wechselt z. B. abends automatisch in den Dunkelmodus.")
-                }
-
-                Section {
-                    Picker("Haltestellennamen", selection: $stopNameStyle) {
-                        ForEach(StopNameStyle.allCases) { option in
-                            VStack(alignment: .leading) {
-                                Text(option.title)
-                                Text(option.example).font(.caption).foregroundStyle(.secondary)
-                            }
-                            .tag(option)
-                        }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                } header: {
-                    Text("Haltestellennamen anzeigen")
-                } footer: {
-                    Text("„Mit Ort“ setzt den Ort davor, damit „Hbf“ und „Bahnhof“ eindeutig sind. Gilt in der ganzen App, im Widget und in der Live-Aktivität.")
-                }
-
-                Section {
-                    Picker("Verspätungen", selection: $delayDisplay) {
-                        ForEach(DelayDisplay.allCases) { option in
-                            VStack(alignment: .leading) {
-                                Text(option.title)
-                                Text(option.example).font(.caption).foregroundStyle(.secondary).monospacedDigit()
-                            }
-                            .tag(option)
-                        }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                } header: {
-                    Text("Verspätungen anzeigen")
-                } footer: {
-                    Text("Gilt in der ganzen App, im Widget und in der Live-Aktivität. Die Minuten bis zur Abfahrt enthalten die Verspätung immer schon.")
-                }
-
-                Section {
-                    Picker("Hinweise", selection: $alertDisplay) {
-                        ForEach(AlertDisplay.allCases) { Text($0.title).tag($0) }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                } header: {
-                    Text("Störungen und Bauarbeiten")
-                } footer: {
-                    Text("„Nur für meinen Abschnitt“ zeigt einen Hinweis, wenn seine Überschrift eine Haltestelle deiner Strecke nennt. „Alle zur Linie“ zeigt jeden Hinweis, den der Verkehrsverbund der Linie zuordnet.")
-                }
-
-                Section {
-                    Toggle("Ausgefallene Fahrten ausblenden", isOn: $hideCancelled)
-                } header: {
-                    Text("Ausfälle")
-                } footer: {
-                    Text("Ausgefallene Fahrten erscheinen sonst rot und durchgestrichen – im Abfahrtsmonitor, in der Verbindungssuche und in den Widgets.")
-                }
-
-                Section {
-                    Picker("Zwischenhalte", selection: $stopListExpansion) {
-                        ForEach(StopListExpansion.allCases) { Text($0.title).tag($0) }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                } header: {
-                    Text("Zwischenhalte in den Fahrtdetails")
-                } footer: {
-                    Text("Antippen von „… Zwischenhalte“ klappt sie jederzeit auf oder zu. Im Fahrtverlauf aus dem Abfahrtsmonitor sind sie immer offen, damit deine Haltestelle zu sehen ist.")
+                    Text("Unter „Anzeige“: Erscheinungsbild, Haltestellennamen, Verspätungen, Störungen, Ausfälle und Zwischenhalte.")
                 }
 
                 Section {
@@ -179,6 +98,104 @@ struct SettingsView: View {
             }
             .navigationTitle("Einstellungen")
         }
+    }
+}
+
+/// Alles, was nur das Aussehen betrifft – gebündelt, damit die Einstellungen kurz bleiben.
+struct DisplaySettingsView: View {
+    @AppStorage(AppearanceSetting.storageKey) private var appearance: AppearanceSetting = .system
+    @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var delayDisplay = DelayDisplay.badge
+    @AppStorage(StopNameStyle.storageKey, store: AppGroup.defaults) private var stopNameStyle = StopNameStyle.withPlace
+    @AppStorage(StopListExpansion.storageKey) private var stopListExpansion = StopListExpansion.collapsed
+    @AppStorage(CancelledDisplay.hideKey, store: AppGroup.defaults) private var hideCancelled = false
+    @AppStorage(AlertDisplay.storageKey, store: AppGroup.defaults) private var alertDisplay = AlertDisplay.affected
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("Erscheinungsbild", selection: $appearance) {
+                    ForEach(AppearanceSetting.allCases) { option in
+                        Label(option.title, systemImage: option.systemImage).tag(option)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } header: {
+                Text("Erscheinungsbild")
+            } footer: {
+                Text("„System“ folgt der Einstellung deines iPhones und wechselt z. B. abends automatisch in den Dunkelmodus.")
+            }
+
+            Section {
+                Picker("Haltestellennamen", selection: $stopNameStyle) {
+                    ForEach(StopNameStyle.allCases) { option in
+                        VStack(alignment: .leading) {
+                            Text(option.title)
+                            Text(option.example).font(.caption).foregroundStyle(.secondary)
+                        }
+                        .tag(option)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } header: {
+                Text("Haltestellennamen anzeigen")
+            } footer: {
+                Text("„Mit Ort“ setzt den Ort davor, damit „Hbf“ und „Bahnhof“ eindeutig sind. Gilt in der ganzen App, im Widget und in der Live-Aktivität.")
+            }
+
+            Section {
+                Picker("Verspätungen", selection: $delayDisplay) {
+                    ForEach(DelayDisplay.allCases) { option in
+                        VStack(alignment: .leading) {
+                            Text(option.title)
+                            Text(option.example).font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                        }
+                        .tag(option)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } header: {
+                Text("Verspätungen anzeigen")
+            } footer: {
+                Text("Gilt in der ganzen App, im Widget und in der Live-Aktivität. Die Minuten bis zur Abfahrt enthalten die Verspätung immer schon.")
+            }
+
+            Section {
+                Picker("Hinweise", selection: $alertDisplay) {
+                    ForEach(AlertDisplay.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } header: {
+                Text("Störungen und Bauarbeiten")
+            } footer: {
+                Text("„Nur für meinen Abschnitt“ zeigt einen Hinweis, wenn seine Überschrift eine Haltestelle deiner Strecke nennt. „Alle zur Linie“ zeigt jeden Hinweis, den der Verkehrsverbund der Linie zuordnet.")
+            }
+
+            Section {
+                Toggle("Ausgefallene Fahrten ausblenden", isOn: $hideCancelled)
+            } header: {
+                Text("Ausfälle")
+            } footer: {
+                Text("Ausgefallene Fahrten erscheinen sonst rot und durchgestrichen – im Abfahrtsmonitor, in der Verbindungssuche und in den Widgets.")
+            }
+
+            Section {
+                Picker("Zwischenhalte", selection: $stopListExpansion) {
+                    ForEach(StopListExpansion.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } header: {
+                Text("Zwischenhalte in den Fahrtdetails")
+            } footer: {
+                Text("Antippen von „… Zwischenhalte“ klappt sie jederzeit auf oder zu. Im Fahrtverlauf aus dem Abfahrtsmonitor sind sie immer offen, damit deine Haltestelle zu sehen ist.")
+            }
+        }
+        .navigationTitle("Anzeige")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

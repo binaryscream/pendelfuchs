@@ -237,7 +237,7 @@ struct TripsResponse: Decodable, StatusCarrying {
                 // Schienenersatzverkehr: ein Bus, der eine Bahn ersetzt (VVO meldet nur „Bus“).
                 let stops = (regularStops ?? []).compactMap(\.tripStop)
                 guard stops.count >= 2 else { return nil }
-                return TripLeg(kind: .ride, mode: .regionalBus, line: mot.name, direction: mot.direction,
+                return TripLeg(kind: .ride, mode: .regionalBus, line: mot.name, direction: mot.direction?.tidiedCase,
                                operatorName: mot.transportationCompany, stops: stops, durationMinutes: duration,
                                notes: ["Schienenersatzverkehr"] + (infos ?? []))
                     .with { $0.alerts = (mot.changes ?? []).map(ServiceAlert.vvoPlaceholder) }
@@ -252,7 +252,7 @@ struct TripsResponse: Decodable, StatusCarrying {
                     kind: .ride,
                     mode: VVODecoding.mode(mot.type, line: mot.name),
                     line: mot.name,
-                    direction: mot.direction,
+                    direction: mot.direction?.tidiedCase,
                     operatorName: mot.transportationCompany,
                     stops: stops,
                     durationMinutes: duration,

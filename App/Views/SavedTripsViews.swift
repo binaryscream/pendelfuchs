@@ -15,6 +15,9 @@ struct MyTripsView: View {
     @Binding var openSavedTrip: UUID?
     @Environment(SavedTripsStore.self) private var store
     @State private var path: [MyTripsRoute] = []
+    /// Fahrt, deren Löschen gerade bestätigt werden soll.
+    @State private var deleting: SavedTrip?
+    @Environment(\.stopNameStyle) private var nameStyle
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -22,6 +25,17 @@ struct MyTripsView: View {
                 list(now: context.date)
             }
             .navigationTitle("Meine Fahrten")
+            .confirmationDialog(deleting.map { "„\($0.title(style: nameStyle))“ löschen?" } ?? "",
+                                isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+                                titleVisibility: .visible, presenting: deleting) { saved in
+                Button("Fahrt löschen", role: .destructive) {
+                    store.remove(id: saved.id)
+                    Task { await TripActivityManager.shared.end(saved.id) }
+                }
+            } message: { saved in
+                Text(saved.isRegular ? "Wochentage, Erinnerungen und Benachrichtigungen dieser Fahrt gehen verloren."
+                                     : "Die gemerkte Fahrt wird entfernt.")
+            }
             .navigationDestination(for: MyTripsRoute.self) { route in
                 switch route {
                 case .saved(let id): SavedTripDetailView(id: id)
@@ -71,11 +85,10 @@ struct MyTripsView: View {
         NavigationLink(value: MyTripsRoute.saved(saved.id)) {
             SavedTripRow(saved: saved, now: now)
         }
-        .swipeActions {
-            Button("Löschen", systemImage: "trash", role: .destructive) {
-                store.remove(id: saved.id)
-                Task { await TripActivityManager.shared.end(saved.id) }
-            }
+        // Ohne `role: .destructive`: Sonst lässt iOS die Zeile schon vor der Rückfrage verschwinden.
+        .swipeActions(allowsFullSwipe: false) {
+            Button("Löschen", systemImage: "trash") { deleting = saved }
+                .tint(.red)
         }
     }
 }

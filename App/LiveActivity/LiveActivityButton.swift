@@ -29,6 +29,7 @@ struct LiveActivityButton: View {
         }
         .disabled(isWorking)
         .tint(isRunning ? .red : .accentColor)
+        .sensoryFeedback(.impact, trigger: isRunning)
         // Laufend nachsehen: Die Aktivität kann auch vom Sperrbildschirm aus oder von selbst enden.
         .task(id: saved.id) {
             while !Task.isCancelled {

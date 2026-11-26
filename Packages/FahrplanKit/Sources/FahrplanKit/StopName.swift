@@ -62,3 +62,18 @@ extension TripStop {
         StopNameStyle.secondaryLine(name: name, place: place, style: style)
     }
 }
+
+extension String {
+    /// Durchgehend großgeschriebene Ziele lesbar machen: „MESSE DRESDEN“ → „Messe Dresden“.
+    /// Gängige Abkürzungen („HBF“, „TU“) und gemischt geschriebene Namen bleiben, wie sie sind.
+    public var tidiedCase: String {
+        let letters = unicodeScalars.filter(CharacterSet.letters.contains)
+        guard letters.count >= 4, self == uppercased() else { return self }
+        let abbreviations: Set<String> = ["HBF", "BF", "ZOB", "DB", "TU", "HTW", "UKD", "DD", "S", "U"]
+        return split(separator: " ", omittingEmptySubsequences: false).map { word -> String in
+            abbreviations.contains(String(word)) ? String(word) : word.split(separator: "-", omittingEmptySubsequences: false)
+                .map { abbreviations.contains(String($0)) ? String($0) : $0.prefix(1).uppercased() + $0.dropFirst().lowercased() }
+                .joined(separator: "-")
+        }.joined(separator: " ")
+    }
+}

@@ -256,7 +256,7 @@ struct DepartureMonitorResponse: Decodable, StatusCarrying {
                 // Die VVO-ID ist pro Fahrt eindeutig; Planzeit anhängen, falls dieselbe Linie mehrfach kommt.
                 id: "\(id)@\(Int(scheduled.timeIntervalSince1970))",
                 line: lineName,
-                direction: direction,
+                direction: direction.tidiedCase,
                 platform: platform?.name,
                 mode: VVODecoding.mode(mot, line: lineName),
                 scheduledTime: scheduled,

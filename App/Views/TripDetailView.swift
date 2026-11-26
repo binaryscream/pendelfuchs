@@ -60,6 +60,7 @@ struct TripDetailView: View {
                     .accessibilityLabel("Fahrt merken")
                 }
             }
+            .sensoryFeedback(.success, trigger: saved != nil)
             .sheet(item: $editing) { SavedTripSheet(id: $0.id, isNew: sheetIsNew) }
             .fullScreenCover(isPresented: $showMap) { TripMapView(trip: trip, runs: runs) }
             // Live-Positionen (TLMS) nur für Straßenbahnen/Stadtbusse in Dresden und nur bis zur Ankunft.

@@ -102,6 +102,7 @@ struct StopDeparturesView: View {
                 Image(systemName: favorites.contains(stop) ? "star.fill" : "star")
             }
             .accessibilityLabel(favorites.contains(stop) ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen")
+            .sensoryFeedback(.success, trigger: favorites.contains(stop))
         }
         .refreshable { await load() }
         .task(id: scenePhase) {

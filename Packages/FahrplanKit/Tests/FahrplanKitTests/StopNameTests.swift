@@ -66,4 +66,13 @@ import Testing
         #expect(ride.fromPlace == nil)
         #expect(ride.fromLabel(.withPlace) == "Pirna")
     }
+
+    @Test func tidiesAllCapsDestinations() {
+        #expect("MESSE DRESDEN".tidiedCase == "Messe Dresden")
+        #expect("BAD SCHANDAU-OSTRAU".tidiedCase == "Bad Schandau-Ostrau")
+        #expect("TU DRESDEN HBF".tidiedCase == "TU Dresden HBF")
+        // Gemischt geschriebene und kurze Namen bleiben unverändert.
+        #expect("Wilder Mann".tidiedCase == "Wilder Mann")
+        #expect("HBF".tidiedCase == "HBF")
+    }
 }

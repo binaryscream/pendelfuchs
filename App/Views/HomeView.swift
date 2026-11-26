@@ -34,6 +34,7 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("Fahrplan XL")
+            .sensoryFeedback(.success, trigger: favorites.stops.count)
             .navigationDestination(for: Stop.self) { StopDeparturesView(stop: $0) }
             .navigationDestination(for: DepartureRoute.self) { DepartureJourneyView(departure: $0.departure, stop: $0.stop) }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
@@ -104,10 +105,20 @@ struct HomeView: View {
                 } else {
                     ForEach(nearby) { stop in
                         NavigationLink(value: stop) { StopRow(stop: stop) }
+                            .swipeActions(edge: .leading) { favoriteAction(stop) }
                     }
                 }
             }
         }
+    }
+
+    /// Nach rechts wischen: Haltestelle zu den Favoriten hinzufügen bzw. daraus entfernen.
+    private func favoriteAction(_ stop: Stop) -> some View {
+        let isFavorite = favorites.contains(stop)
+        return Button(isFavorite ? "Entfernen" : "Favorit", systemImage: isFavorite ? "star.slash" : "star.fill") {
+            favorites.toggle(stop)
+        }
+        .tint(isFavorite ? .gray : .yellow)
     }
 
     private var locatingRow: some View {
@@ -123,6 +134,7 @@ struct HomeView: View {
         } else {
             ForEach(searchResults) { stop in
                 NavigationLink(value: stop) { StopRow(stop: stop) }
+                    .swipeActions(edge: .leading) { favoriteAction(stop) }
             }
         }
     }

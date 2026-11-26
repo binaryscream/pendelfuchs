@@ -290,7 +290,7 @@ enum TransitousAPI {
             return Departure(
                 id: "\(tripId ?? line)@\(Int(scheduled.timeIntervalSince1970))",
                 line: line,
-                direction: headsign ?? tripTo?.name ?? "",
+                direction: (headsign ?? tripTo?.name ?? "").tidiedCase,
                 platform: TransitousAPI.platform(place.track ?? place.scheduledTrack),
                 mode: TransitousAPI.mode(mode),
                 scheduledTime: scheduled,
@@ -448,7 +448,7 @@ enum TransitousAPI {
                     mode: TransitousAPI.mode(mode),
                     line: TransitousAPI.lineName(displayName: displayName, routeShortName: routeShortName,
                                                  tripShortName: tripShortName, mode: mode),
-                    direction: headsign,
+                    direction: headsign?.tidiedCase,
                     operatorName: agencyName,
                     stops: stops,
                     durationMinutes: minutes,
