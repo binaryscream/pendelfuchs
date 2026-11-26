@@ -49,9 +49,8 @@ struct TripLiveActivity: Widget {
                     LineBadge(line: ride.line, mode: ride.mode, compact: true)
                 }
             } compactTrailing: {
-                // Kreis, der sich bis zum Ziel der aktuellen Phase (Abfahrt bzw. Ankunft) schließt.
-                PhaseRing(info: info, hasProblem: context.state.isCancelled)
-                    .frame(width: 22, height: 22)
+                // Countdown bis zum Ziel der aktuellen Phase (Abfahrt bzw. Ausstieg); läuft von selbst weiter.
+                IslandCountdown(info: info, hasProblem: context.state.isCancelled)
             } minimal: {
                 PhaseRing(info: info, hasProblem: context.state.isCancelled)
                     .frame(width: 22, height: 22)
@@ -323,6 +322,42 @@ private struct PhaseRing: View {
         } else {
             Image(systemName: "checkmark.circle.fill").font(.system(size: 20)).foregroundStyle(tint)
                 .accessibilityLabel("Angekommen")
+        }
+    }
+}
+
+/// Kompakte Dynamic Island, rechts: Minuten und Sekunden bis zur Abfahrt bzw. zum Ausstieg. Liegt das Ziel mehr
+/// als eine Stunde entfernt, steht dort die Uhrzeit; nach der Ankunft der Haken, bei Ausfall das Warnzeichen.
+private struct IslandCountdown: View {
+    let info: PhaseInfo
+    let hasProblem: Bool
+
+    var body: some View {
+        let tint = info.ride?.mode.color ?? Color.accentColor
+        if let target = info.target, target > .now, !hasProblem {
+            Group {
+                if target.timeIntervalSinceNow < 60 * 60 {
+                    // Minuten:Sekunden mit Stoppuhr davor – ohne das Symbol sähe „19:09“ neben der Uhr wie eine
+                    // Uhrzeit aus. (Eine reine Minutenanzeige schreibt iOS als „18 Minuten“ aus; zu breit.)
+                    HStack(spacing: 2) {
+                        Image(systemName: "timer").font(.system(size: 10, weight: .semibold))
+                        Text(timerInterval: Date.now...target, countsDown: true, showsHours: false)
+                            // Feste Breite: Der Zähler würde sonst die ganze Insel beanspruchen.
+                            .frame(width: 40, alignment: .trailing)
+                    }
+                } else {
+                    Text(target, style: .time)
+                }
+            }
+            .font(.system(.caption, design: .rounded).weight(.semibold))
+            .monospacedDigit()
+            .multilineTextAlignment(.trailing)
+            .lineLimit(1)
+            .foregroundStyle(tint)
+            .accessibilityLabel(info.isRiding ? "Zeit bis zum Ausstieg" : "Zeit bis zur Abfahrt")
+        } else {
+            PhaseRing(info: info, hasProblem: hasProblem)
+                .frame(width: 22, height: 22)
         }
     }
 }
