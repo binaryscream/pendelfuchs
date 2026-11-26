@@ -16,6 +16,8 @@ struct TripSearchView: View {
     /// Sucheinstellungen (Deutschlandticket, Umstiege, Gehgeschwindigkeit, Verkehrsmittel) – bleiben gespeichert.
     @AppStorage("tripSearch.options") private var optionsData = Data()
     @State private var showOptions = false
+    @Environment(RecentsStore.self) private var recents
+    @Environment(\.stopNameStyle) private var nameStyle
 
     @State private var via: Stop?
     @State private var showVia = false
@@ -140,6 +142,33 @@ struct TripSearchView: View {
                         Text("Start und Ziel sind gleich.")
                     }
                 }
+
+                // Zuletzt gesuchte Strecken: Antippen sucht sofort ab jetzt.
+                if !recents.routes.isEmpty {
+                    Section("Zuletzt gesucht") {
+                        ForEach(recents.routes) { route in
+                            Button {
+                                originData = Self.encode(route.origin)
+                                destinationData = Self.encode(route.destination)
+                                withAnimation { showVia = false; via = nil; timeIsNow = true }
+                                search()
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "clock.arrow.circlepath").foregroundStyle(.secondary)
+                                    Text("\(route.origin.label(nameStyle)) → \(route.destination.label(nameStyle))")
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(2)
+                                    Spacer(minLength: 0)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .swipeActions {
+                                Button("Entfernen", systemImage: "xmark") { recents.remove(route) }
+                            }
+                        }
+                    }
+                }
             }
             .navigationTitle("Verbindungen")
             .onChange(of: openRoute, initial: true) { _, link in
@@ -234,6 +263,7 @@ struct TripSearchView: View {
                               time: timeIsNow ? .now : time,
                               isArrivalTime: isArrival,
                               options: options)
+        recents.use(origin: origin, destination: destination)
         path = [.results(query)]
     }
 
@@ -304,6 +334,7 @@ struct StopPickerSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(FavoritesStore.self) private var favorites
+    @Environment(RecentsStore.self) private var recents
     @Environment(LocationProvider.self) private var location
     @Environment(\.transit) private var transit
 
@@ -313,14 +344,43 @@ struct StopPickerSheet: View {
     @State private var nearby: [Stop] = []
     @State private var nearbyLoaded = false
     @State private var searchActive = true
+    @Environment(\.stopNameStyle) private var pickerStyle
 
     var body: some View {
         NavigationStack {
             List {
                 if query.isEmpty {
+                    // Die App rechnet von Haltestelle zu Haltestelle – „Aktueller Standort“ ist deshalb die
+                    // nächstgelegene Haltestelle, und das steht auch so da.
+                    if let nearest = nearby.first {
+                        Section {
+                            Button {
+                                choose(nearest)
+                            } label: {
+                                Label {
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text("Aktueller Standort").foregroundStyle(.primary)
+                                        Text("Nächste Haltestelle: \(nearest.label(pickerStyle))")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                } icon: {
+                                    Image(systemName: "location.fill")
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                     if !favorites.stops.isEmpty {
                         Section("Favoriten") {
                             ForEach(favorites.stops) { row($0) }
+                        }
+                    }
+                    let recent = recents.stops.filter { !favorites.contains($0) }.prefix(5)
+                    if !recent.isEmpty {
+                        Section("Zuletzt verwendet") {
+                            ForEach(Array(recent)) { row($0) }
                         }
                     }
                     Section("In der Nähe") {
@@ -364,10 +424,15 @@ struct StopPickerSheet: View {
         }
     }
 
+    private func choose(_ stop: Stop) {
+        recents.use(stop)
+        onSelect(stop)
+        dismiss()
+    }
+
     private func row(_ stop: Stop) -> some View {
         Button {
-            onSelect(stop)
-            dismiss()
+            choose(stop)
         } label: {
             StopRow(stop: stop).contentShape(Rectangle())
         }

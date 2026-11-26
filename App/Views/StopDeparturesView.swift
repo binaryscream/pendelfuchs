@@ -9,6 +9,7 @@ struct StopDeparturesView: View {
     let stop: Stop
 
     @Environment(FavoritesStore.self) private var favorites
+    @Environment(RecentsStore.self) private var recents
     @Environment(\.transit) private var transit
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.stopNameStyle) private var style
@@ -105,6 +106,7 @@ struct StopDeparturesView: View {
             .sensoryFeedback(.success, trigger: favorites.contains(stop))
         }
         .refreshable { await load() }
+        .onAppear { recents.use(stop) }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             while !Task.isCancelled {

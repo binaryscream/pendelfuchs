@@ -10,6 +10,7 @@ struct FahrplanXLApp: App {
     @State private var favorites: FavoritesStore
     @State private var location = LocationProvider()
     @State private var savedTrips: SavedTripsStore
+    @State private var recents: RecentsStore
     @AppStorage(AppearanceSetting.storageKey) private var appearance: AppearanceSetting = .system
     @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
     @AppStorage(StopNameStyle.storageKey, store: AppGroup.defaults) private var stopNameStyle = StopNameStyle.withPlace
@@ -27,6 +28,7 @@ struct FahrplanXLApp: App {
         AppGroup.migrateFromStandardDefaults()
         _favorites = State(initialValue: FavoritesStore(defaults: AppGroup.defaults))
         _savedTrips = State(initialValue: SavedTripsStore(defaults: AppGroup.defaults))
+        _recents = State(initialValue: RecentsStore(defaults: AppGroup.defaults))
         // Knöpfe in der Live-Aktivität („Aktualisieren“, „Beenden“) laufen im App-Prozess.
         TripActivityActions.refresh = { await TripActivityManager.shared.refreshAll() }
         TripActivityActions.end = { await TripActivityManager.shared.end($0) }
@@ -72,6 +74,7 @@ struct FahrplanXLApp: App {
                 }
                 .environment(favorites)
                 .environment(savedTrips)
+                .environment(recents)
                 .environment(location)
                 .environment(\.transit, DataSources.router(useVVO: useVVO))
                 .preferredColorScheme(appearance.colorScheme)

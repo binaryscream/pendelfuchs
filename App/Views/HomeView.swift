@@ -9,6 +9,7 @@ struct HomeView: View {
     @Binding var openStop: Stop?
 
     @Environment(FavoritesStore.self) private var favorites
+    @Environment(RecentsStore.self) private var recents
     @Environment(LocationProvider.self) private var location
     @Environment(\.transit) private var transit
     @Environment(\.openURL) private var openURL
@@ -28,6 +29,7 @@ struct HomeView: View {
             List {
                 if query.isEmpty {
                     favoritesSection
+                    recentSection
                     nearbySection
                 } else {
                     searchSection
@@ -70,6 +72,22 @@ struct HomeView: View {
                 }
                 .onDelete { favorites.remove(atOffsets: $0) }
                 .onMove { favorites.move(fromOffsets: $0, toOffset: $1) }
+            }
+        }
+    }
+
+    /// Zuletzt geöffnete Haltestellen, soweit sie nicht schon Favoriten sind.
+    @ViewBuilder private var recentSection: some View {
+        let stops = recents.stops.filter { !favorites.contains($0) }.prefix(5)
+        if !stops.isEmpty {
+            Section("Zuletzt verwendet") {
+                ForEach(Array(stops)) { stop in
+                    NavigationLink(value: stop) { StopRow(stop: stop) }
+                        .swipeActions(edge: .leading) { favoriteAction(stop) }
+                        .swipeActions(edge: .trailing) {
+                            Button("Entfernen", systemImage: "xmark") { recents.remove(stop) }
+                        }
+                }
             }
         }
     }
