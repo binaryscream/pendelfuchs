@@ -41,6 +41,9 @@ struct HomeView: View {
             .navigationDestination(for: DepartureRoute.self) { DepartureJourneyView(departure: $0.departure, stop: $0.stop) }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: "Haltestelle suchen")
+            // Großer Titel fest in der Leiste. Mit dem üblichen einklappbaren Titel startet die Seite wegen der
+            // immer sichtbaren Suchleiste eingeklappt – dann stünde „Fahrplan XL“ nur klein in der Mitte.
+            .toolbarTitleDisplayMode(.inlineLarge)
             .task(id: query) { await search() }
             // Auch bei der Rückkehr in die App: neuer Ort, oder die Standortfreigabe wurde gerade erteilt.
             .task(id: scenePhase) { if scenePhase == .active { await loadNearby() } }
