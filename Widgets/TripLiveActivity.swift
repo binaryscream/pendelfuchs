@@ -165,6 +165,7 @@ private struct TripProgressBar: View {
             EmptyView()
         }
         .tint(state.rides.first?.mode.color ?? .accentColor)
+        .accessibilityLabel("Fortschritt der Fahrt")
     }
 }
 
@@ -202,8 +203,26 @@ private struct RideChain: View {
                 .font(.caption)
                 .minimumScaleFactor(0.75)
                 .strikethrough(ride.isCancelled, color: .red)
+                // Als ein Satz vorlesen statt in losen Bruchstücken; ein Ausfall wird ausgesprochen.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(spoken(ride))
             }
         }
+    }
+}
+
+private extension RideChain {
+    /// „S1, ab 7:06 Pirna Bahnhof, an 7:28 Dresden Hbf“ – mit Ausfall bzw. Verspätung.
+    func spoken(_ ride: TripActivityState.Ride) -> String {
+        let time = Date.FormatStyle.dateTime.hour().minute()
+        var text = "\(ride.line), ab \(ride.departure.expectedTime.formatted(time)) \(ride.fromLabel(style)), "
+            + "an \(ride.arrival.expectedTime.formatted(time)) \(ride.toLabel(style))"
+        if ride.isCancelled {
+            text += ", fällt aus"
+        } else if let delay = ride.departure.delayMinutes, delay > 0 {
+            text += ", \(delay) \(delay == 1 ? "Minute" : "Minuten") Verspätung"
+        }
+        return text
     }
 }
 
@@ -225,6 +244,7 @@ private struct TripProgress: View {
                 EmptyView()
             }
             .tint(state.rides.first?.mode.color ?? .accentColor)
+            .accessibilityLabel("Fortschritt der Fahrt")
 
             HStack(spacing: 6) {
                 TimeLabel(prefix: "ab", point: state.departure)
@@ -265,6 +285,7 @@ private struct TimeLabel: View {
                     Text(delay > 0 ? "+\(delay)" : "\(delay)")
                         .fontWeight(.semibold)
                         .foregroundStyle(delay >= 3 ? .red : .orange)
+                        .accessibilityLabel(delay > 0 ? "\(delay) Minuten Verspätung" : "\(-delay) Minuten früher")
                 }
             }
         }

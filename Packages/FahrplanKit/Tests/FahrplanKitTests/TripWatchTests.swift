@@ -88,6 +88,18 @@ import Testing
         #expect(check(trip(trainCancelled: true), memory: result.memory).notices.isEmpty, "nur einmal")
     }
 
+    @Test func missedConnectionDoesNotRepeatWhenForecastJitters() {
+        // Ankunft pendelt um Sekunden um die Abfahrt der S2 (30 min): verpasst → knapp erreichbar → verpasst.
+        let gone = check(trip(busDelay: 15.5))
+        #expect(gone.notices.contains { $0.body.contains("nicht zu schaffen") })
+        let back = check(trip(busDelay: 14.9), memory: gone.memory)
+        let again = check(trip(busDelay: 15.5), memory: back.memory)
+        #expect(!again.notices.contains { $0.body.contains("nicht zu schaffen") })
+        // Ist der Anschluss wieder deutlich zu schaffen und reißt später erneut, wird neu gemeldet.
+        let fine = check(trip(busDelay: 5), memory: again.memory)
+        #expect(check(trip(busDelay: 17), memory: fine.memory).notices.contains { $0.body.contains("nicht zu schaffen") })
+    }
+
     @Test func missedAndTightConnections() {
         // Bus +17: an 32, S2 ab 30 → verpasst (Verspätung wird dann nicht extra gemeldet).
         let gone = check(trip(busDelay: 17))

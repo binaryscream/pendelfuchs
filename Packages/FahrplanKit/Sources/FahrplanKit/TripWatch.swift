@@ -86,7 +86,11 @@ public enum TripWatch {
                 add(.connection, "\(line.map { "Anschluss \($0)" } ?? "Anschluss") in \(stop.name) ist nicht zu schaffen.\(replacementText)")
             }
         }
-        memory.notifiedDisruption = disruptionKey
+        // Ein gemeldeter verpasster Anschluss bleibt gemerkt, solange er nur um Sekunden wieder erreichbar
+        // scheint – sonst löst eine pendelnde Prognose dieselbe Meldung immer wieder aus.
+        let stillShaky = disruption == nil && memory.notifiedDisruption?.hasPrefix("missed:") == true
+            && tightConnection(in: trip, limit: 1) != nil
+        if !stillShaky { memory.notifiedDisruption = disruptionKey }
         // Bei Ausfall erübrigen sich Verspätung, Gleis und knapper Anschluss.
         guard disruption == nil else { return (notices, memory) }
 

@@ -360,6 +360,7 @@ private struct RouteTripRow: View {
                 Spacer(minLength: 4)
                 if trip.disruption != nil {
                     Image(systemName: "exclamationmark.triangle.fill").font(.caption).foregroundStyle(.red)
+                        .accessibilityLabel("Verbindung gestört")
                 }
                 DelayedTimeText(scheduled: trip.arrival.scheduledTime, actual: trip.arrival.realTime, inline: true)
                     .font(.system(.subheadline, design: .rounded).weight(.bold))
@@ -381,6 +382,7 @@ private struct RouteTripRow: View {
                     }
                     if !AlertDisplay.current.filter(trip).isEmpty {
                         Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                            .accessibilityLabel("Hinweis zur Fahrt")
                     }
                     if trip.interchanges > 0 {
                         Text("\(trip.interchanges)×").foregroundStyle(.tertiary)
@@ -454,5 +456,6 @@ private struct RouteBar: View {
             }
         }
         .frame(height: 6)
+        .accessibilityHidden(true)   // reine Zierde – die Zeiten stehen darüber
     }
 }

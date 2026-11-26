@@ -27,6 +27,9 @@ struct DeparturesEntry: TimelineEntry {
     let date: Date
     let stop: Stop?
     let content: Content
+    /// Letzter Eintrag der Zeitleiste: Uhrzeiten statt Minuten. Lädt iOS das Widget später neu als geplant,
+    /// bleibt dieser Eintrag stehen – Uhrzeiten stimmen dann weiter, „3 min“ wäre falsch.
+    var showsClockTimes = false
 }
 
 struct DeparturesProvider: AppIntentTimelineProvider {
@@ -72,7 +75,11 @@ struct DeparturesProvider: AppIntentTimelineProvider {
                 return DeparturesEntry(date: minute == 0 ? now : date, stop: stop,
                                        content: .departures(Array(upcoming.prefix(12))))
             }
-            return entries
+            guard let last = entries.last, case .departures(let remaining) = last.content, !remaining.isEmpty else {
+                return entries
+            }
+            return entries + [DeparturesEntry(date: last.date.addingTimeInterval(60), stop: stop,
+                                              content: .departures(remaining), showsClockTimes: true)]
         } catch {
             return [DeparturesEntry(date: .now, stop: stop, content: .message("Keine Verbindung zum Fahrplandienst."))]
         }
@@ -148,7 +155,8 @@ struct DeparturesWidgetView: View {
                         Spacer(minLength: 0)
                     } else {
                         ForEach(departures.prefix(maxRows)) { departure in
-                            WidgetDepartureRow(departure: departure, now: entry.date, compact: family == .systemSmall)
+                            WidgetDepartureRow(departure: departure, now: entry.date, compact: family == .systemSmall,
+                                               clock: entry.showsClockTimes)
                         }
                         Spacer(minLength: 0)
                     }
@@ -179,9 +187,11 @@ struct DeparturesWidgetView: View {
                         Text(departure.line).fontWeight(.bold)
                         Text(departure.direction).lineLimit(1)
                         Spacer(minLength: 2)
-                        Text(minutesText(departure, now: entry.date)).monospacedDigit()
+                        Text(minutesText(departure, now: entry.date, clock: entry.showsClockTimes)).monospacedDigit()
                     }
                     .font(.caption)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(spokenText(departure, now: entry.date, clock: entry.showsClockTimes))
                 }
             } else {
                 Text("Keine Abfahrten").font(.caption).foregroundStyle(.secondary)
@@ -195,6 +205,7 @@ private struct WidgetDepartureRow: View {
     let departure: Departure
     let now: Date
     let compact: Bool
+    var clock = false
 
     var body: some View {
         HStack(spacing: compact ? 4 : 6) {
@@ -211,19 +222,36 @@ private struct WidgetDepartureRow: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(delay >= 3 ? .red : .orange)
             }
-            Text(minutesText(departure, now: now))
+            Text(minutesText(departure, now: now, clock: clock))
                 .font((compact ? Font.caption : .subheadline).weight(.semibold).monospacedDigit())
                 .foregroundStyle(departure.hasRealTime ? Color.primary : Color.secondary)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spokenText(departure, now: now, clock: clock))
     }
 }
 
 /// „jetzt“, „5 min“ oder bei mehr als einer Stunde die Uhrzeit.
-private func minutesText(_ departure: Departure, now: Date) -> String {
+private func minutesText(_ departure: Departure, now: Date, clock: Bool = false) -> String {
     if departure.state == .cancelled { return "fällt aus" }
+    if clock { return departure.expectedTime.formatted(date: .omitted, time: .shortened) }
     let minutes = departure.minutesUntilDeparture(from: now)
     if minutes == 0 { return "jetzt" }
     if minutes < 60 { return "\(minutes) min" }
     return departure.expectedTime.formatted(date: .omitted, time: .shortened)
 }
 
+
+/// Für VoiceOver: „Linie 7 nach Weixdorf, in 5 Minuten, 3 Minuten Verspätung“.
+private func spokenText(_ departure: Departure, now: Date, clock: Bool) -> String {
+    let head = "Linie \(departure.line) nach \(departure.direction)"
+    if departure.state == .cancelled { return "\(head), fällt aus" }
+    let minutes = departure.minutesUntilDeparture(from: now)
+    var text = clock || minutes >= 60 ? "\(head), um \(departure.expectedTime.formatted(date: .omitted, time: .shortened))"
+        : minutes == 0 ? "\(head), jetzt"
+        : "\(head), in \(minutes) \(minutes == 1 ? "Minute" : "Minuten")"
+    if let delay = departure.delayMinutes, delay > 0 {
+        text += ", \(delay) \(delay == 1 ? "Minute" : "Minuten") Verspätung"
+    }
+    return text
+}
