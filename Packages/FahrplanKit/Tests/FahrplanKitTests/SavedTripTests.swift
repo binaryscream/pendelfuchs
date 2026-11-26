@@ -142,6 +142,19 @@ private func trip(_ lines: [String], at dep: Date) -> Trip {
         #expect(state.arrival.scheduledTime == long.arrival.scheduledTime)
     }
 
+    @Test func keepsSearchOptionsForLaterQueries() throws {
+        // Mit „nur Deutschlandticket“ gesucht und gemerkt → jede spätere Suche (auch der Ersatz) gilt genauso.
+        var strict = query
+        strict.options = TripOptions(deutschlandTicketOnly: true)
+        let s = SavedTrip(trip: trip(["S1"], at: date(23, 6, 30)), query: strict, weekdays: Weekday.workdays, calendar: berlin)
+        #expect(s.query(on: date(24, 12, 0), calendar: berlin).options.deutschlandTicketOnly)
+        let decoded = try JSONDecoder().decode(SavedTrip.self, from: JSONEncoder().encode(s))
+        #expect(decoded.options == strict.options)
+        // Standard wird nicht eigens gespeichert; alte Daten ohne das Feld gelten als Standard.
+        #expect(saved(Weekday.workdays).searchOptions == nil)
+        #expect(saved(Weekday.workdays).query(on: date(24, 12, 0), calendar: berlin).options.isStandard)
+    }
+
     @Test func bookmarkHasNoOccurrence() {
         #expect(saved([]).nextOccurrence(after: date(23, 5, 0), calendar: berlin) == nil)
     }

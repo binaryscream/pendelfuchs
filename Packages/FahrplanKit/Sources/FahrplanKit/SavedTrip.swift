@@ -142,6 +142,17 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
         set { notifications = newValue }
     }
 
+    /// Sucheinstellungen, mit denen die Fahrt gefunden wurde (Deutschlandticket, Umstiege, Verkehrsmittel …).
+    /// Optional gespeichert, damit ältere Daten lesbar bleiben; `nil` = Standard.
+    public var searchOptions: TripOptions?
+
+    /// Gelten bei jeder erneuten Suche dieser Fahrt – auch für den Ersatz bei Ausfall. Ohne sie könnte der
+    /// Verpass-Assistent z. B. einen ICE vorschlagen, obwohl nur mit Deutschlandticket gesucht wurde.
+    public var options: TripOptions {
+        get { searchOptions ?? .standard }
+        set { searchOptions = newValue.isStandard ? nil : newValue }
+    }
+
     public init(trip: Trip, query: TripQuery, weekdays: Set<Weekday> = [], calendar: Calendar = .current) {
         func clean(_ stop: Stop) -> Stop { var s = stop; s.distance = nil; return s }
         id = UUID()
@@ -155,6 +166,7 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
         modes = trip.rides.map { $0.mode ?? .other }
         self.weekdays = weekdays
         createdAt = .now
+        searchOptions = query.options.isStandard ? nil : query.options
     }
 
     public var isRegular: Bool { !weekdays.isEmpty }
@@ -198,7 +210,8 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
         // Ein paar Minuten früher fragen: `departure` ist die Abfahrt der ersten Bahn. Beginnt die Verbindung mit
         // einem Fußweg oder wurde der Fahrplan um eine Minute vorgezogen, fehlte sie sonst im Ergebnis.
         let time = (departure.date(on: day, calendar: calendar) ?? day).addingTimeInterval(-Self.queryLead)
-        return TripQuery(origin: origin, destination: destination, via: via, time: time, isArrivalTime: false)
+        return TripQuery(origin: origin, destination: destination, via: via, time: time, isArrivalTime: false,
+                         options: options)
     }
 
     /// Ergebnis von `resolve`: die Verbindung, die man jetzt nehmen sollte, und ein Hinweis, falls sie die

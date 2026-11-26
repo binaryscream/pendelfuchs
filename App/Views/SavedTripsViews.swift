@@ -313,6 +313,7 @@ struct SavedTripSheet: View {
 struct SavedTripSettingsSections: View {
     let id: UUID
     @Environment(SavedTripsStore.self) private var store
+    @State private var showOptions = false
 
     var body: some View {
         if let saved = store.trip(id: id) {
@@ -332,6 +333,30 @@ struct SavedTripSettingsSections: View {
                 }
             } footer: {
                 Text("Fällt die Fahrt aus oder ist der Anschluss laut Echtzeit nicht mehr zu schaffen, nehmen Live-Aktivität und Übersicht automatisch die nächste passende Verbindung.")
+            }
+
+            Section {
+                Button {
+                    showOptions = true
+                } label: {
+                    HStack {
+                        Label("Suchoptionen", systemImage: "slider.horizontal.3")
+                        Spacer()
+                        Text(saved.options.summary)
+                            .font(.subheadline)
+                            .foregroundStyle(saved.options.isStandard ? Color.secondary : Color.accentColor)
+                            .multilineTextAlignment(.trailing)
+                            .lineLimit(2)
+                        Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .sheet(isPresented: $showOptions) {
+                    TripOptionsSheet(options: binding(saved, \.options))
+                }
+            } footer: {
+                Text("Gelten immer, wenn die App diese Fahrt neu sucht – auch für den Ersatz bei Ausfall oder verpasstem Anschluss.")
             }
 
             Section {
