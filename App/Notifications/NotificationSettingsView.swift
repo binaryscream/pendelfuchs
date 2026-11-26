@@ -13,6 +13,9 @@ struct NotificationSettingsView: View {
     @AppStorage(TripNotifier.kindKey(.platformChange), store: AppGroup.defaults) private var platformChange = true
     @AppStorage(TripNotifier.kindKey(.connection), store: AppGroup.defaults) private var connection = true
 
+    @AppStorage(TripNotifier.reminderKey, store: AppGroup.defaults) private var reminder = true
+    @AppStorage(TripNotifier.reminderLeadKey, store: AppGroup.defaults) private var reminderLead = 20
+
     @Environment(\.scenePhase) private var scenePhase
     @State private var status: UNAuthorizationStatus?
     @State private var testSent = false
@@ -57,6 +60,19 @@ struct NotificationSettingsView: View {
                 }
 
                 Section {
+                    Toggle("Erinnerung vor der Abfahrt", isOn: $reminder)
+                    if reminder {
+                        Picker("Vorlauf", selection: $reminderLead) {
+                            ForEach([10, 15, 20, 30, 45], id: \.self) { Text("\($0) Minuten").tag($0) }
+                        }
+                    }
+                } header: {
+                    Text("Vor der Abfahrt")
+                } footer: {
+                    Text("Für regelmäßige Fahrten, mit dem Knopf „Live-Aktivität starten“ (Meldung gedrückt halten). Die Erinnerung ist fest eingeplant und kommt pünktlich – sie richtet sich nach dem Fahrplan, nicht nach einer Verspätung.")
+                }
+
+                Section {
                     Button {
                         Task { await sendTest() }
                     } label: {
@@ -64,6 +80,14 @@ struct NotificationSettingsView: View {
                               systemImage: testSent ? "checkmark.circle" : "bell.and.waves.left.and.right")
                     }
                     .disabled(testSent || status == .denied)
+                    if reminder {
+                        Button {
+                            Task { await sendTest(reminderStyle: true) }
+                        } label: {
+                            Label("Test: Erinnerung mit Startknopf", systemImage: "livephoto")
+                        }
+                        .disabled(testSent || status == .denied)
+                    }
                 } footer: {
                     Text("Kommt nach 5 Sekunden – so bleibt Zeit, das iPhone zu sperren oder die App zu verlassen.")
                 }
@@ -72,12 +96,17 @@ struct NotificationSettingsView: View {
         .navigationTitle("Benachrichtigungen")
         .task(id: scenePhase) { status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus }
         .onChange(of: enabled) { _, isOn in
-            if isOn { Task { await requestAuthorization() } }
+            Task {
+                if isOn { await requestAuthorization() }
+                await TripNotifier.shared.scheduleReminders()
+            }
         }
+        .onChange(of: reminder) { Task { await TripNotifier.shared.scheduleReminders() } }
+        .onChange(of: reminderLead) { Task { await TripNotifier.shared.scheduleReminders() } }
     }
 
     /// Beispielmeldung, wie sie bei einer Verspätung käme – nach 5 Sekunden.
-    private func sendTest() async {
+    private func sendTest(reminderStyle: Bool = false) async {
         let center = UNUserNotificationCenter.current()
         if status != .authorized && status != .provisional && status != .ephemeral {
             await requestAuthorization()
@@ -91,6 +120,11 @@ struct NotificationSettingsView: View {
         if let saved = SavedTripsStore(defaults: AppGroup.defaults).regular().first {
             content.title = "Test: \(saved.title)"
             content.userInfo = [NotificationRouter.savedTripKey: saved.id.uuidString]
+        }
+        if reminderStyle {
+            // Wie die echte Erinnerung: mit dem Knopf „Live-Aktivität starten“.
+            content.body = "In \(reminderLead) Minuten: Abfahrt. Gedrückt halten für „Live-Aktivität starten“."
+            content.categoryIdentifier = TripNotifier.startCategory
         }
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
         try? await center.add(UNNotificationRequest(identifier: "test-\(UUID().uuidString)", content: content,

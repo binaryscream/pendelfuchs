@@ -67,6 +67,9 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.de.fahrplanxl.app
+        # Für dringliche Meldungen, die einen Fokus durchbrechen, bräuchte es zusätzlich
+        #   com.apple.developer.usernotifications.time-sensitive: true
+        # Das erlaubt Apple nur mit bezahltem Entwicklerkonto – mit dem kostenlosen schlägt der Build fehl.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: de.fahrplanxl.app

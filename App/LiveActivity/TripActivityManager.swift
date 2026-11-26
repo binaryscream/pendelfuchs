@@ -131,6 +131,7 @@ final class TripActivityManager {
     func backgroundRefresh() async {
         await refreshAll()
         await TripNotifier.shared.checkAll()
+        await TripNotifier.shared.scheduleReminders()
         scheduleBackgroundRefresh()
     }
 

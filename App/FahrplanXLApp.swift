@@ -36,6 +36,7 @@ struct FahrplanXLApp: App {
         }
         // Benachrichtigungen auch zeigen, während die App offen ist.
         UNUserNotificationCenter.current().delegate = NotificationPresenter.shared
+        TripNotifier.registerCategories()
     }
 
     var body: some Scene {
@@ -87,7 +88,10 @@ struct FahrplanXLApp: App {
                     WidgetCenter.shared.reloadTimelines(ofKind: "de.fahrplanxl.nexttrip")
                     // Gleich nach dem Anlegen der ersten regelmäßigen Fahrt um Erlaubnis fragen – nicht erst
                     // beim nächsten Öffnen der App.
-                    Task { await TripNotifier.shared.requestAuthorizationIfNeeded() }
+                    Task {
+                        await TripNotifier.shared.requestAuthorizationIfNeeded()
+                        await TripNotifier.shared.scheduleReminders()
+                    }
                 }
                 .onChange(of: useVVO) { WidgetCenter.shared.reloadAllTimelines() }
                 .environment(\.stopNameStyle, stopNameStyle)
@@ -102,6 +106,7 @@ struct FahrplanXLApp: App {
                         return
                     }
                     await TripNotifier.shared.requestAuthorizationIfNeeded()
+                    await TripNotifier.shared.scheduleReminders()
                     while !Task.isCancelled {
                         await TripActivityManager.shared.refreshAll()
                         await TripNotifier.shared.checkAll()

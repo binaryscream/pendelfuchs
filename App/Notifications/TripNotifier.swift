@@ -38,6 +38,92 @@ final class TripNotifier {
         return TripWatchSettings(enabledKinds: Set(kinds), delayThreshold: threshold)
     }
 
+    // MARK: Erinnerung vor der Abfahrt
+
+    static let reminderKey = "notifications.reminder"
+    static let reminderLeadKey = "notifications.reminderLead"
+    /// Kategorie der Erinnerung – bringt den Knopf „Live-Aktivität starten“ mit.
+    static let startCategory = "TRIP_START"
+    nonisolated static let startActionID = "START_LIVE"
+
+    var remindersEnabled: Bool { isEnabled && (defaults.object(forKey: Self.reminderKey) as? Bool ?? true) }
+    /// So viele Minuten vor der Abfahrt kommt die Erinnerung.
+    var reminderLead: Int { defaults.object(forKey: Self.reminderLeadKey) as? Int ?? 20 }
+
+    /// Meldet iOS den Knopf unter der Erinnerung an (einmal beim Start der App).
+    static func registerCategories() {
+        // `.foreground`: Der Knopf öffnet die App – eine Live-Aktivität darf iOS nur von dort aus starten lassen.
+        let start = UNNotificationAction(identifier: startActionID, title: "Live-Aktivität starten",
+                                         options: [.foreground])
+        let category = UNNotificationCategory(identifier: startCategory, actions: [start], intentIdentifiers: [])
+        UNUserNotificationCenter.current().setNotificationCategories([category])
+    }
+
+    private static let reminderPrefix = "start|"
+
+    private func reminderID(_ saved: SavedTrip, departure: Date) -> String {
+        "\(Self.reminderPrefix)\(saved.id.uuidString)|\(Int(departure.timeIntervalSince1970))"
+    }
+
+    /// Plant die Erinnerungen der nächsten Termine fest ein. Anders als die Echtzeit-Meldungen kommen sie
+    /// deshalb auch dann pünktlich, wenn iOS die App im Hintergrund nicht weckt.
+    func scheduleReminders(now: Date = .now) async {
+        let old = await center.pendingNotificationRequests().map(\.identifier)
+            .filter { $0.hasPrefix(Self.reminderPrefix) }
+        center.removePendingNotificationRequests(withIdentifiers: old)
+
+        guard remindersEnabled else { return }
+        let status = await center.notificationSettings().authorizationStatus
+        guard status == .authorized || status == .provisional || status == .ephemeral else { return }
+
+        let lead = reminderLead
+        let time = Date.FormatStyle.dateTime.hour().minute()
+        var planned = 0
+        for saved in SavedTripsStore(defaults: defaults).trips where saved.isRegular && saved.usesNotifications {
+            // Die nächsten fünf Termine je Fahrt (iOS erlaubt insgesamt nur 64 geplante Meldungen).
+            var cursor = now
+            for _ in 0..<5 {
+                guard planned < 50, let departure = saved.nextOccurrence(after: cursor, grace: 0) else { break }
+                cursor = departure.addingTimeInterval(60)
+                let fire = departure.addingTimeInterval(TimeInterval(-lead * 60))
+                guard fire > now.addingTimeInterval(5) else { continue }
+
+                let content = UNMutableNotificationContent()
+                content.title = saved.title
+                let line = saved.lines.first.map { " mit \($0)" } ?? ""
+                content.body = "In \(lead) Minuten: Abfahrt \(departure.formatted(time))\(line) ab \(saved.origin.label(.current))."
+                content.sound = .default
+                content.threadIdentifier = saved.id.uuidString
+                content.categoryIdentifier = Self.startCategory
+                content.userInfo = [NotificationRouter.savedTripKey: saved.id.uuidString]
+                let parts = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: fire)
+                let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
+                try? await center.add(UNNotificationRequest(identifier: reminderID(saved, departure: departure),
+                                                            content: content, trigger: trigger))
+                planned += 1
+            }
+        }
+    }
+
+    /// Knopf „Live-Aktivität starten“ unter der Erinnerung. Die App kommt dabei gerade erst in den Vordergrund,
+    /// deshalb ein paar Versuche: Vorher lehnt iOS den Start ab.
+    func startActivity(forSavedTrip id: UUID) async {
+        guard let saved = SavedTripsStore(defaults: defaults).trip(id: id) else { return }
+        for attempt in 0..<4 {
+            if attempt > 0 { try? await Task.sleep(for: .seconds(1)) }
+            do {
+                try await TripActivityManager.shared.start(saved)
+                return
+            } catch let error as TripActivityManager.StartError {
+                // Fachliche Gründe (keine Fahrt, Ausfall, ausgeschaltet) ändern sich durch Warten nicht.
+                _ = error
+                return
+            } catch {
+                continue
+            }
+        }
+    }
+
     // MARK: Prüfen
 
     /// Fragt einmalig nach der Erlaubnis (nur aus der geöffneten App heraus sinnvoll).
@@ -70,6 +156,10 @@ final class TripNotifier {
                                            memory: memories[key] ?? TripWatchMemory(), settings: settings)
             memories[key] = result.memory
             for notice in result.notices { await send(notice, about: saved) }
+            // Fällt die Fahrt ersatzlos aus, braucht es keine Erinnerung an die Abfahrt mehr.
+            if replacement == nil, let disruption = match.disruption, disruption.preventsBoarding {
+                center.removePendingNotificationRequests(withIdentifiers: [reminderID(saved, departure: day)])
+            }
         }
         saveMemories(memories)
     }
@@ -126,6 +216,10 @@ final class TripNotifier {
         content.body = notice.body
         content.sound = .default
         content.threadIdentifier = saved.id.uuidString
+        // Ausfall und Anschlussproblem dulden keinen Aufschub: als dringliche Meldung markiert. Wirksam (Fokus
+        // durchbrechen) wird das erst mit der Berechtigung aus `project.yml`, die ein bezahltes Entwicklerkonto
+        // braucht – ohne sie behandelt iOS die Meldung wie jede andere.
+        if notice.kind == .cancellation || notice.kind == .connection { content.interruptionLevel = .timeSensitive }
         // Antippen öffnet die Fahrt (siehe `NotificationPresenter`).
         content.userInfo = [NotificationRouter.savedTripKey: saved.id.uuidString]
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
@@ -164,10 +258,20 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate, S
         [.banner, .list, .sound]
     }
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        guard let text = response.notification.request.content.userInfo[NotificationRouter.savedTripKey] as? String,
-              let id = UUID(uuidString: text) else { return }
-        await MainActor.run { NotificationRouter.shared.savedTripToOpen = id }
+    // Bewusst die Variante mit Rückruf statt `async`: Die `async`-Fassung meldet sich von einem beliebigen Thread
+    // zurück, und iOS bricht die App dann mit „Call must be made on main thread“ ab. iOS ruft hier auf dem
+    // Hauptthread an – die Rückmeldung geht sofort von dort zurück, die Arbeit läuft danach.
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let text = response.notification.request.content.userInfo[NotificationRouter.savedTripKey] as? String
+        let startsActivity = response.actionIdentifier == TripNotifier.startActionID
+        if let id = text.flatMap(UUID.init(uuidString:)) {
+            Task { @MainActor in
+                NotificationRouter.shared.savedTripToOpen = id
+                if startsActivity { await TripNotifier.shared.startActivity(forSavedTrip: id) }
+            }
+        }
+        completionHandler()
     }
 }
 
@@ -178,4 +282,14 @@ final class NotificationRouter {
     nonisolated static let savedTripKey = "savedTripID"
 
     var savedTripToOpen: UUID?
+}
+
+private extension TripDisruption {
+    /// Die Fahrt lässt sich gar nicht antreten (statt nur: Anschluss oder Ausstieg betroffen).
+    var preventsBoarding: Bool {
+        switch self {
+        case .rideCancelled, .boardingCancelled: true
+        case .alightingCancelled, .connectionMissed: false
+        }
+    }
 }
