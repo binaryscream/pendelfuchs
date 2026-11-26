@@ -86,6 +86,70 @@ struct SavedTripStatusIntent: AppIntent {
     }
 }
 
+/// „Live-Aktivität beenden“ – beendet alle laufenden Live-Aktivitäten.
+struct EndTripActivitiesIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Live-Aktivität beenden"
+    static let description = IntentDescription("Beendet die laufende Live-Aktivität von Fahrplan XL.")
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let count = await TripActivityManager.shared.endAll()
+        switch count {
+        case 0: return .result(dialog: "Es läuft gerade keine Live-Aktivität.")
+        case 1: return .result(dialog: "Live-Aktivität beendet.")
+        default: return .result(dialog: "\(count) Live-Aktivitäten beendet.")
+        }
+    }
+}
+
+/// „Verbindung von A nach B“ – Siri nennt die nächsten Verbindungen ab jetzt.
+struct TripConnectionIntent: AppIntent {
+    static let title: LocalizedStringResource = "Verbindung suchen"
+    static let description = IntentDescription(
+        "Nennt die nächsten Verbindungen zwischen zwei Haltestellen – mit den Suchoptionen aus der App.")
+
+    @Parameter(title: "Von", requestValueDialog: "Von welcher Haltestelle?")
+    var origin: StopEntity
+
+    @Parameter(title: "Nach", requestValueDialog: "Wohin soll es gehen?")
+    var destination: StopEntity
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Verbindung von \(\.$origin) nach \(\.$destination)")
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let from = origin.stop, to = destination.stop
+        let route = "\(from.label(.current)) nach \(to.label(.current))"
+        guard from.id != to.id else { return .result(dialog: "Start und Ziel sind gleich.") }
+
+        // Dieselben Sucheinstellungen wie im Tab „Verbindungen“ (z. B. nur Deutschlandticket).
+        let options = UserDefaults.standard.data(forKey: "tripSearch.options")
+            .flatMap { try? JSONDecoder().decode(TripOptions.self, from: $0) } ?? .standard
+        let now = Date.now
+        let found: [Trip]
+        do {
+            found = try await DataSources.router().trips(TripQuery(origin: from, destination: to, time: now, options: options))
+        } catch {
+            return .result(dialog: "\(route): Gerade sind keine Fahrplandaten erreichbar.")
+        }
+        let usable = found.filter { $0.disruption == nil && $0.departure.expectedTime > now.addingTimeInterval(-30) }
+            .sorted { $0.departure.expectedTime < $1.departure.expectedTime }
+        guard let next = usable.first else {
+            return .result(dialog: "\(route): Keine Verbindung gefunden.")
+        }
+        var text = "\(route): \(SiriText.trip(next, now: now))"
+        if next.interchanges > 0 {
+            text += next.interchanges == 1 ? " Ein Umstieg." : " \(next.interchanges) Umstiege."
+        }
+        if let following = usable.dropFirst().first {
+            text += " Danach um \(following.departure.expectedTime.formatted(.dateTime.hour().minute()))."
+        }
+        return .result(dialog: "\(text)")
+    }
+}
+
 /// Kurze, gut vorlesbare Sätze.
 enum SiriText {
     private static let time = Date.FormatStyle.dateTime.hour().minute()

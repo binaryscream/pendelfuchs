@@ -94,6 +94,14 @@ final class TripActivityManager {
         }
     }
 
+    /// Beendet alle laufenden Aktivitäten; liefert, wie viele es waren.
+    @discardableResult
+    func endAll() async -> Int {
+        let running = Self.running
+        for activity in running { await activity.end(nil, dismissalPolicy: .immediate) }
+        return running.count
+    }
+
     /// Holt für alle laufenden Aktivitäten frische Echtzeitdaten; beendet abgeschlossene Fahrten.
     func refreshAll() async {
         let now = Date.now

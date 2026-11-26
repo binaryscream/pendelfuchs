@@ -56,6 +56,33 @@ struct FahrplanShortcuts: AppShortcutsProvider {
             systemImageName: "tram.fill"
         )
         AppShortcut(
+            intent: EndTripActivitiesIntent(),
+            phrases: [
+                "Live-Aktivität in \(.applicationName) beenden",
+                "Beende Live-Aktivität in \(.applicationName)",
+                "\(.applicationName) Live-Aktivität beenden",
+                "Stoppe Live-Aktivität in \(.applicationName)",
+            ],
+            shortTitle: "Live-Aktivität beenden",
+            systemImageName: "stop.circle"
+        )
+        AppShortcut(
+            intent: TripConnectionIntent(),
+            // Je Satz höchstens eine Haltestelle (Vorgabe von iOS) – nach dem Start fragt Siri nach. Nur das Ziel
+            // als Platzhalter: Mit Start und Ziel zeigt die Kurzbefehle-App jede Haltestelle doppelt.
+            phrases: [
+                "Verbindung in \(.applicationName)",
+                "Verbindung suchen in \(.applicationName)",
+                "Verbindung mit \(.applicationName)",
+                "\(.applicationName) Verbindung",
+                "Verbindung nach \(\.$destination) in \(.applicationName)",
+                "Wie komme ich nach \(\.$destination) mit \(.applicationName)",
+                "\(.applicationName) Verbindung nach \(\.$destination)",
+            ],
+            shortTitle: "Verbindung suchen",
+            systemImageName: "point.topleft.down.to.point.bottomright.curvepath"
+        )
+        AppShortcut(
             intent: NextDeparturesIntent(),
             // Der App-Name steht in jeder Variante – sonst übernimmt Siri den Satz selbst oder eine andere App.
             phrases: [
