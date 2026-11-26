@@ -73,7 +73,12 @@ struct FahrplanXLApp: App {
                 }
                 // Siri kennt die Favoriten und gemerkten Fahrten als Auswahl in Sätzen.
                 .task { FahrplanShortcuts.updateAppShortcutParameters() }
-                .onChange(of: savedTrips.trips) { FahrplanShortcuts.updateAppShortcutParameters() }
+                .onChange(of: savedTrips.trips) {
+                    FahrplanShortcuts.updateAppShortcutParameters()
+                    // Gleich nach dem Anlegen der ersten regelmäßigen Fahrt um Erlaubnis fragen – nicht erst
+                    // beim nächsten Öffnen der App.
+                    Task { await TripNotifier.shared.requestAuthorizationIfNeeded() }
+                }
                 .onChange(of: useVVO) { WidgetCenter.shared.reloadAllTimelines() }
                 .environment(\.stopNameStyle, stopNameStyle)
                 .onChange(of: stopNameStyle) { WidgetCenter.shared.reloadAllTimelines() }

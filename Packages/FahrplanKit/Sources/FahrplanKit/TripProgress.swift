@@ -23,9 +23,17 @@ extension TripLeg {
     public func progress(at now: Date) -> RideProgress {
         // Eine ausgefallene Fahrt fährt nicht – kein „unterwegs“, kein Fahrzeug.
         if isFullyCancelled { return .notStarted }
-        let times = stops.enumerated().map { index, stop -> Date? in
+        var times = stops.enumerated().map { index, stop -> Date? in
             // Abfahrt zählt, außer beim letzten Halt (dort die Ankunft).
             index == stops.count - 1 ? (stop.arrival ?? stop.departure)?.expectedTime : stop.passTime
+        }
+        // Zeiten dürfen nicht zurückspringen: Haben nur die ersten Halte Echtzeit, läge ein späterer Halt mit
+        // reiner Fahrplanzeit sonst „vor“ dem verspäteten davor – und die Fahrt gälte zu früh als beendet.
+        var latest: Date?
+        for index in times.indices {
+            guard let time = times[index] else { continue }
+            if let latest, time < latest { times[index] = latest }
+            latest = times[index]
         }
         guard let first = times.first ?? nil, let last = times.last ?? nil else { return .notStarted }
         if now < first { return .notStarted }

@@ -202,7 +202,8 @@ struct StopDeparturesView: View {
                 if loadingMore == direction { ProgressView() }
             }
         }
-        .disabled(loadingMore != nil)
+        // An der Obergrenze lädt „Später“ nichts mehr – dann auch nicht anbieten.
+        .disabled(loadingMore != nil || (direction == .later && limit >= Self.maxLimit))
     }
 
     private func loadMore(_ direction: Direction) async {

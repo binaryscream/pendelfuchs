@@ -118,20 +118,36 @@ struct RouteChangesResponse: Decodable, StatusCarrying {
 }
 
 /// Streckenänderungen werden einmal geladen und 15 Minuten zwischengespeichert.
+///
+/// Ein Fehlschlag wird ebenfalls kurz gemerkt (2 Minuten) und das Laden auf wenige Sekunden begrenzt: Die Hinweise
+/// sind Beiwerk und dürfen Abfahrten und Verbindungssuche nicht aufhalten, wenn der Dienst hängt.
 actor VVORouteChangeCache {
     static let shared = VVORouteChangeCache()
-    private var loaded: (Date, [String: ServiceAlert])?
-    private var running: Task<[String: ServiceAlert], Never>?
+    private var loaded: (until: Date, value: [String: ServiceAlert])?
+    private var running: Task<[String: ServiceAlert]?, Never>?
+
+    static let patience: Duration = .seconds(4)
 
     func alerts(using load: @escaping @Sendable () async throws -> [String: ServiceAlert]) async -> [String: ServiceAlert] {
-        if let (date, value) = loaded, date.timeIntervalSinceNow > -15 * 60 { return value }
-        if let running { return await running.value }
-        let task = Task<[String: ServiceAlert], Never> { (try? await load()) ?? [:] }
+        if let loaded, loaded.until > .now { return loaded.value }
+        if let running { return await running.value ?? [:] }
+        let task = Task<[String: ServiceAlert]?, Never> {
+            await withTaskGroup(of: [String: ServiceAlert]?.self) { group in
+                group.addTask { try? await load() }
+                group.addTask {
+                    try? await Task.sleep(for: Self.patience)
+                    return nil
+                }
+                let first = await group.next() ?? nil
+                group.cancelAll()
+                return first
+            }
+        }
         running = task
         let value = await task.value
         running = nil
-        if !value.isEmpty { loaded = (.now, value) }
-        return value
+        loaded = (Date.now.addingTimeInterval(value == nil ? 2 * 60 : 15 * 60), value ?? [:])
+        return value ?? [:]
     }
 }
 

@@ -151,6 +151,11 @@ struct TripRow: View {
             legChain
 
             HStack(spacing: 6) {
+                // Nicht heute (z. B. nach „Später“ über Mitternacht): den Tag dazusagen.
+                if !Calendar.current.isDate(trip.departure.scheduledTime, inSameDayAs: now) {
+                    Text(relativeDay(trip.departure.scheduledTime, now: now).capitalizedFirst).fontWeight(.semibold)
+                    Text("·")
+                }
                 if let disruption = trip.disruption {
                     Text(disruption.shortText).foregroundStyle(.red).fontWeight(.semibold)
                 } else {
@@ -214,4 +219,9 @@ struct TimePointText: View {
 func durationText(_ interval: TimeInterval) -> String {
     let minutes = Int((interval / 60).rounded())
     return minutes < 60 ? "\(minutes) min" : "\(minutes / 60) h \(String(format: "%02d", minutes % 60)) min"
+}
+
+private extension String {
+    /// „morgen“ → „Morgen“ (Wochentage sind schon großgeschrieben).
+    var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
 }

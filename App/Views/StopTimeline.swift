@@ -106,6 +106,8 @@ struct RailView: View {
 
 /// Ein Halt in der Zeitleiste.
 struct TimelineStopRow: View {
+    /// Breite der Zeitspalte – wächst mit der eingestellten Schriftgröße, damit Zeiten nicht abgeschnitten werden.
+    @ScaledMetric(relativeTo: .subheadline) private var timeWidth: CGFloat = 70
     @Environment(\.stopNameStyle) private var style
     let stop: TripStop
     let time: TimePoint?
@@ -126,7 +128,7 @@ struct TimelineStopRow: View {
             Group {
                 if let time { TimePointText(point: time, cancelled: stop.isCancelled) } else { Text("–") }
             }
-            .frame(width: 70, alignment: .leading)
+            .frame(width: timeWidth, alignment: .leading)
             .font(emphasized ? .body.weight(.semibold) : .subheadline)
             .padding(.vertical, emphasized ? 12 : 8)
 

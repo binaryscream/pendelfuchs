@@ -81,7 +81,15 @@ struct DepartureRow: View {
             } else if minutes < 60 {
                 Text("\(minutes) min")
             } else {
-                Text(departure.expectedTime, format: .dateTime.hour().minute())
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text(departure.expectedTime, format: .dateTime.hour().minute())
+                    // Nach Mitternacht dazusagen, dass es nicht mehr heute ist.
+                    if !Calendar.current.isDate(departure.expectedTime, inSameDayAs: now) {
+                        Text(relativeDay(departure.expectedTime, now: now))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
         .font(.title3.weight(.semibold).monospacedDigit())

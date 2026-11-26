@@ -179,7 +179,9 @@ private struct RideChain: View {
         // Erledigte Fahrten fallen heraus (iOS zeichnet die Aktivität an jedem Phasenwechsel neu);
         // nach der Ankunft bleibt die letzte Fahrt stehen.
         let open = state.rides.filter { $0.arrival.expectedTime > .now }
-        let shown = Array((open.isEmpty ? Array(state.rides.suffix(1)) : open).prefix(3))
+        // Höchstens zwei: Mit drei Zeilen plus Umstiegen wird die Aktivität höher, als iOS erlaubt, und
+        // unten abgeschnitten. Erledigte fallen heraus, die nächste rückt nach.
+        let shown = Array((open.isEmpty ? Array(state.rides.suffix(1)) : open).prefix(2))
         VStack(alignment: .leading, spacing: 3) {
             ForEach(Array(shown.enumerated()), id: \.offset) { index, ride in
                 if index > 0, let previous = shown[safe: index - 1] {

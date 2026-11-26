@@ -8,6 +8,9 @@ struct LiveActivityButton: View {
     let saved: SavedTrip
     /// Bereits geladene Verbindung, falls vorhanden (spart eine Abfrage).
     var knownTrip: Trip?
+    /// Zweite Kennung derselben Fahrt: Wurde die Aktivität vor dem Merken gestartet, läuft sie unter der
+    /// vorläufigen Kennung weiter – der Knopf muss sie trotzdem finden und beenden.
+    var otherID: UUID?
 
     @State private var isRunning = false
     @State private var isWorking = false
@@ -29,7 +32,7 @@ struct LiveActivityButton: View {
         // Laufend nachsehen: Die Aktivität kann auch vom Sperrbildschirm aus oder von selbst enden.
         .task(id: saved.id) {
             while !Task.isCancelled {
-                if !isWorking { isRunning = TripActivityManager.shared.isRunning(saved.id) }
+                if !isWorking { isRunning = runsNow }
                 try? await Task.sleep(for: .seconds(2))
             }
         }
@@ -46,6 +49,7 @@ struct LiveActivityButton: View {
         let manager = TripActivityManager.shared
         if isRunning {
             await manager.end(saved.id)
+            if let otherID { await manager.end(otherID) }
         } else {
             do {
                 try await manager.start(saved, knownTrip: knownTrip)
@@ -53,7 +57,12 @@ struct LiveActivityButton: View {
                 errorMessage = error.localizedDescription
             }
         }
-        isRunning = manager.isRunning(saved.id)
+        isRunning = runsNow
+    }
+
+    private var runsNow: Bool {
+        let manager = TripActivityManager.shared
+        return manager.isRunning(saved.id) || (otherID.map(manager.isRunning) ?? false)
     }
 }
 

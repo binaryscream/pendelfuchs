@@ -119,7 +119,8 @@ struct TripDetailView: View {
             // Nur für Fahrten, die noch nicht vorbei sind.
             if trip.arrival.expectedTime > .now, trip.disruption == nil {
                 Section {
-                    LiveActivityButton(saved: savedTrips.saved(matching: trip, query: query) ?? adHoc, knownTrip: trip)
+                    LiveActivityButton(saved: savedTrips.saved(matching: trip, query: query) ?? adHoc, knownTrip: trip,
+                                       otherID: adHoc.id)
                 }
             }
 

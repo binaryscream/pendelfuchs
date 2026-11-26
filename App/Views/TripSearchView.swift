@@ -203,6 +203,10 @@ struct TripSearchView: View {
                 .frame(width: 32, height: 32)
                 .background(Color(.secondarySystemGroupedBackground), in: Circle())
                 .overlay(Circle().stroke(Color(.separator), lineWidth: 1))
+                // Tippfläche 44 pt, ohne dass die Knöpfe weiter auseinanderrücken.
+                .padding(6)
+                .contentShape(Rectangle())
+                .padding(-6)
         }
         .buttonStyle(.borderless)
         .accessibilityLabel(label)
@@ -252,6 +256,8 @@ enum TripRoute: Hashable {
 
 /// Eine Zeile „Von: Pirna, Bahnhof“, die beim Antippen die Haltestellenauswahl öffnet.
 private struct StopField: View {
+    /// Breite der Spalte „Von/Nach/Über“ – wächst mit der eingestellten Schriftgröße.
+    @ScaledMetric(relativeTo: .body) private var labelWidth: CGFloat = 44
     let label: String
     let stop: Stop?
     let action: () -> Void
@@ -262,7 +268,7 @@ private struct StopField: View {
             HStack(spacing: 12) {
                 Text(label)
                     .foregroundStyle(.secondary)
-                    .frame(width: 44, alignment: .leading)
+                    .frame(width: labelWidth, alignment: .leading)
                 if let stop {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(stop.label(style)).foregroundStyle(.primary)

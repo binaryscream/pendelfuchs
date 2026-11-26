@@ -122,6 +122,26 @@ private func trip(_ lines: [String], at dep: Date) -> Trip {
         #expect(leg.isUnusable)
     }
 
+    @Test func queryStartsABitBeforeTheSavedDeparture() {
+        // 06:30 gemerkt → Suche ab 06:25, damit ein Fußweg davor oder eine vorgezogene Minute nicht stört.
+        #expect(saved(Weekday.workdays).query(on: date(24, 12, 0), calendar: berlin).time == date(24, 6, 25))
+    }
+
+    @Test func progressSurvivesMissingRealTimeAtLaterStops() {
+        // 10 min Verspätung, aber nur der erste Halt hat Echtzeit: Um 06:20 (Plan-Ankunft 06:15) fährt sie noch.
+        var leg = ride("S1", from: date(23, 6, 0), to: date(23, 6, 15))
+        leg.stops[0].departure?.realTime = date(23, 6, 25)
+        #expect(leg.progress(at: date(23, 6, 20)) == .notStarted)
+        #expect(leg.progress(at: date(23, 6, 24)) != .finished)
+    }
+
+    @Test func longTripsKeepTheirRealArrivalInTheActivity() {
+        let long = trip(["1", "2", "3", "4", "5", "6", "7"], at: date(23, 6, 0))
+        let state = TripActivityState(trip: long)
+        #expect(state.rides.count == 5)
+        #expect(state.arrival.scheduledTime == long.arrival.scheduledTime)
+    }
+
     @Test func bookmarkHasNoOccurrence() {
         #expect(saved([]).nextOccurrence(after: date(23, 5, 0), calendar: berlin) == nil)
     }

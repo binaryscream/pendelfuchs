@@ -53,7 +53,11 @@ public struct TripActivityState: Codable, Hashable, Sendable {
     }
 
     public init(trip: Trip, updatedAt: Date = .now, note: String? = nil) {
-        let rides: [Ride] = trip.rides.prefix(5).compactMap { leg in
+        // Höchstens 5 Fahrten (Größengrenze von ActivityKit). Bei mehr bleiben die ersten vier und die letzte:
+        // So stimmen Ankunft und Ende der Aktivität, statt mitten in der Reise aufzuhören.
+        let all = trip.rides
+        let kept = all.count > 5 ? Array(all.prefix(4)) + all.suffix(1) : all
+        let rides: [Ride] = kept.compactMap { leg in
             guard let first = leg.stops.first, let last = leg.stops.last,
                   let dep = leg.departure, let arr = leg.arrival else { return nil }
             return Ride(line: leg.line ?? "?", mode: leg.mode ?? .other, direction: leg.direction,

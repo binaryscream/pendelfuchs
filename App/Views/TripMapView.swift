@@ -16,12 +16,21 @@ struct TripMapView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    /// Die Kartenkacheln ließen sich nicht laden (meist: kein Netz).
+    @State private var mapFailed = false
 
     var body: some View {
         ZStack(alignment: .top) {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 TripMapRepresentable(trip: trip, now: context.date, dark: colorScheme == .dark,
-                                     live: liveStates(at: context.date))
+                                     live: liveStates(at: context.date), onFailure: { mapFailed = true })
+                    .ignoresSafeArea()
+            }
+
+            if mapFailed {
+                ContentUnavailableView("Karte nicht geladen", systemImage: "wifi.exclamationmark",
+                                       description: Text("Die Kartendaten sind gerade nicht erreichbar. Prüfe deine Internetverbindung."))
+                    .background(.regularMaterial)
                     .ignoresSafeArea()
             }
 
@@ -100,6 +109,7 @@ private struct TripMapRepresentable: UIViewRepresentable {
     let now: Date
     let dark: Bool
     let live: [Int: LiveRideState]
+    var onFailure: () -> Void = {}
 
     static func styleURL(dark: Bool) -> URL {
         URL(string: "https://tiles.openfreemap.org/styles/\(dark ? "dark" : "positron")")!
@@ -125,13 +135,17 @@ private struct TripMapRepresentable: UIViewRepresentable {
             coordinator.dark = dark
             map.styleURL = Self.styleURL(dark: dark)
         }
+        // Nachgeladene Echtzeitdaten übernehmen – sonst rechnet die geschätzte Position mit dem alten Stand.
+        coordinator.trip = trip
+        coordinator.onFailure = onFailure
         coordinator.live = live
         coordinator.updateVehicles(on: map, now: now)
     }
 
     @MainActor
     final class Coordinator: NSObject, @preconcurrency MLNMapViewDelegate {
-        let trip: Trip
+        var trip: Trip
+        var onFailure: () -> Void = {}
         var dark = false
         var live: [Int: LiveRideState] = [:]
         /// Ein Fahrzeug-Marker pro gerade befahrenem Abschnitt.
@@ -145,6 +159,10 @@ private struct TripMapRepresentable: UIViewRepresentable {
         }
 
         init(trip: Trip) { self.trip = trip }
+
+        func mapViewDidFailLoadingMap(_ mapView: MLNMapView, withError error: any Error) {
+            onFailure()
+        }
 
         func fitCamera(on map: MLNMapView, animated: Bool) {
             var coordinates = trip.legs.flatMap(\.drawablePath).map(\.clCoordinate)

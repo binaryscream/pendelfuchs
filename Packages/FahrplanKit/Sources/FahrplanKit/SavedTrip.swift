@@ -190,9 +190,14 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
         return nil
     }
 
+    /// So viel früher als die gemerkte Abfahrt beginnt die Suche.
+    public static let queryLead: TimeInterval = 5 * 60
+
     /// Suchanfrage, um die Verbindung an einem bestimmten Tag live abzufragen.
     public func query(on day: Date, calendar: Calendar = .current) -> TripQuery {
-        let time = departure.date(on: day, calendar: calendar) ?? day
+        // Ein paar Minuten früher fragen: `departure` ist die Abfahrt der ersten Bahn. Beginnt die Verbindung mit
+        // einem Fußweg oder wurde der Fahrplan um eine Minute vorgezogen, fehlte sie sonst im Ergebnis.
+        let time = (departure.date(on: day, calendar: calendar) ?? day).addingTimeInterval(-Self.queryLead)
         return TripQuery(origin: origin, destination: destination, via: via, time: time, isArrivalTime: false)
     }
 

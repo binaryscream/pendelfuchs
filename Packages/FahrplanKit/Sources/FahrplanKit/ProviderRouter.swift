@@ -53,7 +53,16 @@ public struct ProviderRouter: TransitProvider {
     func asTransitousStop(_ stop: Stop) async throws -> Stop {
         if stop.provider == .transitous { return stop }
         let query = [stop.place, stop.name].compactMap { $0 }.joined(separator: " ")
-        guard let match = try await transitous.searchStops(query: query).first else {
+        let found = try await transitous.searchStops(query: query)
+        // Nicht blind den ersten Namenstreffer nehmen: Mit bekannter Lage zählt der nächstgelegene Treffer
+        // (höchstens 500 m entfernt) – sonst landet man leicht bei einer ähnlich benannten Haltestelle.
+        if let here = stop.coordinate {
+            let near = found.compactMap { candidate in candidate.coordinate.map { (candidate, Geo.meters(here, $0)) } }
+                .filter { $0.1 <= 500 }
+                .min { $0.1 < $1.1 }
+            if let near { return near.0 }
+        }
+        guard let match = found.first else {
             throw TransitError.service(message: "Die Haltestelle „\(stop.displayName)“ wurde nicht gefunden.")
         }
         return match
