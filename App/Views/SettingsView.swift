@@ -54,6 +54,11 @@ struct SettingsView: View {
                     } label: {
                         Label("Anzeige", systemImage: "textformat.size")
                     }
+                    NavigationLink {
+                        FAQView()
+                    } label: {
+                        Label("Hilfe & Fragen", systemImage: "questionmark.circle")
+                    }
                 } footer: {
                     Text("Unter „Anzeige“: Erscheinungsbild, Haltestellennamen, Verspätungen, Störungen, Ausfälle und Zwischenhalte.")
                 }
