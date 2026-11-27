@@ -6,6 +6,13 @@ import Testing
 import TripKitBridge
 
 @Suite struct RegionalNetworkTests {
+    /// Ohne eigenen User-Agent schickt TripKit einen Safari-User-Agent – der Router setzt den der App.
+    @Test func tripKitSendsAppUserAgent() {
+        _ = ProviderRouter()
+        #expect(RegionalNetwork.userAgent.hasPrefix("Pendelfuchs/"))
+        #expect(!RegionalNetwork.userAgent.contains("Safari"))
+    }
+
     @Test func mapsDistrictsToNetworks() {
         #expect(RegionalNetwork.forDistrict("14511") == .vms)       // Chemnitz
         #expect(RegionalNetwork.forDistrict("14523") == .vvv)       // Vogtlandkreis

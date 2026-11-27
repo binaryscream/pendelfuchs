@@ -12,7 +12,8 @@ let package = Package(
     ],
     dependencies: [
         // Regionale Verbünde (EFA-Schnittstellen) – MIT-Lizenz, Swift-Port von public-transport-enabler.
-        .package(url: "https://github.com/alexander-albers/tripkit.git", revision: "01ad2f0e5e6b859fefc3ed512096663478405751"),
+        // Eigener Fork: Stand 01ad2f0 des Originals plus einstellbarer User-Agent (Branch configurable-user-agent).
+        .package(url: "https://github.com/binaryscream/tripkit.git", revision: "e08611e37aad604ad3b8777af68f766d4510a3b9"),
     ],
     targets: [
         // Nur Typ-Aliase: TripKit hat eine Klasse gleichen Namens wie das Modul und Typen wie `Trip` oder `Stop`,

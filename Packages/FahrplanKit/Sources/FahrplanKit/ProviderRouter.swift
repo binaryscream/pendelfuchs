@@ -20,11 +20,13 @@ public struct ProviderRouter: TransitProvider {
     /// Ob regionale Verbünde über TripKit genutzt werden.
     public let useRegional: Bool
 
+    /// - Parameter userAgent: Kennung für die Anfragen an die regionalen Verbünde (wie bei Transitous und VVO).
     public init(transitous: TransitousProvider = TransitousProvider(), vvo: VVOProvider? = VVOProvider(),
-                useRegional: Bool = true) {
+                useRegional: Bool = true, userAgent: String = TransitousProvider.defaultUserAgent) {
         self.transitous = transitous
         self.vvo = vvo
         self.useRegional = useRegional
+        RegionalNetwork.userAgent = userAgent
     }
 
     // MARK: Zuordnung

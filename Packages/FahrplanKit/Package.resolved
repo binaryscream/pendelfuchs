@@ -1,5 +1,5 @@
 {
-  "originHash" : "e1221df281ef313fb7438f392911fbc28fff66134dd0490e6239a7b0e2bb02ff",
+  "originHash" : "946dfe5515ef61ab38c99cb9dc2da94fe93be2ad15edd3e2c547346944c380c3",
   "pins" : [
     {
       "identity" : "gzipswift",
@@ -31,9 +31,9 @@
     {
       "identity" : "tripkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/alexander-albers/tripkit.git",
+      "location" : "https://github.com/binaryscream/tripkit.git",
       "state" : {
-        "revision" : "01ad2f0e5e6b859fefc3ed512096663478405751"
+        "revision" : "e08611e37aad604ad3b8777af68f766d4510a3b9"
       }
     }
   ],

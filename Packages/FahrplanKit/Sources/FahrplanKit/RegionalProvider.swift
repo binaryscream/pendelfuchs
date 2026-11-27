@@ -4,7 +4,8 @@ import Foundation
 @preconcurrency import TripKit
 import TripKitBridge
 
-/// Regionale Verbünde, deren Auskunft die App über **TripKit** (github.com/alexander-albers/tripkit, MIT) abfragt.
+/// Regionale Verbünde, deren Auskunft die App über **TripKit** (github.com/alexander-albers/tripkit, MIT;
+/// eingebunden über den Fork github.com/binaryscream/tripkit mit einstellbarem User-Agent) abfragt.
 ///
 /// Nur Verbünde mit EFA-Schnittstelle, die ohne Schlüssel auskommt. Regionen, deren Schnittstelle eine Kennung
 /// verlangt (HAFAS), bleiben bei Transitous – Kennungen fremder Apps werden bewusst nicht verwendet.
@@ -25,6 +26,13 @@ public enum RegionalNetwork: String, Codable, Sendable, CaseIterable {
     case vmv
 
     public var providerID: ProviderID { ProviderID(rawValue: rawValue)! }
+
+    /// User-Agent für alle Anfragen über TripKit. Gilt in TripKit global; ohne ihn schickt TripKit einen
+    /// Safari-User-Agent. Einstellbar erst im Fork github.com/binaryscream/tripkit (`HttpClient.defaultUserAgent`).
+    public static var userAgent: String {
+        get { HttpClient.defaultUserAgent }
+        set { HttpClient.defaultUserAgent = newValue }
+    }
 
     /// Wird je Anfrage neu erzeugt: Die TripKit-Klassen sind nicht `Sendable`, aber zustandslos genug.
     func makeProvider() -> TKNetworkProvider {

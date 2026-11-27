@@ -117,6 +117,10 @@ Veröffentlichung je Verbund die Erlaubnis klären – oder auf deren offizielle
 
 - **Bibliothek:** TripKit (github.com/alexander-albers/tripkit, MIT), fest auf einen Stand gesetzt
   (`Packages/FahrplanKit/Package.swift`). Bringt GzipSwift, SwiftyJSON und SWXMLHash mit (alle MIT).
+- **Eigener Fork** github.com/binaryscream/tripkit (Branch `configurable-user-agent`, seit 27.11.2026): Stand
+  01ad2f0 des Originals plus einstellbarer Standard-User-Agent (`HttpClient.defaultUserAgent`). Das Original
+  schickt bei EFA-Verbünden fest einen Safari-User-Agent; mit dem Fork sehen die Verbünde
+  `Pendelfuchs/<Version> (+https://pendelfuchs.de)`. Übernimmt das Original die Änderung, zurück auf das Original.
 - **Nur EFA-Verbünde ohne Schlüssel:** VMS (Chemnitz, Erzgebirge, Mittelsachsen, Zwickau), VVV (Vogtland),
   Bayern-Fahrplan (ganz Bayern), NVBW (Baden-Württemberg), mobil.nrw (NRW), MV-Fahrplan (Mecklenburg-Vorpommern).
   HAFAS-Verbünde (Berlin, Köln-KVB, RMV, Österreich …) brauchen eine Kennung; Kennungen fremder Apps werden

@@ -26,9 +26,13 @@ enum DataSources {
     }
 
     static func router(useNetworks: Bool = DataSources.useNetworks) -> ProviderRouter {
-        ProviderRouter(transitous: TransitousProvider(userAgent: TransitousProvider.userAgent(version: appVersion)),
-                       vvo: useNetworks ? VVOProvider(userAgent: TransitousProvider.userAgent(version: appVersion)) : nil, useRegional: useNetworks)
+        ProviderRouter(transitous: TransitousProvider(userAgent: userAgent),
+                       vvo: useNetworks ? VVOProvider(userAgent: userAgent) : nil, useRegional: useNetworks,
+                       userAgent: userAgent)
     }
+
+    /// `Pendelfuchs/<Version> (+https://pendelfuchs.de)` – für Transitous, VVO, Verbünde und TLMS.
+    static var userAgent: String { TransitousProvider.userAgent(version: appVersion) }
 
     static let tripKitURL = URL(string: "https://github.com/alexander-albers/tripkit")!
 
