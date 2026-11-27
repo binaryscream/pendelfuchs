@@ -3,11 +3,11 @@
 Stand 27.11.2026. Jeder Block ist fertig: Empfänger, Betreff und Text kopieren, abschicken.
 Absender ist die E-Mail-Adresse, von der du schreibst – sie steht deshalb nicht im Text.
 
-> **Versendet am 27.11.2026:** VVO und TLMS per E-Mail, Transitous im Matrix-Raum. Die Anfragen an die regionalen
-> Verbünde (Abschnitt 4) sind noch nicht verschickt.
+> **Versendet am 27.11.2026:** VVO und TLMS per E-Mail, Transitous im Matrix-Raum, außerdem alle sechs Anfragen an die
+> regionalen Verbünde (Abschnitt 4: VMS, VVV, Bayern-Fahrplan, NVBW, mobil.nrw, MV-Fahrplan) per E-Mail aus Proton Mail.
 >
 > **Antwort Transitous (27.11.2026):** `refresh-itinerary` statt wiederholter `/plan`-Anfragen nutzen, alles über
-> v6. Umgesetzt (siehe `docs/DATENQUELLEN.md`). Antworten von VVO und TLMS stehen noch aus.
+> v6. Umgesetzt (siehe `docs/DATENQUELLEN.md`). Antworten von VVO, TLMS und den regionalen Verbünden stehen noch aus.
 
 | Stelle | Wofür die App sie nutzt | Anfrage nötig? | Kanal |
 |---|---|---|---|
@@ -193,7 +193,7 @@ Heidenau
 ### 4.3 Bayern-Fahrplan (Bayerische Eisenbahngesellschaft)
 
 **An:** info@bahnland-bayern.de
-**Hinweis:** Allgemeine Adresse der BEG (Stand einer BEG-Präsentation, vor dem Absenden auf bahnland-bayern.de prüfen). Die BEG betreibt DEFAS bzw. den Bayern-Fahrplan. Laut bayerninfo.de gibt es Echtzeit offiziell nur über TRIAS mit Vertrag – Frage 2 zielt darauf.
+**Hinweis:** Adresse laut Impressum auf bahnland-bayern.de (geprüft 27.11.2026). Die BEG betreibt DEFAS bzw. den Bayern-Fahrplan. Laut bayerninfo.de gibt es Echtzeit offiziell nur über TRIAS mit Vertrag – Frage 2 zielt darauf.
 **Betreff:** Nutzung Ihrer Fahrplanauskunft in einer kostenlosen Open-Source-Fahrplan-App (Pendelfuchs)
 
 ```
