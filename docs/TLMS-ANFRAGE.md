@@ -7,11 +7,11 @@
 
 ## E-Mail (Deutsch)
 
-**Betreff:** Live-Positionen von TLMS in einer Open-Source-Fahrplan-App (Fahrplan XL) – ist das okay?
+**Betreff:** Live-Positionen von TLMS in einer Open-Source-Fahrplan-App (Pendelfuchs) – ist das okay?
 
 Hallo TLMS-Team,
 
-ich entwickle die freie, nicht-kommerzielle iOS-App „Fahrplan XL“ (Lizenz GPL-3.0, Quelltext auf GitHub, derzeit
+ich entwickle die freie, nicht-kommerzielle iOS-App „Pendelfuchs“ (Lizenz GPL-3.0, Quelltext auf GitHub, derzeit
 noch privat, die Veröffentlichung ist geplant). Die App zeigt Abfahrten, Verbindungen, Widgets und
 Live-Aktivitäten – kostenlos, ohne Werbung und ohne Tracking.
 
@@ -48,7 +48,7 @@ Vielen Dank und viele Grüße
 
 ## Matrix (Englisch, kurz)
 
-Hi! I'm building Fahrplan XL, a free, non-commercial, open-source (GPL-3.0) iOS transit app. For trams and city
+Hi! I'm building Pendelfuchs, a free, non-commercial, open-source (GPL-3.0) iOS transit app. For trams and city
 buses in Dresden it now shows your live positions on the map and in the trip timeline – works great, thanks for
 building this!
 

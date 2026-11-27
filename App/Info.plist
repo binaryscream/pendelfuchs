@@ -9,7 +9,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>de</string>
 	<key>CFBundleDisplayName</key>
-	<string>Fahrplan XL</string>
+	<string>Pendelfuchs</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -39,25 +39,25 @@
 	<array>
 		<dict>
 			<key>INAlternativeAppName</key>
-			<string>Fahrplan X L</string>
+			<string>Pendel Fuchs</string>
 			<key>INAlternativeAppNamePronunciationHint</key>
-			<string>Fahrplan Iks El</string>
+			<string>Pendel Fuchs</string>
 		</dict>
 		<dict>
 			<key>INAlternativeAppName</key>
-			<string>Fahrplan Excel</string>
+			<string>Pendlerfuchs</string>
 			<key>INAlternativeAppNamePronunciationHint</key>
-			<string>Fahrplan Ixel</string>
+			<string>Pendler Fuchs</string>
 		</dict>
 		<dict>
 			<key>INAlternativeAppName</key>
-			<string>Fahrplan</string>
+			<string>Pendelfux</string>
 		</dict>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Fahrplan XL zeigt dir Haltestellen in deiner Nähe. Dein Standort wird nur zur Haltestellensuche an den Fahrplandienst übertragen.</string>
+	<string>Pendelfuchs zeigt dir Haltestellen in deiner Nähe. Dein Standort wird nur zur Haltestellensuche an den Fahrplandienst übertragen.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIBackgroundModes</key>

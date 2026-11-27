@@ -1,4 +1,7 @@
-# Fahrplan XL
+# Pendelfuchs
+
+> Früherer Arbeitsname: „Fahrplan XL“. Projektordner, Xcode-Projekt (`FahrplanXL`) und Bundle-ID
+> (`de.fahrplanxl.app`) heißen deshalb noch so.
 
 Open-Source-Fahrplan-App für iOS 18+ (SwiftUI). Lizenz: GPL-3.0 (siehe `LICENSE`).
 

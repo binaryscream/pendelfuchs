@@ -89,7 +89,7 @@ struct SavedTripStatusIntent: AppIntent {
 /// „Live-Aktivität beenden“ – beendet alle laufenden Live-Aktivitäten.
 struct EndTripActivitiesIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Live-Aktivität beenden"
-    static let description = IntentDescription("Beendet die laufende Live-Aktivität von Fahrplan XL.")
+    static let description = IntentDescription("Beendet die laufende Live-Aktivität von Pendelfuchs.")
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {

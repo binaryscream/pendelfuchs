@@ -107,7 +107,7 @@ struct CalendarEventSheet: UIViewControllerRepresentable {
             return "\(dep.scheduledTime.formatted(time)) \(ride.line ?? "") \(first.label(style))\(platform)"
                 + " → \(arr.scheduledTime.formatted(time)) \(last.label(style))"
         }
-        return (lines + ["", "Aus Fahrplan XL – Zeiten laut Fahrplan."]).joined(separator: "\n")
+        return (lines + ["", "Aus Pendelfuchs – Zeiten laut Fahrplan."]).joined(separator: "\n")
     }
 
     @MainActor

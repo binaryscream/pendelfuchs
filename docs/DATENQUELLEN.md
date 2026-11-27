@@ -118,7 +118,7 @@ Die iOS-App „ÖPNV Navigator“ (Alexander Albers) ist **nicht** quelloffen; o
   Vorlage; laut README soll man sie beim Anbieter anfragen „oder dieselben wie die offiziellen Apps verwenden“.
 - **Erlaubnis:** Keine Aussage im README zu Nutzungsbedingungen oder Vereinbarungen mit den Verbünden.
 
-**Bewertung für Fahrplan XL:** Technisch ein gutes Nachschlagewerk (MIT, Swift, mit GPL-3.0 vereinbar),
+**Bewertung für Pendelfuchs:** Technisch ein gutes Nachschlagewerk (MIT, Swift, mit GPL-3.0 vereinbar),
 rechtlich aber dasselbe Risiko wie db-vendo-client – inoffizielle Schnittstellen, teils mit Schlüsseln aus
 fremden Apps. Für eine veröffentlichte App nicht als Grundlage geeignet; Transitous bleibt die Hauptquelle.
 Sinnvoll als Vorlage, falls ein Verbund uns ausdrücklich erlaubt, seine EFA-/TRIAS-Schnittstelle zu nutzen.

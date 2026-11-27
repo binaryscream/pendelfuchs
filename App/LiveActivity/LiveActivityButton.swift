@@ -75,7 +75,7 @@ struct LiveActivityAutomationHint: View {
         if saved.isRegular {
             let start = TimeOfDay(hour: (saved.departure.minutesSinceMidnight - 20 + 1440) % 1440 / 60,
                                   minute: (saved.departure.minutesSinceMidnight - 20 + 1440) % 60)
-            Text("Automatisch starten: In der Kurzbefehle-App unter „Automation“ eine neue Automation „Tageszeit“ anlegen (z. B. \(start.formatted), \(saved.weekdays.summary)), „Sofort ausführen“ wählen und die Aktion „Live-Aktivität starten“ von Fahrplan XL mit dieser Fahrt hinzufügen.")
+            Text("Automatisch starten: In der Kurzbefehle-App unter „Automation“ eine neue Automation „Tageszeit“ anlegen (z. B. \(start.formatted), \(saved.weekdays.summary)), „Sofort ausführen“ wählen und die Aktion „Live-Aktivität starten“ von Pendelfuchs mit dieser Fahrt hinzufügen.")
         } else {
             Text("Zeigt die Fahrt mit Countdown und Echtzeit auf dem Sperrbildschirm und in der Dynamic Island.")
         }

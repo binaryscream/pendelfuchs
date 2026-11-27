@@ -1,13 +1,13 @@
 # Entwurf: Anfrage an den VVO
 
 **An:** opendata@vvo-online.de
-**Betreff:** Anfrage zur Nutzung der VVO-Schnittstellen in einer Open-Source-Fahrplan-App (Fahrplan XL)
+**Betreff:** Anfrage zur Nutzung der VVO-Schnittstellen in einer Open-Source-Fahrplan-App (Pendelfuchs)
 
 ---
 
 Guten Tag,
 
-ich entwickle die freie, nicht-kommerzielle iOS-App „Fahrplan XL“ (Lizenz GPL-3.0, Quelltext auf GitHub, derzeit
+ich entwickle die freie, nicht-kommerzielle iOS-App „Pendelfuchs“ (Lizenz GPL-3.0, Quelltext auf GitHub, derzeit
 noch privat, die Veröffentlichung ist geplant). Die App zeigt Abfahrten, Verbindungen und Echtzeitdaten und bietet
 Widgets sowie Live-Aktivitäten für regelmäßige Fahrten. Sie wird kostenlos, ohne Werbung und ohne Tracking angeboten.
 

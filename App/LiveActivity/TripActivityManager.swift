@@ -29,7 +29,7 @@ final class TripActivityManager {
         var errorDescription: String? {
             switch self {
             case .disabled:
-                "Live-Aktivitäten sind für Fahrplan XL ausgeschaltet. Du kannst sie in den iPhone-Einstellungen unter Fahrplan XL aktivieren."
+                "Live-Aktivitäten sind für Pendelfuchs ausgeschaltet. Du kannst sie in den iPhone-Einstellungen unter Pendelfuchs aktivieren."
             case .noUpcomingTrip:
                 "Für diese Fahrt steht in nächster Zeit kein Termin an."
             case .notFound:

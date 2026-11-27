@@ -168,7 +168,7 @@ struct DeparturesWidgetView: View {
     private var header: some View {
         HStack(spacing: 4) {
             Image(systemName: "tram.fill").foregroundStyle(.tint)
-            Text(entry.stop?.label(style) ?? "Fahrplan XL").fontWeight(.semibold).lineLimit(1)
+            Text(entry.stop?.label(style) ?? "Pendelfuchs").fontWeight(.semibold).lineLimit(1)
             if family != .systemSmall, let second = entry.stop?.secondaryLine(style) {
                 Text(second).foregroundStyle(.secondary).lineLimit(1)
             }
@@ -180,7 +180,7 @@ struct DeparturesWidgetView: View {
     /// Sperrbildschirm: einfarbig, Haltestelle + zwei Abfahrten.
     @ViewBuilder private var lockScreen: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(entry.stop?.label(style) ?? "Fahrplan XL").font(.caption.weight(.semibold)).lineLimit(1)
+            Text(entry.stop?.label(style) ?? "Pendelfuchs").font(.caption.weight(.semibold)).lineLimit(1)
             if case .departures(let departures) = entry.content, !departures.isEmpty {
                 ForEach(departures.prefix(maxRows)) { departure in
                     HStack(spacing: 4) {

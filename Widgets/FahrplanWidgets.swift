@@ -3,7 +3,7 @@
 import SwiftUI
 import WidgetKit
 
-/// Widget-Erweiterung von Fahrplan XL. Enthält die Live-Aktivität (später auch Home-Screen-Widgets).
+/// Widget-Erweiterung von Pendelfuchs. Enthält die Live-Aktivität (später auch Home-Screen-Widgets).
 @main
 struct FahrplanWidgets: WidgetBundle {
     var body: some Widget {

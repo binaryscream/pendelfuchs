@@ -16,7 +16,7 @@ enum AppInfo {
     static let contactEmail: String? = nil
 
     static var contactURL: URL? {
-        contactEmail.flatMap { URL(string: "mailto:\($0)?subject=Fahrplan%20XL") }
+        contactEmail.flatMap { URL(string: "mailto:\($0)?subject=Pendelfuchs") }
     }
 }
 
@@ -65,7 +65,7 @@ struct PrivacyView: View {
             Section {
                 Label("Kein Konto, keine Werbung, kein Tracking", systemImage: "checkmark.shield")
                     .font(.body.weight(.medium))
-                Text("Fahrplan XL hat keinen eigenen Server. Die App sammelt keine Daten über dich und wertet deine Nutzung nicht aus.")
+                Text("Pendelfuchs hat keinen eigenen Server. Die App sammelt keine Daten über dich und wertet deine Nutzung nicht aus.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

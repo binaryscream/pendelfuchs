@@ -106,7 +106,7 @@ struct FAQTopic: Identifiable {
             FAQEntry(question: "Welche Widgets gibt es?",
                      answer: "„Abfahrten“ zeigt die nächsten Abfahrten einer Haltestelle. „Strecke“ zeigt die nächsten Verbindungen von A nach B und wechselt auf Wunsch ab einer Uhrzeit auf den Rückweg. „Meine nächste Fahrt“ zeigt Abfahrt, Gleis und Stand deiner nächsten gemerkten Fahrt, mit Knopf für die Live-Aktivität."),
             FAQEntry(question: "Wie füge ich ein Widget hinzu?",
-                     answer: "Halte eine freie Stelle auf dem Home-Bildschirm gedrückt, tippe auf „Bearbeiten“ und „Widget hinzufügen“ und suche nach Fahrplan XL. Halte das Widget danach gedrückt und wähle „Widget bearbeiten“, um Haltestelle, Strecke oder Fahrt festzulegen."),
+                     answer: "Halte eine freie Stelle auf dem Home-Bildschirm gedrückt, tippe auf „Bearbeiten“ und „Widget hinzufügen“ und suche nach Pendelfuchs. Halte das Widget danach gedrückt und wähle „Widget bearbeiten“, um Haltestelle, Strecke oder Fahrt festzulegen."),
             FAQEntry(question: "Warum zeigt ein Widget alte Zeiten?",
                      answer: "iOS bestimmt, wie oft ein Widget neu laden darf. Die App plant deshalb etwa 45 Minuten voraus. Lädt iOS noch später, zeigt das Abfahrten-Widget Uhrzeiten statt Minuten, damit die Angabe stimmt. Antippen öffnet die App mit frischen Daten."),
             FAQEntry(question: "Wann erscheint der Knopf „Live“ im Widget?",
@@ -114,11 +114,11 @@ struct FAQTopic: Identifiable {
         ]),
         FAQTopic(title: "Siri und Kurzbefehle", entries: [
             FAQEntry(question: "Was kann ich Siri fragen?",
-                     answer: "Zum Beispiel: „Abfahrten in Fahrplan XL“, „Wie fährt meine Fahrt in Fahrplan XL“, „Verbindung nach Pirna Bahnhof in Fahrplan XL“, „Live-Aktivität in Fahrplan XL starten“ und „Live-Aktivität in Fahrplan XL beenden“. Der App-Name muss im Satz vorkommen."),
+                     answer: "Zum Beispiel: „Abfahrten in Pendelfuchs“, „Wie fährt meine Fahrt in Pendelfuchs“, „Verbindung nach Pirna Bahnhof in Pendelfuchs“, „Live-Aktivität in Pendelfuchs starten“ und „Live-Aktivität in Pendelfuchs beenden“. Der App-Name muss im Satz vorkommen."),
             FAQEntry(question: "Warum fragt Siri bei einer Verbindung nach dem Start?",
                      answer: "iOS erlaubt in solchen Sätzen nur eine Haltestelle. Du nennst das Ziel, nach dem Start fragt Siri nach. Die Antwort nutzt deine Suchoptionen aus dem Tab „Verbindungen“."),
             FAQEntry(question: "Kann die Live-Aktivität von selbst starten?",
-                     answer: "Ja, mit einer Automation: In der Kurzbefehle-App eine Automation „Tageszeit“ anlegen, „Sofort ausführen“ wählen und die Aktion „Live-Aktivität starten“ von Fahrplan XL hinzufügen. Einfacher ist meist der Knopf in der Erinnerung oder im Widget."),
+                     answer: "Ja, mit einer Automation: In der Kurzbefehle-App eine Automation „Tageszeit“ anlegen, „Sofort ausführen“ wählen und die Aktion „Live-Aktivität starten“ von Pendelfuchs hinzufügen. Einfacher ist meist der Knopf in der Erinnerung oder im Widget."),
         ]),
         FAQTopic(title: "Verbindungen und Ersatz", entries: [
             FAQEntry(question: "Was macht der Verpass-Assistent?",
