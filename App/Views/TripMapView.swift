@@ -18,12 +18,16 @@ struct TripMapView: View {
     @Environment(\.colorScheme) private var colorScheme
     /// Die Kartenkacheln ließen sich nicht laden (meist: kein Netz).
     @State private var mapFailed = false
+    /// Zähler: Jede Erhöhung lässt die Karte auf den eigenen Standort bzw. die ganze Strecke springen.
+    @State private var locateRequests = 0
+    @State private var fitRequests = 0
 
     var body: some View {
         ZStack(alignment: .top) {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 TripMapRepresentable(trip: trip, now: context.date, dark: colorScheme == .dark,
-                                     live: liveStates(at: context.date), onFailure: { mapFailed = true })
+                                     live: liveStates(at: context.date), locateRequests: locateRequests,
+                                     fitRequests: fitRequests, onFailure: { mapFailed = true })
                     .ignoresSafeArea()
             }
 
@@ -53,6 +57,16 @@ struct TripMapView: View {
         .overlay(alignment: .bottomLeading) {
             attribution
         }
+        .overlay(alignment: .trailing) {
+            // Karte auf den eigenen Standort bzw. zurück auf die ganze Strecke.
+            VStack(spacing: 10) {
+                mapButton("location.fill", label: "Mein Standort") { locateRequests += 1 }
+                mapButton("point.topleft.down.to.point.bottomright.curvepath", label: "Ganze Strecke zeigen") {
+                    fitRequests += 1
+                }
+            }
+            .padding(.trailing)
+        }
         // TLMS nur abfragen, wenn eine Fahrt der Verbindung überhaupt im Feed vorkommen kann.
         .task { if trip.mayHaveLiveVehicles { await feed.keepUpdated() } }
     }
@@ -64,6 +78,16 @@ struct TripMapView: View {
             states[index] = feed.state(for: leg, run: runs[index], at: now)
         }
         return states
+    }
+
+    private func mapButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.headline)
+                .frame(width: 44, height: 44)
+                .background(.regularMaterial, in: Circle())
+        }
+        .accessibilityLabel(label)
     }
 
     private var legend: some View {
@@ -109,6 +133,8 @@ private struct TripMapRepresentable: UIViewRepresentable {
     let now: Date
     let dark: Bool
     let live: [Int: LiveRideState]
+    var locateRequests = 0
+    var fitRequests = 0
     var onFailure: () -> Void = {}
 
     static func styleURL(dark: Bool) -> URL {
@@ -140,12 +166,24 @@ private struct TripMapRepresentable: UIViewRepresentable {
         coordinator.onFailure = onFailure
         coordinator.live = live
         coordinator.updateVehicles(on: map, now: now)
+        if coordinator.locateRequests != locateRequests {
+            coordinator.locateRequests = locateRequests
+            // Folgt dem Standort, bis man die Karte selbst verschiebt; fragt bei Bedarf nach der Freigabe.
+            map.setUserTrackingMode(.follow, animated: true, completionHandler: nil)
+        }
+        if coordinator.fitRequests != fitRequests {
+            coordinator.fitRequests = fitRequests
+            map.setUserTrackingMode(.none, animated: false, completionHandler: nil)
+            coordinator.fitCamera(on: map, animated: true)
+        }
     }
 
     @MainActor
     final class Coordinator: NSObject, @preconcurrency MLNMapViewDelegate {
         var trip: Trip
         var onFailure: () -> Void = {}
+        var locateRequests = 0
+        var fitRequests = 0
         var dark = false
         var live: [Int: LiveRideState] = [:]
         /// Ein Fahrzeug-Marker pro gerade befahrenem Abschnitt.

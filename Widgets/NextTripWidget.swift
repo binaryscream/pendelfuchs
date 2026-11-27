@@ -172,15 +172,20 @@ struct NextTripWidgetView: View {
 
     private func small(_ saved: SavedTrip, _ info: Info) -> some View {
         VStack(alignment: .leading, spacing: 4) {
+            // VoiceOver liest die Fahrt als einen Satz (am Titel); die Einzelteile darunter bleiben stumm.
             Text(saved.title(style: style))
                 .font(.caption.weight(.semibold))
                 .lineLimit(1)
-            departure(info, size: .title)
-            whenLine(info)
-            lines(info, limit: 2)
+                .accessibilityLabel(info.spoken(title: saved.title(style: style)))
+            Group {
+                departure(info, size: .title)
+                whenLine(info)
+                lines(info, limit: 2)
+            }
+            .accessibilityHidden(true)
             Spacer(minLength: 0)
             HStack(alignment: .bottom, spacing: 4) {
-                status(info)
+                status(info).accessibilityHidden(true)
                 Spacer(minLength: 0)
                 liveButton(saved, info, compact: true)
             }
@@ -195,24 +200,32 @@ struct NextTripWidgetView: View {
                 Text(saved.title(style: style))
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
-                departure(info, size: .largeTitle)
-                whenLine(info)
-                Spacer(minLength: 0)
-                status(info)
+                    .accessibilityLabel(info.spoken(title: saved.title(style: style))
+                        + ", Ankunft \(info.arrival.formatted(date: .omitted, time: .shortened))")
+                Group {
+                    departure(info, size: .largeTitle)
+                    whenLine(info)
+                    Spacer(minLength: 0)
+                    status(info)
+                }
+                .accessibilityHidden(true)
             }
             Spacer(minLength: 0)
             VStack(alignment: .trailing, spacing: 6) {
-                lines(info, limit: 3)
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.right").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
-                    Text("an \(info.arrival.formatted(date: .omitted, time: .shortened))").monospacedDigit()
+                Group {
+                    lines(info, limit: 3)
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.right").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                        Text("an \(info.arrival.formatted(date: .omitted, time: .shortened))").monospacedDigit()
+                    }
+                    .font(.subheadline)
+                    if let platform = info.platformText {
+                        Text(platform)
+                            .font(.caption.weight(info.platformChanged ? .semibold : .regular))
+                            .foregroundStyle(info.platformChanged ? Color.orange : Color.secondary)
+                    }
                 }
-                .font(.subheadline)
-                if let platform = info.platformText {
-                    Text(platform)
-                        .font(.caption.weight(info.platformChanged ? .semibold : .regular))
-                        .foregroundStyle(info.platformChanged ? Color.orange : Color.secondary)
-                }
+                .accessibilityHidden(true)
                 Spacer(minLength: 0)
                 liveButton(saved, info, compact: false)
             }
@@ -415,6 +428,8 @@ private struct Info {
     }
 
     func spoken(title: String) -> String {
-        "\(title), \(dayText), \(spokenDeparture)" + (platformText.map { ", \($0)" } ?? "") + ", \(statusText)"
+        let lineText = lines.isEmpty ? "" : ", mit \(lines.map(\.name).joined(separator: ", dann "))"
+        return "\(title), \(dayText), \(spokenDeparture)\(lineText)" + (platformText.map { ", \($0)" } ?? "")
+            + ", \(statusText)"
     }
 }

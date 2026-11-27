@@ -275,6 +275,9 @@ struct RouteWidgetView: View {
                         // Antippen öffnet genau diese Verbindung in der App.
                         Link(destination: entry.linkURL(for: item.trip) ?? entry.linkURL ?? URL(string: "fahrplanxl://")!) {
                             RouteTripRow(trip: item.trip, run: item.run, now: entry.date)
+                                // Eine Verbindung = ein Satz, statt Zeiten, Balken und Linien einzeln.
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel(Self.spoken(item.trip))
                         }
                         .frame(maxHeight: .infinity)
                     }
@@ -322,6 +325,26 @@ struct RouteWidgetView: View {
         return stop.label(style)
     }
 
+    /// Für VoiceOver: „Abfahrt 7:42, 3 Minuten Verspätung, Ankunft 8:20, mit S1, dann 7, Gleis 2, ein Umstieg“.
+    static func spoken(_ trip: Trip) -> String {
+        let time = Date.FormatStyle.dateTime.hour().minute()
+        var parts = ["Abfahrt \(trip.departure.expectedTime.formatted(time))"]
+        if let disruption = trip.disruption {
+            parts.append(disruption.rerouteNote)
+        } else if let delay = trip.departure.delayMinutes, delay > 0 {
+            parts.append("\(delay) \(delay == 1 ? "Minute" : "Minuten") Verspätung")
+        }
+        parts.append("Ankunft \(trip.arrival.expectedTime.formatted(time))")
+        let lines = trip.rides.compactMap(\.line)
+        if !lines.isEmpty { parts.append("mit \(lines.joined(separator: ", dann "))") }
+        if let first = trip.rides.first, let stop = first.stops.first, let platform = stop.platform, !platform.isEmpty {
+            let label = (first.mode ?? .other).platformLabel(platform).replacingOccurrences(of: "Gl. ", with: "Gleis ")
+            parts.append(stop.platformChanged ? "\(label), geändert" : label)
+        }
+        if trip.interchanges > 0 { parts.append(trip.interchanges == 1 ? "ein Umstieg" : "\(trip.interchanges) Umstiege") }
+        return parts.joined(separator: ", ")
+    }
+
     /// Sperrbildschirm: einfarbig, Strecke und die nächsten zwei Verbindungen.
     @ViewBuilder private var lockScreen: some View {
         VStack(alignment: .leading, spacing: 1) {
@@ -338,6 +361,8 @@ struct RouteWidgetView: View {
                         Text(trip.rides.compactMap(\.line).prefix(3).joined(separator: "›")).lineLimit(1)
                     }
                     .font(.caption)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Self.spoken(trip))
                 }
             } else {
                 Text("Keine Verbindungen").font(.caption).foregroundStyle(.secondary)

@@ -25,6 +25,7 @@ struct MyTripsView: View {
                 list(now: context.date)
             }
             .navigationTitle("Meine Fahrten")
+            .toolbarTitleDisplayMode(.inlineLarge)
             .confirmationDialog(deleting.map { "„\($0.title(style: nameStyle))“ löschen?" } ?? "",
                                 isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
                                 titleVisibility: .visible, presenting: deleting) { saved in

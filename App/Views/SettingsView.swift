@@ -60,7 +60,7 @@ struct SettingsView: View {
                         Label("Hilfe & Fragen", systemImage: "questionmark.circle")
                     }
                 } footer: {
-                    Text("Unter „Anzeige“: Erscheinungsbild, Haltestellennamen, Verspätungen, Störungen, Ausfälle und Zwischenhalte.")
+                    Text("Unter „Anzeige“: Start-Tab, Erscheinungsbild, Haltestellennamen, Verspätungen, Störungen, Ausfälle und Zwischenhalte.")
                 }
 
                 Section {
@@ -102,6 +102,7 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Einstellungen")
+            .toolbarTitleDisplayMode(.inlineLarge)
         }
     }
 }
@@ -114,9 +115,18 @@ struct DisplaySettingsView: View {
     @AppStorage(StopListExpansion.storageKey) private var stopListExpansion = StopListExpansion.collapsed
     @AppStorage(CancelledDisplay.hideKey, store: AppGroup.defaults) private var hideCancelled = false
     @AppStorage(AlertDisplay.storageKey, store: AppGroup.defaults) private var alertDisplay = AlertDisplay.affected
+    @AppStorage(AppTab.startKey) private var startTab = AppTab.departures
 
     var body: some View {
         Form {
+            Section {
+                Picker("Beim Start öffnen", selection: $startTab) {
+                    ForEach(AppTab.startChoices, id: \.self) { Text($0.title).tag($0) }
+                }
+            } footer: {
+                Text("Dieser Bereich erscheint, wenn du die App neu öffnest. Widgets und Benachrichtigungen führen weiterhin direkt zu ihrem Ziel.")
+            }
+
             Section {
                 Picker("Erscheinungsbild", selection: $appearance) {
                     ForEach(AppearanceSetting.allCases) { option in

@@ -171,6 +171,7 @@ struct TripSearchView: View {
                 }
             }
             .navigationTitle("Verbindungen")
+            .toolbarTitleDisplayMode(.inlineLarge)
             .onChange(of: openRoute, initial: true) { _, link in
                 guard let link else { return }
                 var query = link.query

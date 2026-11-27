@@ -17,7 +17,7 @@ struct FahrplanXLApp: App {
     @AppStorage(CancelledDisplay.hideKey, store: AppGroup.defaults) private var hideCancelled = false
     @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var delayDisplay = DelayDisplay.badge
     @Environment(\.scenePhase) private var scenePhase
-    @State private var selectedTab = AppTab.departures
+    @State private var selectedTab: AppTab
     @State private var openStop: Stop?
     @State private var openRoute: RouteLink?
     @State private var openSavedTrip: UUID?
@@ -29,6 +29,8 @@ struct FahrplanXLApp: App {
         _favorites = State(initialValue: FavoritesStore(defaults: AppGroup.defaults))
         _savedTrips = State(initialValue: SavedTripsStore(defaults: AppGroup.defaults))
         _recents = State(initialValue: RecentsStore(defaults: AppGroup.defaults))
+        let start = UserDefaults.standard.string(forKey: AppTab.startKey).flatMap(AppTab.init(rawValue:))
+        _selectedTab = State(initialValue: start ?? .departures)
         // Knöpfe in der Live-Aktivität („Aktualisieren“, „Beenden“) laufen im App-Prozess.
         TripActivityActions.refresh = { await TripActivityManager.shared.refreshAll() }
         TripActivityActions.end = { await TripActivityManager.shared.end($0) }
@@ -130,8 +132,21 @@ struct RouteLink: Equatable {
     var trip: TripTarget?
 }
 
-enum AppTab: Hashable {
+enum AppTab: String, Hashable {
     case departures, trips, saved, settings
+
+    /// Einstellung „Beim Start öffnen“.
+    static let startKey = "startTab"
+    static let startChoices: [AppTab] = [.departures, .trips, .saved]
+
+    var title: String {
+        switch self {
+        case .departures: "Abfahrten"
+        case .trips: "Verbindungen"
+        case .saved: "Meine Fahrten"
+        case .settings: "Einstellungen"
+        }
+    }
 }
 
 extension EnvironmentValues {
