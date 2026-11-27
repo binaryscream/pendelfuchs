@@ -34,6 +34,14 @@ private func meters(_ a: Coordinate, _ b: Coordinate) -> Double {
 }
 
 @Suite struct VVODecodingTests {
+    /// Wie bei Transitous und TLMS: Der VVO soll die Anfragen der App zuordnen können.
+    @Test func requestsCarryAppUserAgent() throws {
+        let vvo = VVOProvider(userAgent: TransitousProvider.userAgent(version: "1.0"))
+        let request = try vvo.request("/dm", body: ["stopid": "33000028"])
+        #expect(request.value(forHTTPHeaderField: "User-Agent") == "Pendelfuchs/1.0 (+https://pendelfuchs.de)")
+        #expect(request.httpMethod == "POST")
+    }
+
     @Test func parsesDotNetDates() {
         let d = VVODecoding.parseDate(#"/Date(1795453020000-0000)/"#)
         #expect(d == Date(timeIntervalSince1970: 1_795_453_020))

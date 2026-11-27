@@ -329,4 +329,4 @@ Heidenau
 - **Ein regionaler Verbund sagt nein oder antwortet nicht:** ihn aus `RegionalNetwork` streichen; Transitous übernimmt.
 - **TLMS sagt nein:** Live-Positionen abschalten; die App zeigt dann nur die geschätzte Position.
 - **Transitous nennt Grenzen:** Widget- und Hintergrundabfragen entsprechend drosseln.
-- **Kontakt-URL im User-Agent** zeigt noch auf das private GitHub-Repo. Sobald die Website online ist, auf deren Adresse umstellen (`TransitousProvider.contactURL`).
+- **User-Agent** `Pendelfuchs/<Version> (+https://pendelfuchs.de)` geht seit 27.11.2026 an Transitous, TLMS und den VVO. Die regionalen Verbünde über TripKit sehen dagegen einen festen Safari-User-Agent aus TripKit (`HttpClient.DefaultUserAgent`), der sich ohne Änderung an TripKit nicht ersetzen lässt.

@@ -10,10 +10,14 @@ public struct VVOProvider: TransitProvider {
 
     private let baseURL: URL
     private let session: URLSession
+    /// Derselbe User-Agent wie bei Transitous und TLMS, damit der VVO die Anfragen der App zuordnen kann.
+    private let userAgent: String
 
-    public init(baseURL: URL = URL(string: "https://webapi.vvo-online.de")!, session: URLSession = .shared) {
+    public init(baseURL: URL = URL(string: "https://webapi.vvo-online.de")!, session: URLSession = .shared,
+                userAgent: String = TransitousProvider.defaultUserAgent) {
         self.baseURL = baseURL
         self.session = session
+        self.userAgent = userAgent
     }
 
     // MARK: TransitProvider
@@ -98,14 +102,18 @@ public struct VVOProvider: TransitProvider {
 
     // MARK: HTTP
 
-    func post<T: Decodable & StatusCarrying>(_ path: String, body: [String: any Sendable]) async throws -> T {
+    func request(_ path: String, body: [String: any Sendable]) throws -> URLRequest {
         var request = URLRequest(url: baseURL.appending(path: path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 15
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return request
+    }
 
-        let (data, response) = try await session.data(for: request)
+    func post<T: Decodable & StatusCarrying>(_ path: String, body: [String: any Sendable]) async throws -> T {
+        let (data, response) = try await session.data(for: request(path, body: body))
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw TransitError.badResponse(status: http.statusCode)
         }

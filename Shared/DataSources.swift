@@ -27,7 +27,7 @@ enum DataSources {
 
     static func router(useNetworks: Bool = DataSources.useNetworks) -> ProviderRouter {
         ProviderRouter(transitous: TransitousProvider(userAgent: TransitousProvider.userAgent(version: appVersion)),
-                       vvo: useNetworks ? VVOProvider() : nil, useRegional: useNetworks)
+                       vvo: useNetworks ? VVOProvider(userAgent: TransitousProvider.userAgent(version: appVersion)) : nil, useRegional: useNetworks)
     }
 
     static let tripKitURL = URL(string: "https://github.com/alexander-albers/tripkit")!
