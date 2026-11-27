@@ -66,9 +66,8 @@ Benachrichtigungen bedeutet, steht unten und in der App unter Einstellungen → 
     - Live-Aktivität endet nach der Ankunft nur, wenn iOS die App aufweckt – sonst erst nach bis zu 8 h (später ggf. kürzere Wartezeit oder Push-Server, siehe 12)
     - Dringliche Meldungen (Fokus durchbrechen): im Code vorbereitet, braucht die Berechtigung
       `com.apple.developer.usernotifications.time-sensitive` und damit ein bezahltes Entwicklerkonto (siehe `project.yml`)
-    - Vor einer Veröffentlichung: Datenschutzhinweis rechtlich prüfen lassen, E-Mail-Adresse eintragen
-      (`AppInfo.contactEmail`; die Postanschrift steht schon drin), Datenschutz- und Support-Seite im Web für
-      App Store Connect
+    - Vor einer Veröffentlichung: Datenschutzhinweis rechtlich prüfen lassen (E-Mail-Adresse und Website
+      `pendelfuchs.de` mit Hilfe- und Datenschutzseite sind seit 27.11.2026 da)
     - Regionale Verbünde über TripKit nutzen inoffizielle Schnittstellen – vor einer Veröffentlichung je Verbund
       Erlaubnis klären oder auf offizielle Angebote umsteigen (`docs/DATENQUELLEN.md`, `docs/REGIONEN.md`)
     - Offizielle VVO-Schnittstellen prüfen (TRIAS, SIRI-ET) statt der inoffiziellen WebAPI – je nach Antwort des VVO

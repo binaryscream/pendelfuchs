@@ -10,9 +10,8 @@ import Foundation
 public struct TransitousProvider: TransitProvider {
     public let id: ProviderID = .transitous
 
-    /// Kontaktangabe für Transitous (Pflicht laut Nutzungsbedingungen). Zeigt noch auf das (private) Repo –
-    /// sobald die Website online ist, auf deren Adresse umstellen.
-    public static let contactURL = "https://github.com/binaryscream/pendelfuchs"
+    /// Kontaktangabe im User-Agent (Pflicht laut Transitous, Bitte von TLMS): die Website mit Impressum.
+    public static let contactURL = "https://pendelfuchs.de"
 
     /// App-Name, Version und Kontakt, z. B. `Pendelfuchs/0.1.0 (+https://github.com/…)`.
     public static func userAgent(version: String) -> String {

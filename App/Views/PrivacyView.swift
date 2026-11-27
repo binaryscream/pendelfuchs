@@ -11,9 +11,8 @@ enum AppInfo {
     static let responsibleName = "Rico Kullmann"
     static let responsibleAddress = ["Lessingstraße 20", "01809 Heidenau"]
 
-    /// E-Mail-Adresse für Fragen zur App und zum Datenschutz. Solange sie fehlt, zeigt die App nur die
-    /// Postanschrift – vor einer Veröffentlichung eintragen.
-    static let contactEmail: String? = nil
+    /// E-Mail-Adresse für Fragen zur App und zum Datenschutz (Postfach bei wint.global, wie die Website).
+    static let contactEmail: String? = "kontakt@pendelfuchs.de"
 
     static var contactURL: URL? {
         contactEmail.flatMap { URL(string: "mailto:\($0)?subject=Pendelfuchs") }

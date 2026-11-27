@@ -1,7 +1,7 @@
 # App-Store-Eintrag – zum Kopieren in App Store Connect
 
 Stand 27.11.2026. Alles auf Deutsch, Sprache des Eintrags: **Deutsch**. Die Zeichengrenzen sind geprüft
-(Zahlen in Klammern). Adressen mit `pendelfuchs.de` setzen voraus, dass die Website dort liegt – sonst anpassen.
+(Zahlen in Klammern). Die Website `https://pendelfuchs.de` ist online (27.11.2026).
 
 ## App anlegen (einmalig)
 
@@ -172,8 +172,8 @@ Schönheitsfehler: Auf Bild 2 steht oben links „Carrier“ (Simulator). Bei Be
 ## Vor dem ersten Hochladen
 
 - [ ] Bezahltes Entwicklerkonto
-- [ ] Domain, Website online, E-Mail-Adresse in App und Impressum eingetragen
-- [ ] Kontakt-URL im User-Agent für Transitous auf die Website umgestellt (`TransitousProvider.contactURL`)
+- [x] Domain, Website online, E-Mail-Adresse in App und Impressum eingetragen (`kontakt@pendelfuchs.de`)
+- [x] Kontakt-URL im User-Agent für Transitous auf die Website umgestellt (`TransitousProvider.contactURL`)
 - [ ] Antworten von VVO, TLMS und Transitous umgesetzt (`docs/ANFRAGEN.md`) – Transitous und TLMS erledigt, VVO offen
 - [ ] Erlaubnis der regionalen Verbünde (TripKit) geklärt (Anfragen: `docs/ANFRAGEN.md`, Abschnitt 4) – oder die TripKit-Verbünde vor dem Hochladen im Code abschalten (`useRegional` im Router)
 - [ ] Quelltext auf GitHub öffentlich (Bedingung von Transitous)
