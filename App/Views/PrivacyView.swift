@@ -86,7 +86,7 @@ struct PrivacyView: View {
                 item("dot.radiowaves.left.and.right", "Live-Fahrzeuge in Dresden",
                      "Bei Straßenbahnen und Stadtbussen in Dresden ruft die App die Fahrzeugpositionen von TLMS ab. Die Abfrage enthält keine Angaben zu dir oder deiner Fahrt.")
                 item("network", "Bei jeder Abfrage",
-                     "Wie bei jedem Internetzugriff sieht der jeweilige Dienst deine IP-Adresse. Für den Umgang damit gelten die Datenschutzhinweise der Dienste.")
+                     "Wie bei jedem Internetzugriff sieht der jeweilige Dienst deine IP-Adresse. Die Fahrplandienste und TLMS erhalten außerdem den Namen und die Version der App (z. B. „Pendelfuchs/1.0“) mit der Adresse pendelfuchs.de, damit sie die Anfragen der App zuordnen können – eine Kennung für dich oder dein Gerät ist das nicht. Für den Umgang damit gelten die Datenschutzhinweise der Dienste.")
             } header: {
                 Text("Was dein iPhone verlässt")
             } footer: {
