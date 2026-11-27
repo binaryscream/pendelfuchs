@@ -146,6 +146,50 @@ To try the main features:
 Data sources: Transitous (transitous.org, open data for all of Germany), the regional transit authority VVO in the Dresden area, live vehicle positions from TLMS (tlm.solutions) for Dresden trams and city buses, map tiles from OpenFreeMap. The app has no backend server; all requests go directly from the device to these services.
 ```
 
+## TestFlight (externe Tester)
+
+Unter **TestFlight → Testinformationen**. Die Beta-Prüfung bei Apple betrifft den ersten Build jeder Version.
+
+| Feld | Wert |
+|---|---|
+| Feedback-E-Mail | `kontakt@pendelfuchs.de` |
+| Marketing-URL | `https://pendelfuchs.de/` |
+| Datenschutzrichtlinie-URL | `https://pendelfuchs.de/datenschutz.html` |
+| Anmeldung erforderlich | Nein |
+| Kontakt für die Beta-Prüfung | wie bei der App-Prüfung (sieht nur Apple) |
+| Notizen für die Prüfer | die englischen Notizen aus „Hinweise für die App-Prüfung“ |
+
+**Beta-App-Beschreibung** (sehen die Tester)
+```
+Pendelfuchs ist eine kostenlose Fahrplan-App für ganz Deutschland – ohne Werbung, ohne Konto, ohne eigenen Server.
+
+• Abfahrten an Haltestellen, mit Echtzeit, Gleis und Störungen
+• Verbindungssuche mit Umstiegen, Karte und Fahrtverlauf
+• „Meine Fahrten“: regelmäßige Wege wie den Arbeitsweg speichern
+• Erinnerung vor der Abfahrt und Meldungen bei Verspätung, Ausfall oder knappem Anschluss
+• Live-Aktivität auf dem Sperrbildschirm und in der Dynamic Island
+• Widgets und Siri-Kurzbefehle
+• In Dresden: Straßenbahnen und Stadtbusse live auf der Karte
+
+Daten: Transitous (offene Fahrplandaten für ganz Deutschland), zusätzlich die Auskünfte einiger Verkehrsverbünde. Der Quellcode ist offen: github.com/binaryscream/pendelfuchs
+```
+
+**Was zu testen ist** (für Build 0.1.0 – bei jedem Build anpassen)
+```
+Danke fürs Testen! Am meisten hilft der Alltag: Leg deinen Arbeits- oder Schulweg unter „Meine Fahrten“ an (Verbindung suchen → Stern → Wochentage wählen) und nutz die App ein paar Tage.
+
+Bitte achte besonders auf:
+• Stimmen Abfahrten, Verspätungen und Gleise mit dem, was du am Bahnsteig siehst?
+• Kommt die Erinnerung vor der Abfahrt pünktlich? Lässt sich daraus die Live-Aktivität starten (Meldung gedrückt halten)?
+• Aktualisiert sich die Live-Aktivität unterwegs, und verschwindet sie nach der Ankunft?
+• Kommen Meldungen bei Verspätung oder Ausfall – und wie spät nach dem eigentlichen Ereignis?
+• Zeigen die Widgets die richtigen nächsten Abfahrten?
+
+Bekannt: Im Hintergrund prüft die App nur, wenn iOS sie weckt (oft etwa alle 15 Minuten). Meldungen können deshalb etwas später kommen.
+
+Feedback: in der App einen Screenshot machen und „Feedback senden“ wählen – oder per E-Mail an kontakt@pendelfuchs.de.
+```
+
 ## Bildschirmfotos
 
 Pflicht ist ein Satz für das **6,9-Zoll-iPhone** (Hochformat **1320 × 2868** Pixel, PNG oder JPEG, ohne
