@@ -26,7 +26,7 @@ Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingung
 - **Widgets**: „Abfahrten“, „Strecke“ (mit Rückweg und Tausch-Knopf) und „Meine nächste Fahrt“
 - **Siri**: Abfahrten, Stand einer gemerkten Fahrt, Verbindung suchen, Live-Aktivität starten und beenden
 - **Regionale Verbünde** (Sachsen außerhalb des VVO, Bayern, Baden-Württemberg, NRW, Mecklenburg-Vorpommern) über
-  [TripKit](https://github.com/alexander-albers/tripkit) – zusätzlich zu Transitous, abschaltbar
+  [TripKit](https://github.com/alexander-albers/tripkit) – zusätzlich zu Transitous, zusammen mit dem VVO abschaltbar
 - **Karte** mit Streckenverlauf und Fahrzeugposition – in Dresden live aus [TLMS](https://tlm.solutions)
 - **Extras**: Kalendereintrag, Link zur DB-Buchung, Hilfe-Seite (FAQ), Datenschutzhinweis, Daten zurücksetzen
 

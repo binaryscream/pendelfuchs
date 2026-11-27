@@ -38,8 +38,7 @@ enum AppearanceSetting: String, CaseIterable, Identifiable {
 }
 
 struct SettingsView: View {
-    @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
-    @AppStorage(DataSources.useRegionalKey, store: AppGroup.defaults) private var useRegional = true
+    @AppStorage(DataSources.useNetworksKey, store: AppGroup.defaults) private var useNetworks = true
 
     var body: some View {
         NavigationStack {
@@ -70,12 +69,11 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("VVO-Daten im VVO-Gebiet", isOn: $useVVO)
-                    Toggle("Regionale Verbünde", isOn: $useRegional)
+                    Toggle("Daten der Verkehrsverbünde", isOn: $useNetworks)
                 } header: {
                     Text("Datenquellen")
                 } footer: {
-                    Text("Fahrplandaten für ganz Deutschland kommen von Transitous. Im Gebiet des Verkehrsverbunds Oberelbe (Dresden, Meißen, Pirna, Bautzen …) kann die App zusätzlich die Daten des VVO nutzen – mit Fahrpreisen und Auslastung. „Regionale Verbünde“ fragt in Chemnitz/Mittelsachsen, im Vogtland, in Bayern, Baden-Württemberg, Nordrhein-Westfalen und Mecklenburg-Vorpommern die Auskunft des jeweiligen Verbunds ab. Klappt das nicht, springt Transitous ein.")
+                    Text("Fahrplandaten für ganz Deutschland kommen von Transitous. Wo ein Verkehrsverbund eine eigene Auskunft hat, fragt die App zusätzlich diese ab – oft mit genauerer Echtzeit, im VVO-Gebiet auch mit Fahrpreisen und Auslastung: Oberelbe (Dresden), Mittelsachsen (Chemnitz), Vogtland, Bayern, Baden-Württemberg, Nordrhein-Westfalen und Mecklenburg-Vorpommern. Klappt das nicht, springt Transitous ein. Aus: alles über Transitous.")
                 }
 
                 Section {
@@ -94,11 +92,9 @@ struct SettingsView: View {
                     Link(destination: URL(string: "https://tlm.solutions")!) {
                         LabeledContent("Live-Fahrzeuge Dresden", value: "TLMS")
                     }
-                    if useVVO {
+                    if useNetworks {
                         LabeledContent("VVO-Gebiet", value: "Verkehrsverbund Oberelbe")
-                    }
-                    if useRegional {
-                        LabeledContent("Regionale Verbünde",
+                        LabeledContent("Weitere Verbünde",
                                        value: RegionalNetwork.allCases.map(\.providerID.displayName).joined(separator: ", "))
                         Link(destination: DataSources.tripKitURL) {
                             LabeledContent("Anbindung", value: "TripKit (MIT-Lizenz)")

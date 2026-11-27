@@ -127,7 +127,8 @@ Veröffentlichung je Verbund die Erlaubnis klären – oder auf deren offizielle
 - **Router:** Abfahrten an Haltestellen im Verbundgebiet und Verbindungen, deren Start und Ziel im selben Verbund
   liegen, kommen vom Verbund; Fehler oder leeres Ergebnis → Transitous. Gemerkte Fahrten aus Verbunddaten haben
   keine `refresh-itinerary`-Kennung und werden wie VVO-Fahrten neu gesucht.
-- **Schalter:** Einstellungen → „Regionale Verbünde“ (Standard an), Quellenangabe in den Einstellungen.
+- **Schalter:** Einstellungen → „Daten der Verkehrsverbünde“ (Standard an) gilt für VVO und TripKit-Verbünde
+  gemeinsam; der frühere Schalter „VVO-Daten“ wird beim Start übernommen. Quellenangabe in den Einstellungen.
 - **Live-Probe** (27.11.2026, `RegionalProviderLiveTests`, mit `FAHRPLAN_LIVE_TESTS=1` über `xcodebuild test`
   laufen lassen – `swift test` stürzt in TripKits Logging ab, weil dort keine App-Kennung existiert): alle sechs
   Verbünde liefern Abfahrten, Fahrtverläufe und Verbindungen, alle außer VVV mit Echtzeit.

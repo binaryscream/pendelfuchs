@@ -167,7 +167,7 @@ Vorschlag, in dieser Reihenfolge:
 - [ ] Domain, Website online, E-Mail-Adresse in App und Impressum eingetragen
 - [ ] Kontakt-URL im User-Agent für Transitous auf die Website umgestellt (`TransitousProvider.contactURL`)
 - [ ] Antworten von VVO, TLMS und Transitous umgesetzt (`docs/ANFRAGEN.md`)
-- [ ] Erlaubnis der regionalen Verbünde (TripKit) geklärt – oder „Regionale Verbünde“ vor dem Hochladen abschalten
+- [ ] Erlaubnis der regionalen Verbünde (TripKit) geklärt – oder die TripKit-Verbünde vor dem Hochladen im Code abschalten (`useRegional` im Router)
 - [ ] Quelltext auf GitHub öffentlich (Bedingung von Transitous)
 - [ ] Rechtstexte geprüft
 - [ ] Bildschirmfotos aufgenommen

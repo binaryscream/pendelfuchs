@@ -79,7 +79,7 @@ struct PrivacyView: View {
 
             Section {
                 item("tram", "Fahrplandienste",
-                     "Für Abfahrten und Verbindungen fragt die App Transitous, im Gebiet des Verkehrsverbunds Oberelbe den VVO und – falls eingeschaltet – in Chemnitz/Mittelsachsen, im Vogtland, in Bayern, Baden-Württemberg, Nordrhein-Westfalen und Mecklenburg-Vorpommern die Auskunft des jeweiligen Verbunds. Übertragen werden die gesuchten Haltestellen, Strecken und Zeiten.")
+                     "Für Abfahrten und Verbindungen fragt die App Transitous, und – solange „Daten der Verkehrsverbünde“ eingeschaltet ist – im Gebiet des Verkehrsverbunds Oberelbe den VVO sowie in Chemnitz/Mittelsachsen, im Vogtland, in Bayern, Baden-Württemberg, Nordrhein-Westfalen und Mecklenburg-Vorpommern die Auskunft des jeweiligen Verbunds. Übertragen werden die gesuchten Haltestellen, Strecken und Zeiten.")
                 item("location", "Standort",
                      "Nur wenn du ihn freigibst und nur, während du die App benutzt: Für „In der Nähe“ gehen deine Koordinaten an den Fahrplandienst, der die Haltestellen im Umkreis liefert. Eine Standortabfrage im Hintergrund gibt es nicht.")
                 item("map", "Karte",

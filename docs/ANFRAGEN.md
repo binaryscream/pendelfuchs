@@ -118,7 +118,7 @@ Is that okay? Is there a per-user or total volume I should stay under, or anythi
 
 ## Nach den Antworten
 
-- **VVO sagt nein oder antwortet nicht:** In den Einstellungen „VVO-Daten im VVO-Gebiet“ standardmäßig ausschalten, dann läuft alles über Transitous.
+- **VVO sagt nein oder antwortet nicht:** Den VVO im Code abschalten (`vvo: nil` in `DataSources.router`), dann läuft das VVO-Gebiet über Transitous.
 - **TLMS sagt nein:** Live-Positionen abschalten; die App zeigt dann nur die geschätzte Position.
 - **Transitous nennt Grenzen:** Widget- und Hintergrundabfragen entsprechend drosseln.
 - **Kontakt-URL im User-Agent** zeigt noch auf das private GitHub-Repo. Sobald die Website online ist, auf deren Adresse umstellen (`TransitousProvider.contactURL`).

@@ -132,7 +132,7 @@ struct FAQTopic: Identifiable {
         ]),
         FAQTopic(title: "Daten und Datenschutz", entries: [
             FAQEntry(question: "Woher kommen die Fahrplandaten?",
-                     answer: "Für ganz Deutschland von Transitous, einem freien Gemeinschaftsprojekt. Im Gebiet des Verkehrsverbunds Oberelbe (Dresden, Meißen, Pirna, Bautzen …) nutzt die App zusätzlich die Daten des VVO, mit Fahrpreisen und Auslastung. In Chemnitz/Mittelsachsen, im Vogtland, in Bayern, Baden-Württemberg, Nordrhein-Westfalen und Mecklenburg-Vorpommern fragt sie die Auskunft des jeweiligen Verbunds ab. Beides lässt sich in den Einstellungen abschalten; dann kommt alles von Transitous."),
+                     answer: "Für ganz Deutschland von Transitous, einem freien Gemeinschaftsprojekt. Im Gebiet des Verkehrsverbunds Oberelbe (Dresden, Meißen, Pirna, Bautzen …) nutzt die App zusätzlich die Daten des VVO, mit Fahrpreisen und Auslastung. In Chemnitz/Mittelsachsen, im Vogtland, in Bayern, Baden-Württemberg, Nordrhein-Westfalen und Mecklenburg-Vorpommern fragt sie die Auskunft des jeweiligen Verbunds ab. Mit „Daten der Verkehrsverbünde“ in den Einstellungen lässt sich das abschalten; dann kommt alles von Transitous."),
             FAQEntry(question: "Was bedeutet „LIVE“ auf der Karte und in der Fahrt?",
                      answer: "Für Straßenbahnen und Stadtbusse in Dresden zeigt die App die gemeldete Position des Fahrzeugs (Quelle: TLMS). Überall sonst ist die Position aus Fahrplan und Echtzeit geschätzt."),
             FAQEntry(question: "Warum gibt es keine Wagenreihung und Zugauslastung?",
