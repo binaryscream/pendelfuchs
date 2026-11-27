@@ -3,7 +3,8 @@
 Stand 27.11.2026. Jeder Block ist fertig: Empfänger, Betreff und Text kopieren, abschicken.
 Absender ist die E-Mail-Adresse, von der du schreibst – sie steht deshalb nicht im Text.
 
-> **Versendet am 27.11.2026:** VVO und TLMS per E-Mail, Transitous im Matrix-Raum.
+> **Versendet am 27.11.2026:** VVO und TLMS per E-Mail, Transitous im Matrix-Raum. Die Anfragen an die regionalen
+> Verbünde (Abschnitt 4) sind noch nicht verschickt.
 >
 > **Antwort Transitous (27.11.2026):** `refresh-itinerary` statt wiederholter `/plan`-Anfragen nutzen, alles über
 > v6. Umgesetzt (siehe `docs/DATENQUELLEN.md`). Antworten von VVO und TLMS stehen noch aus.
@@ -14,6 +15,7 @@ Absender ist die E-Mail-Adresse, von der du schreibst – sie steht deshalb nich
 | TLMS | Live-Positionen von Straßenbahn und Stadtbus in Dresden | **Ja** – keine Nutzungsbedingungen veröffentlicht | E-Mail oder Matrix |
 | Transitous | Fahrplandaten für ganz Deutschland | **Ja, als Absprache** – Bedingungen verlangen das bei vielen Nutzern | Matrix |
 | OpenFreeMap | Kartenkacheln | Nein – frei nutzbar, Grenzen gelten nur für Offline-Downloads (macht die App nicht) | – |
+| Regionale Verbünde (VMS, VVV, Bayern-Fahrplan, NVBW, mobil.nrw, MV-Fahrplan) | Abfahrten, Verbindungen, Echtzeit, teils Preise in ihrer Region | **Ja** – keine Nutzungsbedingungen veröffentlicht | E-Mail (Abschnitt 4) |
 | Deutsche Bahn | – | Nein – wird nicht genutzt | – |
 
 ---
@@ -116,9 +118,208 @@ Is that okay? Is there a per-user or total volume I should stay under, or anythi
 
 ---
 
+## 4. Regionale Verbünde (über TripKit)
+
+Die App fragt in diesen Regionen zusätzlich die Fahrplanauskunft des Verbunds ab (EFA-Schnittstellen, eingebunden über
+die Open-Source-Bibliothek TripKit, siehe `docs/DATENQUELLEN.md`). Offizielle Nutzungsbedingungen für diese Adressen sind
+nicht veröffentlicht – deshalb vor dem Hochladen fragen. **Wer nein sagt oder nicht antwortet:** den Verbund in
+`RegionalNetwork` streichen (bzw. alle mit `useRegional: false` im Router abschalten); dann übernimmt Transitous.
+
+Die Adressen sind recherchiert (Stand 27.11.2026), meist allgemeine Kontaktadressen – die Bitte um Weiterleitung
+steht deshalb in jedem Text.
+
+### 4.1 VMS (Verkehrsverbund Mittelsachsen)
+
+**An:** info@vms.de
+**Hinweis:** Allgemeine Adresse; eine eigene Open-Data-Adresse ist nicht veröffentlicht. Die Website hat eine Seite „Open Data“ (vms.de) – vor dem Absenden kurz nachsehen, ob dort inzwischen ein Ansprechpartner steht.
+**Betreff:** Nutzung Ihrer Fahrplanauskunft in einer kostenlosen Open-Source-Fahrplan-App (Pendelfuchs)
+
+```
+Guten Tag,
+
+ich entwickle die kostenlose iOS-App „Pendelfuchs“ – eine Fahrplan-App ohne Werbung, ohne Tracking und ohne Nutzerkonto. Der Quelltext steht unter der Open-Source-Lizenz GPL-3.0 und wird vor der Veröffentlichung im App Store freigegeben. Falls Sie nicht die richtige Stelle sind, leiten Sie meine Anfrage bitte an die zuständigen Ansprechpartner für Fahrplandaten weiter – vielen Dank!
+
+Die App zeigt Abfahrten, Verbindungen mit Echtzeit, Widgets und Live-Aktivitäten für regelmäßige Fahrten. Grundlage für ganz Deutschland sind die offenen Daten von Transitous. Für Chemnitz, Zwickau, Erzgebirge und Mittelsachsen fragt die App zusätzlich Ihre Fahrplanauskunft ab, weil sie dort oft genauere Echtzeitdaten hat. Genutzt wird die EFA-Schnittstelle unter
+https://efa.vms.de/VMSSL3/
+mit diesen Abfragen: Haltestellensuche, Abfahrten einer Haltestelle, Verbindungssuche und Fahrtverlauf. Angebunden ist sie über die freie Bibliothek TripKit, die auch andere Fahrplan-Apps verwenden.
+
+Die App fragt direkt vom iPhone aus ab, es gibt keinen eigenen Server, und nichts wird gespeichert oder weitergegeben. Abgefragt wird nur bei Bedarf: wenn jemand in der App sucht, wenn ein Widget aktualisiert wird oder kurz vor einer gemerkten Fahrt. Ist Ihre Auskunft nicht erreichbar, nutzt die App automatisch nur Transitous.
+
+Bevor die App erscheint, möchte ich Ihr Einverständnis einholen. Dazu habe ich vier Fragen:
+
+1. Darf die App Ihre Fahrplanauskunft in diesem Umfang nutzen? Falls Sie Bedingungen haben – etwa eine Quellenangabe, eine Obergrenze für Anfragen oder eine Kennung im Header –, setze ich sie gern um.
+2. Gibt es eine offizielle Schnittstelle, die Ihnen lieber wäre (zum Beispiel TRIAS)? Dann würde ich die App darauf umstellen.
+3. Mit wie vielen Anfragen sollte ich höchstens rechnen, damit Ihre Systeme nicht belastet werden?
+4. Darf die App „Daten: VMS“ als Quelle anzeigen?
+
+Wenn Sie die Nutzung nicht wünschen, ist das auch in Ordnung – dann nutzt die App in Ihrem Gebiet nur die Daten von Transitous.
+
+Vielen Dank und freundliche Grüße
+Rico Kullmann
+Heidenau
+```
+
+### 4.2 VVV (Verkehrsverbund Vogtland)
+
+**An:** mail@vvvogtland.de
+**Hinweis:** Allgemeine Adresse aus den Nutzungsbedingungen und dem App-Store-Eintrag des VVV.
+**Betreff:** Nutzung Ihrer Fahrplanauskunft in einer kostenlosen Open-Source-Fahrplan-App (Pendelfuchs)
+
+```
+Guten Tag,
+
+ich entwickle die kostenlose iOS-App „Pendelfuchs“ – eine Fahrplan-App ohne Werbung, ohne Tracking und ohne Nutzerkonto. Der Quelltext steht unter der Open-Source-Lizenz GPL-3.0 und wird vor der Veröffentlichung im App Store freigegeben. Falls Sie nicht die richtige Stelle sind, leiten Sie meine Anfrage bitte an die zuständigen Ansprechpartner für Fahrplandaten weiter – vielen Dank!
+
+Die App zeigt Abfahrten, Verbindungen mit Echtzeit, Widgets und Live-Aktivitäten für regelmäßige Fahrten. Grundlage für ganz Deutschland sind die offenen Daten von Transitous. Für Vogtlandkreis fragt die App zusätzlich Ihre Fahrplanauskunft ab, weil sie dort oft genauere Echtzeitdaten hat. Genutzt wird die EFA-Schnittstelle unter
+https://vogtlandauskunft.de/vvv2/
+mit diesen Abfragen: Haltestellensuche, Abfahrten einer Haltestelle, Verbindungssuche und Fahrtverlauf. Angebunden ist sie über die freie Bibliothek TripKit, die auch andere Fahrplan-Apps verwenden.
+
+Die App fragt direkt vom iPhone aus ab, es gibt keinen eigenen Server, und nichts wird gespeichert oder weitergegeben. Abgefragt wird nur bei Bedarf: wenn jemand in der App sucht, wenn ein Widget aktualisiert wird oder kurz vor einer gemerkten Fahrt. Ist Ihre Auskunft nicht erreichbar, nutzt die App automatisch nur Transitous.
+
+Bevor die App erscheint, möchte ich Ihr Einverständnis einholen. Dazu habe ich vier Fragen:
+
+1. Darf die App Ihre Fahrplanauskunft in diesem Umfang nutzen? Falls Sie Bedingungen haben – etwa eine Quellenangabe, eine Obergrenze für Anfragen oder eine Kennung im Header –, setze ich sie gern um.
+2. Gibt es eine offizielle Schnittstelle, die Ihnen lieber wäre (zum Beispiel TRIAS)? Dann würde ich die App darauf umstellen.
+3. Mit wie vielen Anfragen sollte ich höchstens rechnen, damit Ihre Systeme nicht belastet werden?
+4. Darf die App „Daten: VVV“ als Quelle anzeigen?
+
+Wenn Sie die Nutzung nicht wünschen, ist das auch in Ordnung – dann nutzt die App in Ihrem Gebiet nur die Daten von Transitous.
+
+Vielen Dank und freundliche Grüße
+Rico Kullmann
+Heidenau
+```
+
+### 4.3 Bayern-Fahrplan (Bayerische Eisenbahngesellschaft)
+
+**An:** info@bahnland-bayern.de
+**Hinweis:** Allgemeine Adresse der BEG (Stand einer BEG-Präsentation, vor dem Absenden auf bahnland-bayern.de prüfen). Die BEG betreibt DEFAS bzw. den Bayern-Fahrplan. Laut bayerninfo.de gibt es Echtzeit offiziell nur über TRIAS mit Vertrag – Frage 2 zielt darauf.
+**Betreff:** Nutzung Ihrer Fahrplanauskunft in einer kostenlosen Open-Source-Fahrplan-App (Pendelfuchs)
+
+```
+Guten Tag,
+
+ich entwickle die kostenlose iOS-App „Pendelfuchs“ – eine Fahrplan-App ohne Werbung, ohne Tracking und ohne Nutzerkonto. Der Quelltext steht unter der Open-Source-Lizenz GPL-3.0 und wird vor der Veröffentlichung im App Store freigegeben. Falls Sie nicht die richtige Stelle sind, leiten Sie meine Anfrage bitte an die zuständigen Ansprechpartner für Fahrplandaten weiter – vielen Dank!
+
+Die App zeigt Abfahrten, Verbindungen mit Echtzeit, Widgets und Live-Aktivitäten für regelmäßige Fahrten. Grundlage für ganz Deutschland sind die offenen Daten von Transitous. Für Bayern fragt die App zusätzlich Ihre Fahrplanauskunft ab, weil sie dort oft genauere Echtzeitdaten hat. Genutzt wird die EFA-Schnittstelle unter
+https://mobile.defas-fgi.de/beg/
+mit diesen Abfragen: Haltestellensuche, Abfahrten einer Haltestelle, Verbindungssuche und Fahrtverlauf. Angebunden ist sie über die freie Bibliothek TripKit, die auch andere Fahrplan-Apps verwenden.
+
+Die App fragt direkt vom iPhone aus ab, es gibt keinen eigenen Server, und nichts wird gespeichert oder weitergegeben. Abgefragt wird nur bei Bedarf: wenn jemand in der App sucht, wenn ein Widget aktualisiert wird oder kurz vor einer gemerkten Fahrt. Ist Ihre Auskunft nicht erreichbar, nutzt die App automatisch nur Transitous.
+
+Bevor die App erscheint, möchte ich Ihr Einverständnis einholen. Dazu habe ich vier Fragen:
+
+1. Darf die App Ihre Fahrplanauskunft in diesem Umfang nutzen? Falls Sie Bedingungen haben – etwa eine Quellenangabe, eine Obergrenze für Anfragen oder eine Kennung im Header –, setze ich sie gern um.
+2. Gibt es eine offizielle Schnittstelle, die Ihnen lieber wäre (zum Beispiel TRIAS)? Dann würde ich die App darauf umstellen.
+3. Mit wie vielen Anfragen sollte ich höchstens rechnen, damit Ihre Systeme nicht belastet werden?
+4. Darf die App „Daten: Bayern-Fahrplan“ als Quelle anzeigen?
+
+Wenn Sie die Nutzung nicht wünschen, ist das auch in Ordnung – dann nutzt die App in Ihrem Gebiet nur die Daten von Transitous.
+
+Vielen Dank und freundliche Grüße
+Rico Kullmann
+Heidenau
+```
+
+### 4.4 NVBW (Baden-Württemberg)
+
+**An:** mobidata-bw@nvbw.de
+**Hinweis:** Adresse von MobiData BW, der Open-Data-Plattform der NVBW. Die NVBW bietet die EFA-BW offiziell und kostenlos als TRIAS-Schnittstelle über MobiData BW an (mit Nutzungsbedingungen) – gut möglich, dass sie darauf verweist.
+**Betreff:** Nutzung Ihrer Fahrplanauskunft in einer kostenlosen Open-Source-Fahrplan-App (Pendelfuchs)
+
+```
+Guten Tag,
+
+ich entwickle die kostenlose iOS-App „Pendelfuchs“ – eine Fahrplan-App ohne Werbung, ohne Tracking und ohne Nutzerkonto. Der Quelltext steht unter der Open-Source-Lizenz GPL-3.0 und wird vor der Veröffentlichung im App Store freigegeben. Falls Sie nicht die richtige Stelle sind, leiten Sie meine Anfrage bitte an die zuständigen Ansprechpartner für Fahrplandaten weiter – vielen Dank!
+
+Die App zeigt Abfahrten, Verbindungen mit Echtzeit, Widgets und Live-Aktivitäten für regelmäßige Fahrten. Grundlage für ganz Deutschland sind die offenen Daten von Transitous. Für Baden-Württemberg fragt die App zusätzlich Ihre Fahrplanauskunft ab, weil sie dort oft genauere Echtzeitdaten hat. Genutzt wird die EFA-Schnittstelle unter
+https://www.efa-bw.de/nvbw/
+mit diesen Abfragen: Haltestellensuche, Abfahrten einer Haltestelle, Verbindungssuche und Fahrtverlauf. Angebunden ist sie über die freie Bibliothek TripKit, die auch andere Fahrplan-Apps verwenden.
+
+Die App fragt direkt vom iPhone aus ab, es gibt keinen eigenen Server, und nichts wird gespeichert oder weitergegeben. Abgefragt wird nur bei Bedarf: wenn jemand in der App sucht, wenn ein Widget aktualisiert wird oder kurz vor einer gemerkten Fahrt. Ist Ihre Auskunft nicht erreichbar, nutzt die App automatisch nur Transitous.
+
+Mir ist bekannt, dass Sie die EFA-BW über MobiData BW auch als TRIAS-Schnittstelle anbieten. Bevor die App erscheint, möchte ich Ihr Einverständnis einholen. Dazu habe ich vier Fragen:
+
+1. Darf die App Ihre Fahrplanauskunft in diesem Umfang nutzen? Falls Sie Bedingungen haben – etwa eine Quellenangabe, eine Obergrenze für Anfragen oder eine Kennung im Header –, setze ich sie gern um.
+2. Gibt es eine offizielle Schnittstelle, die Ihnen lieber wäre (zum Beispiel TRIAS)? Dann würde ich die App darauf umstellen.
+3. Mit wie vielen Anfragen sollte ich höchstens rechnen, damit Ihre Systeme nicht belastet werden?
+4. Darf die App „Daten: NVBW“ als Quelle anzeigen?
+
+Wenn Sie die Nutzung nicht wünschen, ist das auch in Ordnung – dann nutzt die App in Ihrem Gebiet nur die Daten von Transitous.
+
+Vielen Dank und freundliche Grüße
+Rico Kullmann
+Heidenau
+```
+
+### 4.5 mobil.nrw (Nordrhein-Westfalen)
+
+**An:** mdd-nrw@vrs.de
+**Hinweis:** Adresse der Multimodalen Datendrehscheibe NRW (beim VRS), die die landesweiten Fahrplandaten bereitstellt. Für mobil.nrw selbst ist keine technische Adresse veröffentlicht; die Bitte um Weiterleitung steht deshalb im Text.
+**Betreff:** Nutzung Ihrer Fahrplanauskunft in einer kostenlosen Open-Source-Fahrplan-App (Pendelfuchs)
+
+```
+Guten Tag,
+
+ich entwickle die kostenlose iOS-App „Pendelfuchs“ – eine Fahrplan-App ohne Werbung, ohne Tracking und ohne Nutzerkonto. Der Quelltext steht unter der Open-Source-Lizenz GPL-3.0 und wird vor der Veröffentlichung im App Store freigegeben. Falls Sie nicht die richtige Stelle sind, leiten Sie meine Anfrage bitte an die zuständigen Ansprechpartner für Fahrplandaten weiter – vielen Dank!
+
+Die App zeigt Abfahrten, Verbindungen mit Echtzeit, Widgets und Live-Aktivitäten für regelmäßige Fahrten. Grundlage für ganz Deutschland sind die offenen Daten von Transitous. Für Nordrhein-Westfalen fragt die App zusätzlich Ihre Fahrplanauskunft ab, weil sie dort oft genauere Echtzeitdaten hat. Genutzt wird die EFA-Schnittstelle unter
+https://ticketshop.mobil.nrw/MS_EFA/
+mit diesen Abfragen: Haltestellensuche, Abfahrten einer Haltestelle, Verbindungssuche und Fahrtverlauf. Angebunden ist sie über die freie Bibliothek TripKit, die auch andere Fahrplan-Apps verwenden.
+
+Die App fragt direkt vom iPhone aus ab, es gibt keinen eigenen Server, und nichts wird gespeichert oder weitergegeben. Abgefragt wird nur bei Bedarf: wenn jemand in der App sucht, wenn ein Widget aktualisiert wird oder kurz vor einer gemerkten Fahrt. Ist Ihre Auskunft nicht erreichbar, nutzt die App automatisch nur Transitous.
+
+Bevor die App erscheint, möchte ich Ihr Einverständnis einholen. Dazu habe ich vier Fragen:
+
+1. Darf die App Ihre Fahrplanauskunft in diesem Umfang nutzen? Falls Sie Bedingungen haben – etwa eine Quellenangabe, eine Obergrenze für Anfragen oder eine Kennung im Header –, setze ich sie gern um.
+2. Gibt es eine offizielle Schnittstelle, die Ihnen lieber wäre (zum Beispiel TRIAS)? Dann würde ich die App darauf umstellen.
+3. Mit wie vielen Anfragen sollte ich höchstens rechnen, damit Ihre Systeme nicht belastet werden?
+4. Darf die App „Daten: mobil.nrw“ als Quelle anzeigen?
+
+Wenn Sie die Nutzung nicht wünschen, ist das auch in Ordnung – dann nutzt die App in Ihrem Gebiet nur die Daten von Transitous.
+
+Vielen Dank und freundliche Grüße
+Rico Kullmann
+Heidenau
+```
+
+### 4.6 MV-Fahrplan (Verkehrsgesellschaft Mecklenburg-Vorpommern)
+
+**An:** info@vmv-mbh.de
+**Hinweis:** Allgemeine Adresse aus der Datenschutzerklärung der VMV. Die VMV betreibt die landesweite Auskunft; für die Fahrplandaten selbst verweist sie auf die Verkehrsunternehmen.
+**Betreff:** Nutzung Ihrer Fahrplanauskunft in einer kostenlosen Open-Source-Fahrplan-App (Pendelfuchs)
+
+```
+Guten Tag,
+
+ich entwickle die kostenlose iOS-App „Pendelfuchs“ – eine Fahrplan-App ohne Werbung, ohne Tracking und ohne Nutzerkonto. Der Quelltext steht unter der Open-Source-Lizenz GPL-3.0 und wird vor der Veröffentlichung im App Store freigegeben. Falls Sie nicht die richtige Stelle sind, leiten Sie meine Anfrage bitte an die zuständigen Ansprechpartner für Fahrplandaten weiter – vielen Dank!
+
+Die App zeigt Abfahrten, Verbindungen mit Echtzeit, Widgets und Live-Aktivitäten für regelmäßige Fahrten. Grundlage für ganz Deutschland sind die offenen Daten von Transitous. Für Mecklenburg-Vorpommern fragt die App zusätzlich Ihre Fahrplanauskunft ab, weil sie dort oft genauere Echtzeitdaten hat. Genutzt wird die EFA-Schnittstelle unter
+https://www.fahrplanauskunft-mv.de/vmv-efa/
+mit diesen Abfragen: Haltestellensuche, Abfahrten einer Haltestelle, Verbindungssuche und Fahrtverlauf. Angebunden ist sie über die freie Bibliothek TripKit, die auch andere Fahrplan-Apps verwenden.
+
+Die App fragt direkt vom iPhone aus ab, es gibt keinen eigenen Server, und nichts wird gespeichert oder weitergegeben. Abgefragt wird nur bei Bedarf: wenn jemand in der App sucht, wenn ein Widget aktualisiert wird oder kurz vor einer gemerkten Fahrt. Ist Ihre Auskunft nicht erreichbar, nutzt die App automatisch nur Transitous.
+
+Bevor die App erscheint, möchte ich Ihr Einverständnis einholen. Dazu habe ich vier Fragen:
+
+1. Darf die App Ihre Fahrplanauskunft in diesem Umfang nutzen? Falls Sie Bedingungen haben – etwa eine Quellenangabe, eine Obergrenze für Anfragen oder eine Kennung im Header –, setze ich sie gern um.
+2. Gibt es eine offizielle Schnittstelle, die Ihnen lieber wäre (zum Beispiel TRIAS)? Dann würde ich die App darauf umstellen.
+3. Mit wie vielen Anfragen sollte ich höchstens rechnen, damit Ihre Systeme nicht belastet werden?
+4. Darf die App „Daten: MV-Fahrplan“ als Quelle anzeigen?
+
+Wenn Sie die Nutzung nicht wünschen, ist das auch in Ordnung – dann nutzt die App in Ihrem Gebiet nur die Daten von Transitous.
+
+Vielen Dank und freundliche Grüße
+Rico Kullmann
+Heidenau
+```
+
+---
+
 ## Nach den Antworten
 
 - **VVO sagt nein oder antwortet nicht:** Den VVO im Code abschalten (`vvo: nil` in `DataSources.router`), dann läuft das VVO-Gebiet über Transitous.
+- **Ein regionaler Verbund sagt nein oder antwortet nicht:** ihn aus `RegionalNetwork` streichen; Transitous übernimmt.
 - **TLMS sagt nein:** Live-Positionen abschalten; die App zeigt dann nur die geschätzte Position.
 - **Transitous nennt Grenzen:** Widget- und Hintergrundabfragen entsprechend drosseln.
 - **Kontakt-URL im User-Agent** zeigt noch auf das private GitHub-Repo. Sobald die Website online ist, auf deren Adresse umstellen (`TransitousProvider.contactURL`).

@@ -175,7 +175,7 @@ Schönheitsfehler: Auf Bild 2 steht oben links „Carrier“ (Simulator). Bei Be
 - [ ] Domain, Website online, E-Mail-Adresse in App und Impressum eingetragen
 - [ ] Kontakt-URL im User-Agent für Transitous auf die Website umgestellt (`TransitousProvider.contactURL`)
 - [ ] Antworten von VVO, TLMS und Transitous umgesetzt (`docs/ANFRAGEN.md`)
-- [ ] Erlaubnis der regionalen Verbünde (TripKit) geklärt – oder die TripKit-Verbünde vor dem Hochladen im Code abschalten (`useRegional` im Router)
+- [ ] Erlaubnis der regionalen Verbünde (TripKit) geklärt (Anfragen: `docs/ANFRAGEN.md`, Abschnitt 4) – oder die TripKit-Verbünde vor dem Hochladen im Code abschalten (`useRegional` im Router)
 - [ ] Quelltext auf GitHub öffentlich (Bedingung von Transitous)
 - [ ] Rechtstexte geprüft
 - [x] Bildschirmfotos aufgenommen (`design/app-store/`)
