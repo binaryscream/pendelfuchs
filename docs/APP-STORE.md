@@ -219,8 +219,9 @@ Schönheitsfehler: Auf Bild 2 steht oben links „Carrier“ (Simulator). Bei Be
 - [x] Domain, Website online, E-Mail-Adresse in App und Impressum eingetragen (`kontakt@pendelfuchs.de`)
 - [x] Kontakt-URL im User-Agent für Transitous auf die Website umgestellt (`TransitousProvider.contactURL`)
 - [ ] Antworten von VVO, TLMS und Transitous umgesetzt (`docs/ANFRAGEN.md`) – Transitous und TLMS erledigt, VVO offen
+- [x] Erster TestFlight-Build 0.1.0 (1) hochgeladen, interne Testgruppe eingerichtet (27.11.2026; Ablauf: README „TestFlight“)
 - [ ] Erlaubnis der regionalen Verbünde (TripKit) geklärt (Anfragen: `docs/ANFRAGEN.md`, Abschnitt 4) – oder die TripKit-Verbünde vor dem Hochladen im Code abschalten (`useRegional` im Router)
-- [ ] Quelltext auf GitHub öffentlich (Bedingung von Transitous)
+- [x] Quelltext auf GitHub öffentlich (Bedingung von Transitous) – seit 27.11.2026
 - [ ] Rechtstexte geprüft
 - [x] Bildschirmfotos aufgenommen (`design/app-store/`)
 - [ ] Version `1.0` statt `0.1.0` (`MARKETING_VERSION` in `project.yml`)

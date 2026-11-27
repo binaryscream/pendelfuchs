@@ -21,10 +21,11 @@ struct NotificationSettingsView: View {
     @State private var status: UNAuthorizationStatus?
     /// Schalter „Dringliche Mitteilungen“ in den iPhone-Einstellungen (nur lesbar).
     @State private var timeSensitive: UNNotificationSetting?
-    @State private var testSent = false
+    /// Welcher Testknopf gerade wartet (für die Beschriftung); solange sind alle gesperrt.
+    @State private var pendingTest: TestKind?
     @State private var testError: String?
-    /// Welcher der beiden Testknöpfe gerade wartet (für die Beschriftung).
-    @State private var reminderTestSent = false
+
+    private enum TestKind { case plain, reminder, urgent }
 
     var body: some View {
         Form {
@@ -99,27 +100,18 @@ struct NotificationSettingsView: View {
                 }
 
                 Section {
-                    Button {
-                        Task { await sendTest() }
-                    } label: {
-                        Label(testSent && !reminderTestSent ? "Kommt in 5 Sekunden …" : "Testbenachrichtigung senden",
-                              systemImage: testSent && !reminderTestSent ? "checkmark.circle" : "bell.and.waves.left.and.right")
-                    }
-                    .disabled(testSent || status == .denied)
+                    testButton(.plain, "Testbenachrichtigung senden", icon: "bell.and.waves.left.and.right")
                     if reminder {
-                        Button {
-                            Task { await sendTest(reminderStyle: true) }
-                        } label: {
-                            Label(reminderTestSent ? "Kommt in 5 Sekunden …" : "Test: Erinnerung mit Startknopf",
-                                  systemImage: reminderTestSent ? "checkmark.circle" : "livephoto")
-                        }
-                        .disabled(testSent || status == .denied)
+                        testButton(.reminder, "Test: Erinnerung mit Startknopf", icon: "livephoto")
+                    }
+                    if urgent, cancellation || connection {
+                        testButton(.urgent, "Test: dringliche Meldung", icon: "exclamationmark.bubble")
                     }
                 } footer: {
                     if let testError {
                         Text(testError).foregroundStyle(.red)
                     } else {
-                        Text("Kommt nach 5 Sekunden – so bleibt Zeit, das iPhone zu sperren oder die App zu verlassen.")
+                        Text("Kommt nach 5 Sekunden – so bleibt Zeit, das iPhone zu sperren oder die App zu verlassen. Für die dringliche Meldung vorher einen Fokus wie „Nicht stören“ einschalten: Sie sollte trotzdem erscheinen.")
                     }
                 }
             }
@@ -140,8 +132,18 @@ struct NotificationSettingsView: View {
         .onChange(of: reminderLead) { Task { await TripNotifier.shared.scheduleReminders() } }
     }
 
+    private func testButton(_ kind: TestKind, _ title: String, icon: String) -> some View {
+        Button {
+            Task { await sendTest(kind) }
+        } label: {
+            Label(pendingTest == kind ? "Kommt in 5 Sekunden …" : title,
+                  systemImage: pendingTest == kind ? "checkmark.circle" : icon)
+        }
+        .disabled(pendingTest != nil || status == .denied)
+    }
+
     /// Beispielmeldung, wie sie bei einer Verspätung käme – nach 5 Sekunden.
-    private func sendTest(reminderStyle: Bool = false) async {
+    private func sendTest(_ kind: TestKind) async {
         let center = UNUserNotificationCenter.current()
         if status != .authorized && status != .provisional && status != .ephemeral {
             await requestAuthorization()
@@ -156,10 +158,16 @@ struct NotificationSettingsView: View {
             content.title = "Test: \(saved.title)"
             content.userInfo = [NotificationRouter.savedTripKey: saved.id.uuidString]
         }
-        if reminderStyle {
+        switch kind {
+        case .plain: break
+        case .reminder:
             // Wie die echte Erinnerung: mit dem Knopf „Live-Aktivität starten“.
             content.body = "In \(reminderLead) Minuten: Abfahrt. Gedrückt halten für „Live-Aktivität starten“."
             content.categoryIdentifier = TripNotifier.startCategory
+        case .urgent:
+            // Wie ein echter Ausfall: dringlich, kommt auch durch einen Fokus.
+            content.body = "So sieht eine dringliche Meldung aus – z. B. „S1 7:36 fällt aus.“ Sie kommt auch durch einen Fokus."
+            content.interruptionLevel = .timeSensitive
         }
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
         do {
@@ -170,11 +178,9 @@ struct NotificationSettingsView: View {
             testError = "Die Testmeldung konnte nicht geplant werden: \(error.localizedDescription)"
             return
         }
-        testSent = true
-        reminderTestSent = reminderStyle
+        pendingTest = kind
         try? await Task.sleep(for: .seconds(6))
-        testSent = false
-        reminderTestSent = false
+        pendingTest = nil
     }
 
     private func requestAuthorization() async {

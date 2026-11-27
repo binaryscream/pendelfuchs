@@ -65,19 +65,20 @@ Benachrichtigungen bedeutet, steht unten und in der App unter Einstellungen → 
 14. Offen (TODO):
     - Wagenreihung und Auslastung für Züge: offiziell derzeit nur für Eisenbahnunternehmen und Vertragspartner (DB API Marketplace geprüft 11/2026, siehe `docs/DATENQUELLEN.md`); alter Stand in der Git-Historie
     - Verpasster Anschluss, Stufe 2: Standort/Laufzeit einbeziehen (braucht Standort „Immer“, am besten mit Push-Server); Stufe 1 (Umstellung nach Echtzeitdaten) ist eingebaut
-    - Antworten von VVO, TLMS und Transitous abwarten und umsetzen – Anfragen am 27.11.2026 versendet
-      (VVO und TLMS per E-Mail, Transitous im Matrix-Raum; Texte und nächste Schritte: `docs/ANFRAGEN.md`)
-    - Live-Aktivität endet nach der Ankunft nur, wenn iOS die App aufweckt – sonst erst nach bis zu 8 h (später ggf. kürzere Wartezeit oder Push-Server, siehe 12)
-    - Dringliche Meldungen (Fokus durchbrechen): seit 27.11.2026 eingeschaltet (bezahltes Entwicklerkonto,
-      Berechtigung in `project.yml`) – auf dem Gerät noch prüfen
-    - Vor einer Veröffentlichung: Datenschutzhinweis rechtlich prüfen lassen (E-Mail-Adresse und Website
-      `pendelfuchs.de` mit Hilfe- und Datenschutzseite sind seit 27.11.2026 da)
-    - Regionale Verbünde über TripKit nutzen inoffizielle Schnittstellen – vor einer Veröffentlichung je Verbund
-      Erlaubnis klären oder auf offizielle Angebote umsteigen (`docs/DATENQUELLEN.md`, `docs/REGIONEN.md`)
+    - Erlaubnisse (Stand 27.11.2026, Texte und Antworten in `docs/ANFRAGEN.md`): Transitous ✅, TLMS ✅;
+      VVO und die sechs regionalen Verbünde (TripKit) angefragt, Antwort offen. Vor einer Veröffentlichung je
+      Verbund klären, auf offizielle Angebote umsteigen oder abschalten (`docs/DATENQUELLEN.md`, `docs/REGIONEN.md`)
     - Offizielle VVO-Schnittstellen prüfen (TRIAS, SIRI-ET) statt der inoffiziellen WebAPI – je nach Antwort des VVO
-    - Ohne Zustimmung von TLMS die Live-Positionen vor einer Veröffentlichung abschalten (siehe `docs/ANFRAGEN.md`)
-    - Am Gerät prüfen: Benachrichtigungen im Hintergrund, Erinnerung, Siri per Sprache, Live-Aktivität bei
-      Umstiegen, VoiceOver in den Widgets
+    - TripKit läuft über den eigenen Fork (einstellbarer User-Agent); zurück auf das Original, sobald
+      alexander-albers/tripkit#127 übernommen ist
+    - Live-Aktivität endet nach der Ankunft nur, wenn iOS die App aufweckt – sonst erst nach bis zu 8 h.
+      ActivityKit kennt kein vorab geplantes Ende (geprüft 11/2026); zuverlässig ginge es nur mit Push-Server
+    - Push-Server (APNs) für pünktliche Meldungen und Live-Updates: seit dem bezahlten Entwicklerkonto möglich,
+      bewusst noch nicht gebaut (Betrieb, Datenschutz)
+    - Vor einer Veröffentlichung: Datenschutzhinweis und Impressum rechtlich prüfen lassen, Version 1.0 setzen,
+      App-Store-Eintrag ausfüllen (`docs/APP-STORE.md`)
+    - Am Gerät prüfen (läuft über TestFlight seit 27.11.2026): Benachrichtigungen im Hintergrund, dringliche
+      Meldungen bei aktivem Fokus, Siri per Sprache, Live-Aktivität bei Umstiegen, VoiceOver in den Widgets
 
 ### Hinweise zur Live-Aktivität und zu Benachrichtigungen
 
@@ -114,6 +115,21 @@ cd Packages/FahrplanKit
 swift test                          # offline, mit gespeicherten API-Antworten
 FAHRPLAN_LIVE_TESTS=1 swift test    # zusätzlich gegen die echte VVO-API
 ```
+
+## TestFlight
+
+Braucht ein bezahltes Entwicklerkonto und die App in App Store Connect (beides vorhanden). Vor jedem Upload die
+Build-Nummer erhöhen (`CURRENT_PROJECT_VERSION` in `project.yml`) – App Store Connect nimmt jede Nummer nur einmal.
+
+```bash
+xcodegen generate
+xcodebuild archive -project FahrplanXL.xcodeproj -scheme FahrplanXL -configuration Release -destination 'generic/platform=iOS' -archivePath build/archive/Pendelfuchs.xcarchive -allowProvisioningUpdates
+xcodebuild -exportArchive -archivePath build/archive/Pendelfuchs.xcarchive -exportOptionsPlist Config/ExportOptions.plist -exportPath build/export -allowProvisioningUpdates
+```
+
+Der zweite Befehl lädt direkt hoch („Upload succeeded“). Die Warnung zu fehlenden dSYMs von MapLibre ist harmlos.
+Nach 10–30 Minuten Verarbeitung bekommt die interne Testgruppe den Build automatisch. Texte für externe Tester:
+`docs/APP-STORE.md`.
 
 ## Aufbau
 
