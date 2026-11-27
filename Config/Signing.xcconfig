@@ -1,0 +1,4 @@
+// Signier-Einstellungen für alle Ziele.
+// Die eigene Apple-Team-ID gehört in Config/Local.xcconfig – die Datei ist nicht im Repo.
+// Vorlage: Config/Local.xcconfig.example kopieren und die Team-ID eintragen.
+#include? "Local.xcconfig"

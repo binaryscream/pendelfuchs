@@ -6,3 +6,6 @@ build/
 FahrplanXL.xcodeproj/
 .build/
 .swiftpm/
+
+# Eigene Signier-Einstellungen (Team-ID), siehe Config/Local.xcconfig.example
+Config/Local.xcconfig

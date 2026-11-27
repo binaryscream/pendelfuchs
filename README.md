@@ -97,9 +97,12 @@ Technische Notizen zu den Datenquellen: [`docs/DATENQUELLEN.md`](docs/DATENQUELL
 Voraussetzungen: Xcode 16 oder neuer, [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
 ```bash
+cp Config/Local.xcconfig.example Config/Local.xcconfig   # eigene Team-ID eintragen (nur für Geräte-Builds)
 xcodegen generate          # erzeugt FahrplanXL.xcodeproj aus project.yml
 open FahrplanXL.xcodeproj
 ```
+
+Die Apple-Team-ID steht nur in `Config/Local.xcconfig`; die Datei ist nicht im Repo. Für den Simulator ist sie nicht nötig.
 
 Tests der Kernlogik (ohne Simulator):
 
@@ -127,3 +130,4 @@ FAHRPLAN_LIVE_TESTS=1 swift test    # zusätzlich gegen die echte VVO-API
   farbig getönten Varianten ließen sich nur über eine `.icon`-Datei aus Icon Composer einbinden.
   `design/app-icon-source.png` und `tools/make-app-icon.swift` gehören zum früheren Icon.
 - `project.yml` – Projektbeschreibung für XcodeGen (das `.xcodeproj` wird daraus erzeugt)
+- `Config/` – Signier-Einstellungen; die eigene Team-ID gehört in `Config/Local.xcconfig` (nicht im Repo)
