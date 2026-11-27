@@ -152,14 +152,18 @@ Pflicht ist ein Satz für das **6,9-Zoll-iPhone** (Hochformat **1320 × 2868** P
 Transparenz, 1 bis 10 Bilder). App Store Connect verkleinert ihn selbst für kleinere iPhones. Aufnehmen im
 Simulator „iPhone 18 Pro Max“ – der hat genau diese Größe.
 
-Vorschlag, in dieser Reihenfolge:
-1. **Meine Fahrten** mit zwei regelmäßigen Fahrten und Live-Status („pünktlich“)
-2. **Live-Aktivität** auf dem Sperrbildschirm
-3. **Abfahrten** an einer Dresdner Haltestelle mit Echtzeit
-4. **Verbindung** mit Zeitleiste und Live-Fahrzeug
-5. **Karte** mit Streckenverlauf
-6. **Widgets** auf dem Home-Bildschirm
-7. **Erinnerung** vor der Abfahrt mit Knopf „Live-Aktivität starten“
+Aufgenommen am 27.11.2026 in `design/app-store/` (alle 1320 × 2868, PNG ohne Transparenz), in dieser Reihenfolge hochladen:
+1. `01-meine-fahrten.png` – Meine Fahrten mit zwei regelmäßigen Fahrten, „pünktlich“
+2. `02-live-aktivitaet.png` – Live-Aktivität auf dem Sperrbildschirm („in 12 Minuten“)
+3. `03-abfahrten.png` – Abfahrten Dresden Hauptbahnhof mit Echtzeit, Auslastung und Ausfall
+4. `04-verbindungssuche.png` – Pirna → Dresden Postplatz mit Preisen
+5. `05-verbindung.png` – Verbindung mit Zeitleiste, Preis und Tarifzonen
+6. `06-karte.png` – Karte mit Streckenverlauf
+7. `07-widgets.png` – Widgets „Meine nächste Fahrt“ und „Abfahrten“, Countdown in der Dynamic Island
+8. `08-erinnerung.png` – Erinnerung vor der Abfahrt mit Knopf „Live-Aktivität starten“
+
+Schönheitsfehler: Auf dem Sperrbildschirm (Bild 2) steht oben links „Carrier“ – der Simulator lässt sich dort nicht
+umbenennen. Bei Bedarf in einem Bildprogramm übermalen.
 
 ## Vor dem ersten Hochladen
 
@@ -170,5 +174,5 @@ Vorschlag, in dieser Reihenfolge:
 - [ ] Erlaubnis der regionalen Verbünde (TripKit) geklärt – oder die TripKit-Verbünde vor dem Hochladen im Code abschalten (`useRegional` im Router)
 - [ ] Quelltext auf GitHub öffentlich (Bedingung von Transitous)
 - [ ] Rechtstexte geprüft
-- [ ] Bildschirmfotos aufgenommen
+- [x] Bildschirmfotos aufgenommen (`design/app-store/`)
 - [ ] Version `1.0` statt `0.1.0` (`MARKETING_VERSION` in `project.yml`)
