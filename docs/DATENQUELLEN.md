@@ -137,6 +137,28 @@ Veröffentlichung je Verbund die Erlaubnis klären – oder auf deren offizielle
   laufen lassen – `swift test` stürzt in TripKits Logging ab, weil dort keine App-Kennung existiert): alle sechs
   Verbünde liefern Abfahrten, Fahrtverläufe und Verbindungen, alle außer VVV mit Echtzeit.
 
+## DELFI-Echtzeit und andere Apps (geprüft 27.11.2026)
+
+**Ergebnis: kein eigener DELFI-Zugang nötig – die DELFI-Echtzeit kommt schon über Transitous.**
+
+- **DELFI offiziell:** Seit 08/2024 bundesweite Prognosedaten (GTFS-RT Trip Updates und SIRI-ET) auf der Mobilithek
+  (mobilithek.info), Bezug über „Abonnieren“ und Freischaltung durch DELFI e.V. Gedacht für Betreiber mit eigenem
+  Server – ein bundesweiter Strom ist auf dem iPhone nicht sinnvoll zu verarbeiten.
+- **gtfs.de:** kostenloser gebündelter GTFS-RT-Strom (`realtime.gtfs.de/realtime-free.pb`, CC BY-SA 4.0, Beta), u. a. VVO,
+  VRS, VRR, NVBW, DEFAS Bayern, VBB, Bahn-Regionalverkehr, SIRI Oberelbe/Bayern/BW/MV/Hessen. VMS und Vogtland fehlen.
+- **Transitous** (`feeds/de.json`) liest bereits DELFI-Fahrplan, einen DELFI-GTFS-RT-Strom, DELFI-SIRI sowie VBB, VBN, KVV
+  u. a. ein und fragt jede Minute ab. Was dort ankommt, zeigt Pendelfuchs schon.
+- **Wozu dann die Verbünde (VVO, TripKit)?** Preise und Auslastung gibt es nur dort, und in Regionen mit lückenhafter
+  DELFI-Echtzeit (z. B. VMS, Vogtland) ist die Auskunft des Verbunds genauer.
+
+**Wie es andere machen:**
+- Große Apps (Google Maps, Apple Karten, Moovit) nutzen DELFI-Daten und eigene Verträge; Google seit 2026 mit einer
+  DELFI-Kooperation für Echtzeit.
+- Indie-Apps (Öffi, Transportr, ÖPNV Navigator) fragen die Auskünfte der Verbünde direkt ab (public-transport-enabler bzw.
+  TripKit), meist ohne veröffentlichte Erlaubnis. F-Droid kennzeichnet Öffi deshalb mit „NonFreeNet“. Risiko:
+  Schnittstellen können wegfallen (DB-HAFAS Anfang 2025 abgeschaltet).
+- Pendelfuchs geht einen Schritt weiter und fragt die Verbünde vorher (`docs/ANFRAGEN.md`).
+
 ## Vergleich: ÖPNV Navigator (iOS) / TripKit
 
 Die iOS-App „ÖPNV Navigator“ (Alexander Albers) ist **nicht** quelloffen; offen ist nur ihre Datenbibliothek
