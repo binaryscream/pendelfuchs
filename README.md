@@ -59,15 +59,16 @@ Benachrichtigungen bedeutet, steht unten und in der App unter Einstellungen → 
 14. Offen (TODO):
     - Wagenreihung und Auslastung für Züge: offiziell derzeit nur für Eisenbahnunternehmen und Vertragspartner (DB API Marketplace geprüft 11/2026, siehe `docs/DATENQUELLEN.md`); alter Stand in der Git-Historie
     - Verpasster Anschluss, Stufe 2: Standort/Laufzeit einbeziehen (braucht Standort „Immer“, am besten mit Push-Server); Stufe 1 (Umstellung nach Echtzeitdaten) ist eingebaut
-    - Anfragen an VVO, TLMS und Transitous versenden (fertige Texte: `docs/ANFRAGEN.md`)
+    - Antworten von VVO, TLMS und Transitous abwarten und umsetzen – Anfragen am 27.11.2026 versendet
+      (VVO und TLMS per E-Mail, Transitous im Matrix-Raum; Texte und nächste Schritte: `docs/ANFRAGEN.md`)
     - Live-Aktivität endet nach der Ankunft nur, wenn iOS die App aufweckt – sonst erst nach bis zu 8 h (später ggf. kürzere Wartezeit oder Push-Server, siehe 12)
     - Dringliche Meldungen (Fokus durchbrechen): im Code vorbereitet, braucht die Berechtigung
       `com.apple.developer.usernotifications.time-sensitive` und damit ein bezahltes Entwicklerkonto (siehe `project.yml`)
     - Vor einer Veröffentlichung: Datenschutzhinweis rechtlich prüfen lassen, E-Mail-Adresse eintragen
       (`AppInfo.contactEmail`; die Postanschrift steht schon drin), Datenschutz- und Support-Seite im Web für
       App Store Connect
-    - Offizielle VVO-Schnittstellen prüfen (TRIAS, SIRI-ET) statt der inoffiziellen WebAPI; Erlaubnis bei opendata@vvo-online.de klären
-    - TLMS-Nutzungsbedingungen klären, bevor die App veröffentlicht wird (siehe `docs/ANFRAGEN.md`)
+    - Offizielle VVO-Schnittstellen prüfen (TRIAS, SIRI-ET) statt der inoffiziellen WebAPI – je nach Antwort des VVO
+    - Ohne Zustimmung von TLMS die Live-Positionen vor einer Veröffentlichung abschalten (siehe `docs/ANFRAGEN.md`)
     - Am Gerät prüfen: Benachrichtigungen im Hintergrund, Erinnerung, Siri per Sprache, Live-Aktivität bei
       Umstiegen, VoiceOver in den Widgets
 
