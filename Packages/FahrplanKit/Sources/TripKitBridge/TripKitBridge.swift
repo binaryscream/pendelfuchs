@@ -20,3 +20,4 @@ public typealias TKNetworkProvider = NetworkProvider
 public typealias TKJourneyContext = QueryJourneyDetailContext
 public typealias TKEfaJourneyContext = EfaJourneyContext
 public typealias TKLocationType = LocationType
+public typealias TKFare = Fare

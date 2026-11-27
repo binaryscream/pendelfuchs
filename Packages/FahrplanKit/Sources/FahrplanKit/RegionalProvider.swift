@@ -64,6 +64,12 @@ public enum RegionalNetwork: String, Codable, Sendable, CaseIterable {
     }
 
     static func district(of stopID: String) -> String? { DHID(transitousID: stopID)?.district }
+
+    /// Transitous-Haltestelle ohne bundesweite ID (Fernbus-Halte, ausländische Datensätze): Die Region ist
+    /// unbekannt, nicht „außerhalb“.
+    public static func isUnplaced(_ stop: Stop) -> Bool {
+        stop.provider == .transitous && DHID(transitousID: stop.stopID) == nil && stop.coordinate != nil
+    }
 }
 
 /// Bundesweite Haltestellen-ID (`de:Kreis:Nummer:…`) aus einer Transitous-Kennung, egal mit welchem Präfix.
@@ -287,7 +293,26 @@ public struct RegionalProvider: TransitProvider {
         while let last = legs.last, last.kind == .walk, (last.durationMinutes ?? 0) == 0 { legs.removeLast() }
         let rides = legs.filter { $0.kind == .ride }.count
         guard rides > 0 else { return nil }
-        return Trip(legs: legs, interchanges: max(0, rides - 1), source: id)
+        let (price, zones) = Self.price(from: t.fares)
+        return Trip(legs: legs, interchanges: max(0, rides - 1), price: price, fareZones: zones, source: id)
+    }
+
+    /// Einzelfahrt für Erwachsene, z. B. („11,50 €“, „Preisstufe VR“) – wie beim VVO. Nicht jeder Verbund liefert
+    /// Preise (Bayern, NVBW, MV liefern keine).
+    static func price(from fares: [TKFare]) -> (price: String?, zones: String?) {
+        guard let adult = fares.first(where: { $0.type == .adult }) ?? fares.first else { return (nil, nil) }
+        return price(amount: Double(adult.fare), currency: adult.currency, unitsName: adult.unitsName, units: adult.units)
+    }
+
+    static func price(amount: Double, currency: String, unitsName: String?, units: String?) -> (price: String?, zones: String?) {
+        guard amount > 0 else { return (nil, nil) }
+        // Gleiche Schreibweise wie beim VVO („6,30 €“), mit normalem Leerzeichen.
+        let number = String(format: "%.2f", amount).replacingOccurrences(of: ".", with: ",")
+        let price = currency == "EUR" ? "\(number) €" : "\(number) \(currency)"
+        let name = unitsName?.trimmingCharacters(in: .whitespaces) ?? ""
+        let value = units?.trimmingCharacters(in: .whitespaces) ?? ""
+        let zones: String? = value.isEmpty ? nil : "\(name.isEmpty ? "Preisstufe" : name) \(value)"
+        return (price, zones)
     }
 
     func tripLeg(from leg: TKPublicLeg) -> TripLeg {

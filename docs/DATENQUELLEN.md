@@ -127,6 +127,10 @@ Veröffentlichung je Verbund die Erlaubnis klären – oder auf deren offizielle
 - **Router:** Abfahrten an Haltestellen im Verbundgebiet und Verbindungen, deren Start und Ziel im selben Verbund
   liegen, kommen vom Verbund; Fehler oder leeres Ergebnis → Transitous. Gemerkte Fahrten aus Verbunddaten haben
   keine `refresh-itinerary`-Kennung und werden wie VVO-Fahrten neu gesucht.
+- **Fahrpreise:** Einzelfahrt Erwachsene mit Preisstufe, wo der Verbund sie liefert – VMS, VVV und mobil.nrw
+  (Probe 27.11.2026: Chemnitz → Zwickau 11,50 €, Preisstufe VR); Bayern-Fahrplan, NVBW und MV-Fahrplan liefern keine.
+- **Haltestellen ohne bundesweite ID** (z. B. Fernbus-Halte, die Transitous bei der Suche mit anbietet) gelten bei
+  Verbindungen nicht als „außerhalb“: Liegen die übrigen Halte in einem Verbund, sucht dieser sie über die Lage.
 - **Schalter:** Einstellungen → „Daten der Verkehrsverbünde“ (Standard an) gilt für VVO und TripKit-Verbünde
   gemeinsam; der frühere Schalter „VVO-Daten“ wird beim Start übernommen. Quellenangabe in den Einstellungen.
 - **Live-Probe** (27.11.2026, `RegionalProviderLiveTests`, mit `FAHRPLAN_LIVE_TESTS=1` über `xcodebuild test`

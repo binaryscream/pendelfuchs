@@ -3,6 +3,7 @@
 import Foundation
 import Testing
 @testable import FahrplanKit
+import TripKitBridge
 
 @Suite struct RegionalNetworkTests {
     @Test func mapsDistrictsToNetworks() {
@@ -34,6 +35,20 @@ import Testing
         #expect(RegionalNetwork.for(regional) == .nrw)
         let vvo = Stop(provider: .vvo, stopID: "33000028", name: "Hauptbahnhof", place: "Dresden")
         #expect(RegionalNetwork.for(vvo) == nil)
+    }
+
+    @Test func tripsWithUnplacedStopStillUseTheNetwork() {
+        let router = ProviderRouter(vvo: nil)
+        let chemnitz = Stop(provider: .transitous, stopID: "de-DELFI_de:14511:30062", name: "Chemnitz, Hauptbahnhof",
+                            coordinate: Coordinate(latitude: 50.84, longitude: 12.93))
+        let zwickauBus = Stop(provider: .transitous, stopID: "eu-flixbus_dcbdcbbd", name: "Zwickau, Hauptbahnhof",
+                              coordinate: Coordinate(latitude: 50.72, longitude: 12.48))
+        let berlin = Stop(provider: .transitous, stopID: "de-DELFI_de:11000:900003201", name: "Berlin Hbf",
+                          coordinate: Coordinate(latitude: 52.52, longitude: 13.37))
+        #expect(router.regionalForTrip(TripQuery(origin: chemnitz, destination: zwickauBus))?.network == .vms)
+        #expect(router.regionalForTrip(TripQuery(origin: chemnitz, destination: berlin)) == nil)
+        #expect(router.regionalForTrip(TripQuery(origin: zwickauBus, destination: zwickauBus)) == nil)
+        #expect(ProviderRouter(vvo: nil, useRegional: false).regionalForTrip(TripQuery(origin: chemnitz, destination: zwickauBus)) == nil)
     }
 
     @Test func picksNearestCandidateWithMatchingName() {
@@ -88,5 +103,16 @@ struct RegionalProviderLiveTests {
         print("\(network): \(departures.count) Abfahrten, z. B. \(departures[0].line) → \(departures[0].direction); "
               + "\(trips.count) Verbindungen, erste \(first.rides.map { $0.line ?? "?" }.joined(separator: ", ")), "
               + "Echtzeit: \(departures.contains { $0.realTime != nil })")
+    }
+}
+
+@Suite struct RegionalFareTests {
+    @Test func formatsSingleFare() {
+        let vms = RegionalProvider.price(amount: 11.5, currency: "EUR", unitsName: nil, units: "VR")
+        #expect(vms.price == "11,50 €")
+        #expect(vms.zones == "Preisstufe VR")
+        let vvv = RegionalProvider.price(amount: 5.6, currency: "EUR", unitsName: "Preisstufe", units: "13")
+        #expect(vvv.zones == "Preisstufe 13")
+        #expect(RegionalProvider.price(amount: 0, currency: "EUR", unitsName: nil, units: nil).price == nil)
     }
 }

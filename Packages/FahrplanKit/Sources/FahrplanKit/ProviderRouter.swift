@@ -54,6 +54,24 @@ public struct ProviderRouter: TransitProvider {
         }
     }
 
+    /// Verbund für eine Verbindung: Alle Haltestellen mit bekannter Region liegen im selben Verbund. Haltestellen
+    /// ohne bundesweite ID (z. B. Fernbus-Halte bei Transitous) zählen nicht dagegen – der Verbund sucht sie über
+    /// ihre Lage; liegt sie außerhalb, scheitert das und Transitous übernimmt.
+    func regionalForTrip(_ query: TripQuery) -> RegionalProvider? {
+        guard useRegional else { return nil }
+        let stops = [query.origin, query.destination] + (query.via.map { [$0] } ?? [])
+        var network: RegionalNetwork?
+        for stop in stops {
+            if let found = RegionalNetwork.for(stop) {
+                if let network, network != found { return nil }
+                network = found
+            } else if !RegionalNetwork.isUnplaced(stop) {
+                return nil   // bekannte Region ohne Verbund (z. B. Berlin) oder VVO
+            }
+        }
+        return network.map { RegionalProvider(network: $0) }
+    }
+
     /// Regionaler Verbund für eine Haltestelle, sofern regionale Daten eingeschaltet sind.
     func regional(for stop: Stop) -> RegionalProvider? {
         guard useRegional, let network = RegionalNetwork.for(stop) else { return nil }
@@ -147,8 +165,7 @@ public struct ProviderRouter: TransitProvider {
         }
 
         // Start und Ziel (und Zwischenhalt) im selben regionalen Verbund → dessen Auskunft.
-        if let regional = regional(for: query.origin), RegionalNetwork.for(query.destination) == regional.network,
-           query.via.map({ RegionalNetwork.for($0) == regional.network }) ?? true {
+        if let regional = regionalForTrip(query) {
             do {
                 let trips = try await regional.trips(query)
                 if !trips.isEmpty { return trips }
