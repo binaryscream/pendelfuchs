@@ -131,7 +131,7 @@ steht deshalb in jedem Text.
 ### 4.1 VMS (Verkehrsverbund Mittelsachsen)
 
 **An:** info@vms.de
-**Hinweis:** Allgemeine Adresse; eine eigene Open-Data-Adresse ist nicht veröffentlicht. Die Website hat eine Seite „Open Data“ (vms.de) – vor dem Absenden kurz nachsehen, ob dort inzwischen ein Ansprechpartner steht.
+**Hinweis:** Laut Impressum die Adresse des VMS (geprüft 27.11.2026). Der Bereich „Open Data – GTFS-Daten“ unter vms.de → Service → Downloads nennt keinen eigenen Ansprechpartner. Dort gibt es nur Solldaten als GTFS (wöchentlich, CC BY 4.0, Quellenangabe „VMS GmbH“) – keine Echtzeit, deshalb bleibt die Anfrage zur Fahrplanauskunft nötig.
 **Betreff:** Nutzung Ihrer Fahrplanauskunft in einer kostenlosen Open-Source-Fahrplan-App (Pendelfuchs)
 
 ```
@@ -145,7 +145,7 @@ mit diesen Abfragen: Haltestellensuche, Abfahrten einer Haltestelle, Verbindungs
 
 Die App fragt direkt vom iPhone aus ab, es gibt keinen eigenen Server, und nichts wird gespeichert oder weitergegeben. Abgefragt wird nur bei Bedarf: wenn jemand in der App sucht, wenn ein Widget aktualisiert wird oder kurz vor einer gemerkten Fahrt. Ist Ihre Auskunft nicht erreichbar, nutzt die App automatisch nur Transitous.
 
-Bevor die App erscheint, möchte ich Ihr Einverständnis einholen. Dazu habe ich vier Fragen:
+Ihre GTFS-Daten unter CC BY 4.0 kenne ich; da sie keine Echtzeit enthalten, würde ich für die aktuellen Abfahrten gern Ihre Fahrplanauskunft nutzen. Bevor die App erscheint, möchte ich Ihr Einverständnis einholen. Dazu habe ich vier Fragen:
 
 1. Darf die App Ihre Fahrplanauskunft in diesem Umfang nutzen? Falls Sie Bedingungen haben – etwa eine Quellenangabe, eine Obergrenze für Anfragen oder eine Kennung im Header –, setze ich sie gern um.
 2. Gibt es eine offizielle Schnittstelle, die Ihnen lieber wäre (zum Beispiel TRIAS)? Dann würde ich die App darauf umstellen.
