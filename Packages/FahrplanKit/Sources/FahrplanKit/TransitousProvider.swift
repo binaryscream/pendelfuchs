@@ -12,7 +12,7 @@ public struct TransitousProvider: TransitProvider {
 
     /// Kontaktangabe für Transitous (Pflicht laut Nutzungsbedingungen). Zeigt noch auf das (private) Repo –
     /// sobald die Website online ist, auf deren Adresse umstellen.
-    public static let contactURL = "https://github.com/binaryscream/fahrplan-xl"
+    public static let contactURL = "https://github.com/binaryscream/pendelfuchs"
 
     /// App-Name, Version und Kontakt, z. B. `Pendelfuchs/0.1.0 (+https://github.com/…)`.
     public static func userAgent(version: String) -> String {

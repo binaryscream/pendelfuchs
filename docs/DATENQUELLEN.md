@@ -28,7 +28,7 @@ DELFI / opendata-oepnv.de, CC BY 4.0, plus Echtzeit). OpenAPI-Spezifikation:
 - Nur für **kostenlose Open-Source-Projekte**, nicht kommerziell (wegen der Datenlizenzen). Quellcode muss
   unter einer Open-Source-Lizenz veröffentlicht sein (Prototypen vorher sind ok). → Passt zu GPL-3.0, App muss gratis bleiben.
 - **User-Agent** mit App-Name, Version und Kontakt (E-Mail oder URL) bei jeder Anfrage.
-  → umgesetzt: `Pendelfuchs/<Version> (+https://github.com/binaryscream/fahrplan-xl)`.
+  → umgesetzt: `Pendelfuchs/<Version> (+https://github.com/binaryscream/pendelfuchs)`.
 - **Quellenangabe:** sichtbarer Link auf `https://transitous.org/sources/` plus OpenStreetMap-Nennung.
 - Viele Verbindungssuchen (> 720 `/plan`-Anfragen pro 24 h) und viele Nutzer gelten als hohe Last →
   vor einer Veröffentlichung mit vielen Nutzern im Matrix-Kanal von Transitous absprechen.
@@ -217,6 +217,8 @@ Ein `ProviderRouter` wählt je nach Region und Verfügbarkeit die Quelle:
 
 ## TLMS-Fahrzeugpositionen (Karte)
 
+- **Erlaubnis (27.11.2026):** TLMS erlaubt die Nutzung bei maßvollem Traffic, mit Nennung in der App und einem
+  eindeutigen User-Agent (`Pendelfuchs/<Version> (+<Kontakt-URL>)`, gesetzt in `TLMSClient`).
 - **Abfrage:** `GET https://lizard.tlm.solutions/v1/vehicles/0` (Region 0 = Dresden, CORS offen, ohne Schlüssel).
   Antwort: Liste mit `line`, `run` (Umlauf), `lat`/`lon`, `time` (ms seit 1970), `delayed` (Sekunden).
   Einträge älter als ca. 3 Minuten fallen serverseitig heraus. Daneben gibt es `/v1/gtfs/0` (GTFS-RT-ähnlich, JSON)
