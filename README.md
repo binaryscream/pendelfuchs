@@ -59,7 +59,7 @@ Benachrichtigungen bedeutet, steht unten und in der App unter Einstellungen → 
 14. Offen (TODO):
     - Wagenreihung und Auslastung für Züge: offiziell derzeit nur für Eisenbahnunternehmen und Vertragspartner (DB API Marketplace geprüft 11/2026, siehe `docs/DATENQUELLEN.md`); alter Stand in der Git-Historie
     - Verpasster Anschluss, Stufe 2: Standort/Laufzeit einbeziehen (braucht Standort „Immer“, am besten mit Push-Server); Stufe 1 (Umstellung nach Echtzeitdaten) ist eingebaut
-    - Anfrage an den VVO versenden (Entwurf: `docs/VVO-ANFRAGE.md`)
+    - Anfragen an VVO, TLMS und Transitous versenden (fertige Texte: `docs/ANFRAGEN.md`)
     - Live-Aktivität endet nach der Ankunft nur, wenn iOS die App aufweckt – sonst erst nach bis zu 8 h (später ggf. kürzere Wartezeit oder Push-Server, siehe 12)
     - Dringliche Meldungen (Fokus durchbrechen): im Code vorbereitet, braucht die Berechtigung
       `com.apple.developer.usernotifications.time-sensitive` und damit ein bezahltes Entwicklerkonto (siehe `project.yml`)
@@ -67,7 +67,7 @@ Benachrichtigungen bedeutet, steht unten und in der App unter Einstellungen → 
       (`AppInfo.contactEmail`; die Postanschrift steht schon drin), Datenschutz- und Support-Seite im Web für
       App Store Connect
     - Offizielle VVO-Schnittstellen prüfen (TRIAS, SIRI-ET) statt der inoffiziellen WebAPI; Erlaubnis bei opendata@vvo-online.de klären
-    - TLMS-Nutzungsbedingungen klären, bevor die App veröffentlicht wird (Entwurf: `docs/TLMS-ANFRAGE.md`)
+    - TLMS-Nutzungsbedingungen klären, bevor die App veröffentlicht wird (siehe `docs/ANFRAGEN.md`)
     - Am Gerät prüfen: Benachrichtigungen im Hintergrund, Erinnerung, Siri per Sprache, Live-Aktivität bei
       Umstiegen, VoiceOver in den Widgets
 
@@ -114,7 +114,7 @@ FAHRPLAN_LIVE_TESTS=1 swift test    # zusätzlich gegen die echte VVO-API
   der App über die App Group `group.de.fahrplanxl.app`
 - `Packages/FahrplanKit/` – gemeinsame Logik mit Tests: Datenmodelle, Datenquellen und Router, gemerkte Fahrten,
   Favoriten, zuletzt verwendet, Erkennung von Meldungen (`TripWatch`), Live-Fahrzeuge
-- `docs/` – Datenquellen, Regionen, Entwürfe der Anfragen an VVO und TLMS
+- `docs/` – Datenquellen, Regionen, fertige Anfragen an VVO, TLMS und Transitous (`ANFRAGEN.md`)
 - `design/pendelfuchs/` – die endgültigen App-Icons in sechs Varianten (Standard, Dunkel, Klar hell/dunkel, Getönt
   hell/dunkel). Im Asset-Katalog liegen Standard, Dunkel und eine Graustufenfassung für „Getönt“; die klaren und
   farbig getönten Varianten ließen sich nur über eine `.icon`-Datei aus Icon Composer einbinden.

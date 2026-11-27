@@ -28,7 +28,7 @@ DELFI / opendata-oepnv.de, CC BY 4.0, plus Echtzeit). OpenAPI-Spezifikation:
 - Nur für **kostenlose Open-Source-Projekte**, nicht kommerziell (wegen der Datenlizenzen). Quellcode muss
   unter einer Open-Source-Lizenz veröffentlicht sein (Prototypen vorher sind ok). → Passt zu GPL-3.0, App muss gratis bleiben.
 - **User-Agent** mit App-Name, Version und Kontakt (E-Mail oder URL) bei jeder Anfrage.
-  → umgesetzt: `FahrplanXL/<Version> (+https://github.com/binaryscream/fahrplan-xl)`.
+  → umgesetzt: `Pendelfuchs/<Version> (+https://github.com/binaryscream/fahrplan-xl)`.
 - **Quellenangabe:** sichtbarer Link auf `https://transitous.org/sources/` plus OpenStreetMap-Nennung.
 - Viele Verbindungssuchen (> 720 `/plan`-Anfragen pro 24 h) und viele Nutzer gelten als hohe Last →
   vor einer Veröffentlichung mit vielen Nutzern im Matrix-Kanal von Transitous absprechen.
@@ -157,7 +157,7 @@ Ein `ProviderRouter` wählt je nach Region und Verfügbarkeit die Quelle:
 - **TLMS** (tlm.solutions): ehrenamtlicher Live-Feed mit Fahrzeugpositionen und Verspätungen aus
   R09-Funktelegrammen (Dresden). **Wird für die Karte genutzt**, siehe unten. Nutzungsbedingungen sind nirgends
   veröffentlicht – vor einer Veröffentlichung der App beim Projekt nachfragen (hello@tlm.solutions oder Matrix
-  `#tlm-solutions:matrix.org`; Entwurf: `docs/TLMS-ANFRAGE.md`).
+  `#dump-dvb:matrix.org`, so auf tlm.solutions verlinkt; fertiger Text: `docs/ANFRAGEN.md`).
 
 ## TLMS-Fahrzeugpositionen (Karte)
 
