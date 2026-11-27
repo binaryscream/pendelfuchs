@@ -115,5 +115,8 @@ FAHRPLAN_LIVE_TESTS=1 swift test    # zusätzlich gegen die echte VVO-API
 - `Packages/FahrplanKit/` – gemeinsame Logik mit Tests: Datenmodelle, Datenquellen und Router, gemerkte Fahrten,
   Favoriten, zuletzt verwendet, Erkennung von Meldungen (`TripWatch`), Live-Fahrzeuge
 - `docs/` – Datenquellen, Regionen, Entwürfe der Anfragen an VVO und TLMS
-- `design/` – Vorlage des App-Icons; `tools/make-app-icon.swift` erzeugt daraus die Icon-Varianten (`swift tools/make-app-icon.swift design/app-icon-source.png App/Assets.xcassets/AppIcon.appiconset`)
+- `design/pendelfuchs/` – die endgültigen App-Icons in sechs Varianten (Standard, Dunkel, Klar hell/dunkel, Getönt
+  hell/dunkel). Im Asset-Katalog liegen Standard, Dunkel und eine Graustufenfassung für „Getönt“; die klaren und
+  farbig getönten Varianten ließen sich nur über eine `.icon`-Datei aus Icon Composer einbinden.
+  `design/app-icon-source.png` und `tools/make-app-icon.swift` gehören zum früheren Icon.
 - `project.yml` – Projektbeschreibung für XcodeGen (das `.xcodeproj` wird daraus erzeugt)
