@@ -14,6 +14,11 @@ enum AppInfo {
     /// E-Mail-Adresse für Fragen zur App und zum Datenschutz (Postfach bei wint.global, wie die Website).
     static let contactEmail: String? = "kontakt@pendelfuchs.de"
 
+    /// Website mit Hilfe, Datenschutz und Impressum.
+    static let websiteURL = URL(string: "https://pendelfuchs.de")!
+    /// Quellcode der App (GPL-3.0; offener Code ist auch Bedingung von Transitous).
+    static let sourceCodeURL = URL(string: "https://github.com/binaryscream/pendelfuchs")!
+
     static var contactURL: URL? {
         contactEmail.flatMap { URL(string: "mailto:\($0)?subject=Pendelfuchs") }
     }

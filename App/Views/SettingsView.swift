@@ -108,7 +108,12 @@ struct SettingsView: View {
 
                 Section("Über") {
                     LabeledContent("Version", value: Bundle.main.versionString)
-                    LabeledContent("Lizenz", value: "GPL-3.0")
+                    Link(destination: AppInfo.sourceCodeURL) {
+                        LabeledContent("Quellcode", value: "GitHub, GPL-3.0")
+                    }
+                    Link(destination: AppInfo.websiteURL) {
+                        LabeledContent("Website", value: "pendelfuchs.de")
+                    }
                     LabeledContent("Kontakt", value: AppInfo.responsibleName)
                     if let mail = AppInfo.contactURL {
                         Link(destination: mail) {
