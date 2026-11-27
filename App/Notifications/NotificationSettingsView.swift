@@ -19,6 +19,9 @@ struct NotificationSettingsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var status: UNAuthorizationStatus?
     @State private var testSent = false
+    @State private var testError: String?
+    /// Welcher der beiden Testknöpfe gerade wartet (für die Beschriftung).
+    @State private var reminderTestSent = false
 
     var body: some View {
         Form {
@@ -76,20 +79,25 @@ struct NotificationSettingsView: View {
                     Button {
                         Task { await sendTest() }
                     } label: {
-                        Label(testSent ? "Kommt in 5 Sekunden …" : "Testbenachrichtigung senden",
-                              systemImage: testSent ? "checkmark.circle" : "bell.and.waves.left.and.right")
+                        Label(testSent && !reminderTestSent ? "Kommt in 5 Sekunden …" : "Testbenachrichtigung senden",
+                              systemImage: testSent && !reminderTestSent ? "checkmark.circle" : "bell.and.waves.left.and.right")
                     }
                     .disabled(testSent || status == .denied)
                     if reminder {
                         Button {
                             Task { await sendTest(reminderStyle: true) }
                         } label: {
-                            Label("Test: Erinnerung mit Startknopf", systemImage: "livephoto")
+                            Label(reminderTestSent ? "Kommt in 5 Sekunden …" : "Test: Erinnerung mit Startknopf",
+                                  systemImage: reminderTestSent ? "checkmark.circle" : "livephoto")
                         }
                         .disabled(testSent || status == .denied)
                     }
                 } footer: {
-                    Text("Kommt nach 5 Sekunden – so bleibt Zeit, das iPhone zu sperren oder die App zu verlassen.")
+                    if let testError {
+                        Text(testError).foregroundStyle(.red)
+                    } else {
+                        Text("Kommt nach 5 Sekunden – so bleibt Zeit, das iPhone zu sperren oder die App zu verlassen.")
+                    }
                 }
             }
         }
@@ -127,11 +135,19 @@ struct NotificationSettingsView: View {
             content.categoryIdentifier = TripNotifier.startCategory
         }
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
-        try? await center.add(UNNotificationRequest(identifier: "test-\(UUID().uuidString)", content: content,
-                                                    trigger: trigger))
+        do {
+            try await center.add(UNNotificationRequest(identifier: "test-\(UUID().uuidString)", content: content,
+                                                       trigger: trigger))
+            testError = nil
+        } catch {
+            testError = "Die Testmeldung konnte nicht geplant werden: \(error.localizedDescription)"
+            return
+        }
         testSent = true
+        reminderTestSent = reminderStyle
         try? await Task.sleep(for: .seconds(6))
         testSent = false
+        reminderTestSent = false
     }
 
     private func requestAuthorization() async {
