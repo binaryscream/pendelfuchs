@@ -213,6 +213,19 @@ Auslastung kommt weiter vom VVO (`Occupancy` je Halt in `/tr/trips`, `/dm`, `/dm
     Verspätungsgründe, Störungs- und Kundentexte sowie Ersatzverkehre bei der Bahn.
   - Antwortfelder sind öffentlich nicht dokumentiert (Spec-Seite leer); ob Nicht-DB-Unternehmen enthalten sind, ist
     offen.
+- **OpenBoards-Broker von Bahn-Vorhersage** (bahnvorhersage.de/open-data/open-boards, geprüft 27.11.2026):
+  Privatprojekt, das OpenBoards für alle Bahnhöfe jede Minute abruft (bei ruhigen Bahnhöfen seltener) und über
+  MQTT verteilt – `openboards.bahnvorhersage.de:1883`, Topics `openboards/v1/{EVA}/departures` bzw. `…/arrivals`,
+  Inhalt Brotli-komprimiert, fast 1:1 das OpenBoards-Schema plus `scrapeTs`. Quellcode auf GitLab.
+  **Vorerst nicht eingebaut:**
+  - Derzeit **nur Fernverkehr** – S-Bahn und Regionalzüge fehlen; den Fernverkehr deckt Transitous schon ab.
+  - Gleiche Lizenz wie OpenBoards (Web-Bahnhofstafel), also weiterhin schriftliche Zustimmung der DB nötig.
+  - Zugangsdaten nur auf Anfrage beim Betreiber; in einer Open-Source-App lägen sie offen.
+  - **Kein TLS**, Daten gingen unverschlüsselt übers Netz.
+  - Gedacht für wenige, dauerhaft verbundene Abnehmer (Bandbreite sparen), nicht für eine Verbindung je iPhone;
+    kurze Vorhaltezeit (ca. 10 Minuten).
+  - Wieder ansehen, sobald Regionalverkehr enthalten ist – dann am ehesten über einen eigenen kleinen Server, der die
+    Daten an die App weiterreicht (Verspätungsgründe, Störungstexte, Ersatzzüge der Bahn).
 
 Fazit: Wagenreihung und Zug-Auslastung bleiben vorerst draußen.
 
