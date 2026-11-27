@@ -4,12 +4,16 @@
 > Bundle-ID ist `de.pendelfuchs.app` (bis 27.11.2026: `de.fahrplanxl.app`).
 
 Open-Source-Fahrplan-App für iOS 18+ (SwiftUI). Lizenz: GPL-3.0 (siehe `LICENSE`).
+Website mit Hilfe, Datenschutz und Impressum: [pendelfuchs.de](https://pendelfuchs.de).
 
 Karte: [MapLibre](https://maplibre.org) (BSD-2-Clause) mit Kacheln von [OpenFreeMap](https://openfreemap.org)
 (© OpenMapTiles, Daten © OpenStreetMap-Mitwirkende).
 
-Fahrplandaten: [Transitous](https://transitous.org/sources/) (ganz Deutschland) und im Gebiet des
-Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingungen: `docs/DATENQUELLEN.md`.
+Fahrplandaten: [Transitous](https://transitous.org/sources/) (ganz Deutschland), dazu – abschaltbar – die
+VVO-WebAPI im Gebiet des Verkehrsverbunds Oberelbe und die Auskunft regionaler Verbünde (Chemnitz/Mittelsachsen,
+Vogtland, Bayern, Baden-Württemberg, NRW, Mecklenburg-Vorpommern) über
+[TripKit](https://github.com/binaryscream/tripkit) (Fork mit eigenem User-Agent). Live-Positionen von Straßenbahn
+und Stadtbus in Dresden: [TLMS](https://tlm.solutions). Details und Nutzungsbedingungen: `docs/DATENQUELLEN.md`.
 
 ## Funktionen
 
