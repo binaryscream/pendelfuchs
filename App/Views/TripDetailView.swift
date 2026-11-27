@@ -78,6 +78,14 @@ struct TripDetailView: View {
         while !Task.isCancelled, trip.arrival.expectedTime.addingTimeInterval(10 * 60) > .now {
             try? await Task.sleep(for: .seconds(45))
             guard !Task.isCancelled else { return }
+            // Mit Kennung (Transitous): nur diese eine Verbindung abholen statt neu zu suchen.
+            if let id = trip.itineraryID,
+               let refreshed = try? await transit.refresh(itineraryID: id, options: query.options),
+               refreshed.id == trip.id {
+                trip = refreshed
+                lastUpdate = .now
+                continue
+            }
             var fresh = query
             // Etwas früher suchen: Eine Minute Fahrplanabweichung soll die Verbindung nicht aus dem Ergebnis werfen.
             fresh.time = trip.departure.scheduledTime.addingTimeInterval(-3 * 60)

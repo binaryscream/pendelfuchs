@@ -114,8 +114,9 @@ final class TripActivityManager {
             // Erst frische Daten holen: Die alte Ankunftszeit kann durch eine neue Verspätung überholt sein.
             var state = current
             var isFresh = false
-            if let trips = try? await transit.trips(saved.query(on: current.departure.scheduledTime)),
-               let resolved = saved.resolve(in: trips) {
+            if let lookup = try? await SavedTripLookup.lookup(saved, on: current.departure.scheduledTime, now: now,
+                                                              using: transit, suite: AppGroup.id),
+               let resolved = lookup.resolved {
                 state = TripActivityState(trip: resolved.trip, note: resolved.note)
                 isFresh = true
             }

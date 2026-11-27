@@ -21,6 +21,14 @@ public protocol TransitProvider: Sendable {
 
     /// Kompletter Fahrtverlauf einer Abfahrt (alle Halte, Echtzeit, Strecke).
     func journey(of departure: Departure, at stop: Stop) async throws -> TripLeg
+
+    /// Holt eine schon gefundene Verbindung über ihre Kennung (`Trip.itineraryID`) mit frischen Echtzeitdaten ab –
+    /// viel sparsamer als eine neue Suche. `nil`, wenn die Quelle das nicht kann.
+    func refresh(itineraryID: String, options: TripOptions) async throws -> Trip?
+}
+
+extension TransitProvider {
+    public func refresh(itineraryID: String, options: TripOptions) async throws -> Trip? { nil }
 }
 
 extension TransitProvider {

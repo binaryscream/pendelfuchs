@@ -32,6 +32,11 @@ DELFI / opendata-oepnv.de, CC BY 4.0, plus Echtzeit). OpenAPI-Spezifikation:
 - **Quellenangabe:** sichtbarer Link auf `https://transitous.org/sources/` plus OpenStreetMap-Nennung.
 - Viele Verbindungssuchen (> 720 `/plan`-Anfragen pro 24 h) und viele Nutzer gelten als hohe Last →
   vor einer Veröffentlichung mit vielen Nutzern im Matrix-Kanal von Transitous absprechen.
+  **Abgesprochen 27.11.2026:** Transitous empfahl für wiederkehrende Abfragen `refresh-itinerary` statt `/plan` und
+  „everything v6“. Umgesetzt: Gemerkte Fahrten werden einmal am Tag gesucht, danach nur noch über die
+  Kennung der Verbindung abgeholt (`SavedTripLookup`, Kennungen in der App Group); neu gesucht wird nur ohne
+  Kennung, bei Fehlern oder bei Ausfall/verpasstem Anschluss (für den Ersatz). Die geöffnete Verbindung lädt
+  ebenfalls per Kennung nach. Alle Endpunkte laufen über v6, nur `geocode`/`reverse-geocode` gibt es nur als v1.
 - Kein Scraping, keine Staging-/internen Hosts. Betrieb „best effort“, ohne Garantie, Zugang kann entzogen werden.
 - Optional: Link zur Spendenseite.
 

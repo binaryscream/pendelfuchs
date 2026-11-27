@@ -132,6 +132,11 @@ public struct ProviderRouter: TransitProvider {
         return try await transitous.trips(transitousQuery)
     }
 
+    /// Kennungen stammen nur von Transitous.
+    public func refresh(itineraryID: String, options: TripOptions) async throws -> Trip? {
+        try await transitous.refresh(itineraryID: itineraryID, options: options)
+    }
+
     public func journey(of departure: Departure, at stop: Stop) async throws -> TripLeg {
         switch departure.source {
         case .vvo:

@@ -81,6 +81,18 @@ public struct TransitousProvider: TransitProvider {
             .sorted { $0.departure.expectedTime < $1.departure.expectedTime }
     }
 
+    /// `refresh-itinerary` (MOTIS, laut Doku noch experimentell): dieselbe Verbindung mit aktuellen Daten. Von
+    /// Transitous ausdrücklich empfohlen statt wiederholter `/plan`-Anfragen für gemerkte Fahrten.
+    public func refresh(itineraryID: String, options: TripOptions) async throws -> Trip? {
+        var params = ["itineraryId": itineraryID, "language": "de"]
+        if options.allowedModes != Set(ModeGroup.allCases) {
+            params["transitModes"] = TransitousAPI.transitModes(for: options.allowedModes).joined(separator: ",")
+        }
+        if options.walkingSpeed != .normal { params["pedestrianSpeed"] = String(options.walkingSpeed.metersPerSecond) }
+        let itinerary: TransitousAPI.Itinerary = try await get("v6/refresh-itinerary", params)
+        return itinerary.trip
+    }
+
     public func journey(of departure: Departure, at stop: Stop) async throws -> TripLeg {
         guard let tripID = departure.tripID else {
             throw TransitError.service(message: "Für diese Fahrt ist kein Fahrtverlauf verfügbar.")
@@ -388,6 +400,8 @@ enum TransitousAPI {
     struct Itinerary: Decodable {
         let transfers: Int?
         let legs: [Leg]
+        /// Kennung für `refresh-itinerary`.
+        let id: String?
 
         var trip: Trip? {
             var result: [TripLeg] = []
@@ -404,7 +418,7 @@ enum TransitousAPI {
             while let last = result.last, last.kind == .walk, (last.durationMinutes ?? 0) == 0 { result.removeLast() }
             let rides = result.filter { $0.kind == .ride }.count
             guard rides > 0 else { return nil }
-            return Trip(legs: result, interchanges: transfers ?? max(0, rides - 1), source: .transitous)
+            return Trip(legs: result, interchanges: transfers ?? max(0, rides - 1), source: .transitous, itineraryID: id)
         }
     }
 

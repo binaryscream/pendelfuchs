@@ -33,14 +33,18 @@ public struct Trip: Codable, Sendable, Hashable, Identifiable {
     public var fareZones: String?
     /// Datenquelle (für die Quellenangabe).
     public var source: ProviderID?
+    /// Kennung der Verbindung bei Transitous: Damit lässt sie sich mit frischen Echtzeitdaten abholen, ohne neu zu
+    /// suchen (`TransitProvider.refresh`). Gilt nur für diese eine Fahrt an diesem Tag; `nil` bei anderen Quellen.
+    public var itineraryID: String?
 
     public init(legs: [TripLeg], interchanges: Int, price: String? = nil, fareZones: String? = nil,
-                source: ProviderID? = nil) {
+                source: ProviderID? = nil, itineraryID: String? = nil) {
         self.legs = legs
         self.interchanges = interchanges
         self.price = price
         self.fareZones = fareZones
         self.source = source
+        self.itineraryID = itineraryID
     }
 
     /// Stabil über mehrere Suchen hinweg (für „Früher/Später“-Zusammenführung).

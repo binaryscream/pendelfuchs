@@ -56,6 +56,14 @@ private func fixture(_ name: String) throws -> Data {
         #expect(nightTrain.state == .unknown)
     }
 
+    @Test func refreshedItineraryKeepsItsID() throws {
+        let itinerary = try TransitousAPI.decode(TransitousAPI.Itinerary.self, from: fixture("transitous-refresh-itinerary"))
+        let trip = try #require(itinerary.trip)
+        #expect(trip.itineraryID?.isEmpty == false)
+        #expect(trip.rides.map(\.line) == ["S1"])
+        #expect(trip.rides[0].departure?.realTime != nil)
+    }
+
     @Test func planBecomesTrips() throws {
         let response = try TransitousAPI.decode(TransitousAPI.PlanResponse.self, from: fixture("transitous-plan-pirna-postplatz"))
         let trips = response.itineraries.compactMap(\.trip)

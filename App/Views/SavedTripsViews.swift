@@ -457,8 +457,8 @@ enum LiveState: Equatable {
     /// Sucht die gemerkte Verbindung am angegebenen Tag und gleicht sie ab.
     static func load(_ saved: SavedTrip, on day: Date, using transit: any TransitProvider) async -> LiveState {
         do {
-            let trips = try await transit.trips(saved.query(on: day))
-            guard let resolved = saved.resolve(in: trips) else { return .notFound }
+            let lookup = try await SavedTripLookup.lookup(saved, on: day, using: transit, suite: AppGroup.id)
+            guard let resolved = lookup.resolved else { return .notFound }
             if let note = resolved.note { return .rerouted(resolved.trip, note) }
             return .found(resolved.trip)
         } catch {

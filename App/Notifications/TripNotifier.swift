@@ -147,9 +147,11 @@ final class TripNotifier {
         let settings = settings
         var memories = loadMemories(now: now)
         for (saved, day) in watchedTrips(now: now, horizon: Self.leadTime) {
-            guard let trips = try? await transit.trips(saved.query(on: day)),
-                  let match = saved.bestMatch(in: trips) else { continue }
-            let resolved = saved.resolve(in: trips, now: now)
+            // Sparsam: nach der ersten Suche des Tages nur noch diese eine Verbindung abholen.
+            guard let lookup = try? await SavedTripLookup.lookup(saved, on: day, now: now, using: transit,
+                                                                 suite: AppGroup.id),
+                  let match = lookup.match else { continue }
+            let resolved = lookup.resolved
             let replacement = resolved?.note != nil ? resolved?.trip : nil
             let key = memoryKey(saved, day: day)
             let result = TripWatch.notices(for: match, replacement: replacement, title: saved.title, now: now,

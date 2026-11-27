@@ -74,8 +74,9 @@ struct NextTripProvider: AppIntentTimelineProvider {
 
         let occurrence = Self.occurrence(of: saved, now: now)
         do {
-            let trips = try await DataSources.router().trips(saved.query(on: occurrence))
-            guard let resolved = saved.resolve(in: trips, now: now) else {
+            let lookup = try await SavedTripLookup.lookup(saved, on: occurrence, now: now, using: DataSources.router(),
+                                                          suite: AppGroup.id)
+            guard let resolved = lookup.resolved else {
                 return NextTripEntry(date: now, saved: saved, occurrence: occurrence,
                                      content: .planned(reason: "Nicht gefunden"))
             }

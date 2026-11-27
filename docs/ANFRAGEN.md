@@ -3,7 +3,10 @@
 Stand 27.11.2026. Jeder Block ist fertig: Empfänger, Betreff und Text kopieren, abschicken.
 Absender ist die E-Mail-Adresse, von der du schreibst – sie steht deshalb nicht im Text.
 
-> **Versendet am 27.11.2026:** VVO und TLMS per E-Mail, Transitous im Matrix-Raum. Antworten stehen noch aus.
+> **Versendet am 27.11.2026:** VVO und TLMS per E-Mail, Transitous im Matrix-Raum.
+>
+> **Antwort Transitous (27.11.2026):** `refresh-itinerary` statt wiederholter `/plan`-Anfragen nutzen, alles über
+> v6. Umgesetzt (siehe `docs/DATENQUELLEN.md`). Antworten von VVO und TLMS stehen noch aus.
 
 | Stelle | Wofür die App sie nutzt | Anfrage nötig? | Kanal |
 |---|---|---|---|
