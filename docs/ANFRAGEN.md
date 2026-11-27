@@ -7,12 +7,19 @@ Absender ist die E-Mail-Adresse, von der du schreibst – sie steht deshalb nich
 > regionalen Verbünde (Abschnitt 4: VMS, VVV, Bayern-Fahrplan, NVBW, mobil.nrw, MV-Fahrplan) per E-Mail aus Proton Mail.
 >
 > **Antwort Transitous (27.11.2026):** `refresh-itinerary` statt wiederholter `/plan`-Anfragen nutzen, alles über
-> v6. Umgesetzt (siehe `docs/DATENQUELLEN.md`). Antworten von VVO, TLMS und den regionalen Verbünden stehen noch aus.
+> v6. Umgesetzt (siehe `docs/DATENQUELLEN.md`).
+>
+> **Antwort TLMS (27.11.2026):** Nutzung erlaubt, solange die App keine Unmengen an Traffic erzeugt; eine Nennung in
+> der App wäre schön; bitte einen vernünftigen User-Agent, damit TLMS die Anfragen zuordnen kann. Umgesetzt: User-Agent
+> `Pendelfuchs/<Version> (+<Kontakt-URL>)` wie bei Transitous, Nennung „Live-Fahrzeuge Dresden: TLMS“ (Einstellungen,
+> Karte, Datenschutz), Abfrage nur bei offener Karte/Fahrt, höchstens alle 12–15 s.
+>
+> Antworten von VVO und den regionalen Verbünden stehen noch aus.
 
 | Stelle | Wofür die App sie nutzt | Anfrage nötig? | Kanal |
 |---|---|---|---|
 | VVO | Abfahrten, Verbindungen, Preise, Auslastung im VVO-Gebiet | **Ja** – Schnittstelle ist inoffiziell | E-Mail |
-| TLMS | Live-Positionen von Straßenbahn und Stadtbus in Dresden | **Ja** – keine Nutzungsbedingungen veröffentlicht | E-Mail oder Matrix |
+| TLMS | Live-Positionen von Straßenbahn und Stadtbus in Dresden | ✅ **Erlaubt** (27.11.2026) – maßvoller Traffic, Nennung, User-Agent | E-Mail |
 | Transitous | Fahrplandaten für ganz Deutschland | **Ja, als Absprache** – Bedingungen verlangen das bei vielen Nutzern | Matrix |
 | OpenFreeMap | Kartenkacheln | Nein – frei nutzbar, Grenzen gelten nur für Offline-Downloads (macht die App nicht) | – |
 | Regionale Verbünde (VMS, VVV, Bayern-Fahrplan, NVBW, mobil.nrw, MV-Fahrplan) | Abfahrten, Verbindungen, Echtzeit, teils Preise in ihrer Region | **Ja** – keine Nutzungsbedingungen veröffentlicht | E-Mail (Abschnitt 4) |

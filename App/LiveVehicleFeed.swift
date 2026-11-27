@@ -14,7 +14,9 @@ final class LiveVehicleFeed {
 
     private(set) var vehicles: [LiveVehicle] = []
 
-    @ObservationIgnored private let client = TLMSClient()
+    /// Mit dem User-Agent der App, damit TLMS die Anfragen zuordnen kann (Bitte von TLMS).
+    @ObservationIgnored private let client = TLMSClient(
+        userAgent: TransitousProvider.userAgent(version: DataSources.appVersion))
     @ObservationIgnored private var lastFetch = Date.distantPast
     @ObservationIgnored private var isFetching = false
     /// Einmal gefundenes Fahrzeug (Umlauf) je Fahrt, damit die Anzeige nicht zwischen Fahrzeugen springt.

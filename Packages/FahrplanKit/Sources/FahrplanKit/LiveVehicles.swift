@@ -25,20 +25,31 @@ public struct LiveVehicle: Sendable, Hashable {
 }
 
 /// Liest die Fahrzeugpositionen von TLMS (`lizard.tlm.solutions`, Region 0 = Dresden).
+///
+/// Erlaubnis von TLMS (11/2026): Nutzung in Ordnung bei maßvollem Traffic, mit Nennung in der App und einem
+/// eindeutigen User-Agent, damit TLMS die Anfragen der App zuordnen kann – derselbe wie bei Transitous.
 public struct TLMSClient: Sendable {
     private let url: URL
+    private let userAgent: String
     private let session: URLSession
 
     public init(baseURL: URL = URL(string: "https://lizard.tlm.solutions")!, region: Int = 0,
-                session: URLSession = .shared) {
+                userAgent: String = TransitousProvider.defaultUserAgent, session: URLSession = .shared) {
         self.url = baseURL.appending(path: "v1/vehicles/\(region)")
+        self.userAgent = userAgent
         self.session = session
     }
 
-    public func vehicles() async throws -> [LiveVehicle] {
+    /// Die Anfrage an TLMS (getrennt, damit sich die Kopfzeilen testen lassen).
+    func request() -> URLRequest {
         var request = URLRequest(url: url, timeoutInterval: 10)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        let (data, response) = try await session.data(for: request)
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        return request
+    }
+
+    public func vehicles() async throws -> [LiveVehicle] {
+        let (data, response) = try await session.data(for: request())
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw URLError(.badServerResponse)
         }

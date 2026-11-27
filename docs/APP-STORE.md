@@ -125,7 +125,7 @@ Nutzerinhalte, kein Chat. Ergebnis: **4+**.
 |---|---|
 | Händlerstatus (EU, Digital Services Act) | **Kein Händler** – die App ist kostenlos und ohne Werbung, Käufe oder Spenden. Bei Unsicherheit rechtlich beraten lassen. |
 | Exportvorschriften / Verschlüsselung | Keine eigene Verschlüsselung; `ITSAppUsesNonExemptEncryption = NO` ist bereits gesetzt, App Store Connect fragt deshalb nicht nach. |
-| Inhaltsrechte | „Enthält Inhalte Dritter?“ → **Ja**: Fahrplandaten von Transitous (CC BY 4.0) und VVO, Fahrzeugpositionen von TLMS, Karten von OpenFreeMap/OpenStreetMap (ODbL). Die Rechte bzw. Erlaubnisse sind in `docs/DATENQUELLEN.md` und `docs/ANFRAGEN.md` festgehalten – vor dem Einreichen sollten die Antworten von VVO und TLMS da sein. |
+| Inhaltsrechte | „Enthält Inhalte Dritter?“ → **Ja**: Fahrplandaten von Transitous (CC BY 4.0) und VVO, Fahrzeugpositionen von TLMS, Karten von OpenFreeMap/OpenStreetMap (ODbL). Die Rechte bzw. Erlaubnisse sind in `docs/DATENQUELLEN.md` und `docs/ANFRAGEN.md` festgehalten – TLMS hat zugestimmt (27.11.2026); vor dem Einreichen sollte die Antwort des VVO da sein. |
 
 ## Hinweise für die App-Prüfung (App Review Information)
 
@@ -174,7 +174,7 @@ Schönheitsfehler: Auf Bild 2 steht oben links „Carrier“ (Simulator). Bei Be
 - [ ] Bezahltes Entwicklerkonto
 - [ ] Domain, Website online, E-Mail-Adresse in App und Impressum eingetragen
 - [ ] Kontakt-URL im User-Agent für Transitous auf die Website umgestellt (`TransitousProvider.contactURL`)
-- [ ] Antworten von VVO, TLMS und Transitous umgesetzt (`docs/ANFRAGEN.md`)
+- [ ] Antworten von VVO, TLMS und Transitous umgesetzt (`docs/ANFRAGEN.md`) – Transitous und TLMS erledigt, VVO offen
 - [ ] Erlaubnis der regionalen Verbünde (TripKit) geklärt (Anfragen: `docs/ANFRAGEN.md`, Abschnitt 4) – oder die TripKit-Verbünde vor dem Hochladen im Code abschalten (`useRegional` im Router)
 - [ ] Quelltext auf GitHub öffentlich (Bedingung von Transitous)
 - [ ] Rechtstexte geprüft

@@ -40,6 +40,15 @@ import Testing
         #expect(abs(vehicles[0].reportedAt.timeIntervalSince1970 - 1_795_621_322.658) < 0.001)
     }
 
+    /// TLMS bittet um einen eindeutigen User-Agent, um die Anfragen der App zuzuordnen.
+    @Test func tlmsRequestCarriesAppUserAgent() {
+        let request = TLMSClient(userAgent: TransitousProvider.userAgent(version: "1.0")).request()
+        #expect(request.url?.absoluteString == "https://lizard.tlm.solutions/v1/vehicles/0")
+        #expect(request.value(forHTTPHeaderField: "User-Agent")
+                == "Pendelfuchs/1.0 (+\(TransitousProvider.contactURL))")
+        #expect(TLMSClient().request().value(forHTTPHeaderField: "User-Agent") == TransitousProvider.defaultUserAgent)
+    }
+
     @Test func onlyDresdenTramsAndCityBusesAreEligible() {
         #expect(leg().tlmsLine == 3)
         #expect(leg(line: "62", mode: .cityBus).tlmsLine == 62)
