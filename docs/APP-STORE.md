@@ -152,18 +152,22 @@ Pflicht ist ein Satz für das **6,9-Zoll-iPhone** (Hochformat **1320 × 2868** P
 Transparenz, 1 bis 10 Bilder). App Store Connect verkleinert ihn selbst für kleinere iPhones. Aufnehmen im
 Simulator „iPhone 18 Pro Max“ – der hat genau diese Größe.
 
-Aufgenommen am 27.11.2026 in `design/app-store/` (alle 1320 × 2868, PNG ohne Transparenz), in dieser Reihenfolge hochladen:
-1. `01-meine-fahrten.png` – Meine Fahrten mit zwei regelmäßigen Fahrten, „pünktlich“
-2. `02-live-aktivitaet.png` – Live-Aktivität auf dem Sperrbildschirm („in 12 Minuten“)
-3. `03-abfahrten.png` – Abfahrten Dresden Hauptbahnhof mit Echtzeit, Auslastung und Ausfall
-4. `04-verbindungssuche.png` – Pirna → Dresden Postplatz mit Preisen
-5. `05-verbindung.png` – Verbindung mit Zeitleiste, Preis und Tarifzonen
-6. `06-karte.png` – Karte mit Streckenverlauf
-7. `07-widgets.png` – Widgets „Meine nächste Fahrt“ und „Abfahrten“, Countdown in der Dynamic Island
-8. `08-erinnerung.png` – Erinnerung vor der Abfahrt mit Knopf „Live-Aktivität starten“
+Fertige Bilder in `design/app-store/` (1320 × 2868, PNG ohne Transparenz): mit Überschrift und Geräterahmen
+gestaltet, aus 1206 × 2622 auf die 6,9-Zoll-Größe hochgerechnet. Die unbearbeiteten Simulator-Aufnahmen liegen in
+`design/app-store/roh/`. In dieser Reihenfolge hochladen:
 
-Schönheitsfehler: Auf dem Sperrbildschirm (Bild 2) steht oben links „Carrier“ – der Simulator lässt sich dort nicht
-umbenennen. Bei Bedarf in einem Bildprogramm übermalen.
+| Datei | Überschrift | Inhalt |
+|---|---|---|
+| `01-meine-fahrten.png` | Dein Arbeitsweg. Einfacher. | Zwei regelmäßige Fahrten, „pünktlich“ |
+| `02-live-aktivitaet.png` | Deine Fahrt in Echtzeit | Live-Aktivität auf dem Sperrbildschirm |
+| `03-abfahrten.png` | Alle Abfahrten im Blick | Dresden Hauptbahnhof mit Echtzeit, Auslastung, Ausfall |
+| `04-verbindungssuche.png` | Finde deine nächste Verbindung | Pirna → Dresden Postplatz mit Preisen |
+| `05-verbindung.png` | Entspannt ans Ziel | Zeitleiste, Preis, Tarifzonen |
+| `06-karte.png` | Behalte deine Route im Blick | Karte mit Streckenverlauf |
+| `07-widgets.png` | Alles auf deinem Homescreen | Widgets und Countdown in der Dynamic Island |
+| `08-erinnerung.png` | Verpasse keine Abfahrt | Erinnerung mit Knopf „Live-Aktivität starten“ |
+
+Schönheitsfehler: Auf Bild 2 steht oben links „Carrier“ (Simulator). Bei Bedarf übermalen.
 
 ## Vor dem ersten Hochladen
 
