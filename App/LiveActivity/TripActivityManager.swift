@@ -15,7 +15,7 @@ import Foundation
 final class TripActivityManager {
     static let shared = TripActivityManager()
 
-    static let refreshTaskID = "de.fahrplanxl.app.refresh"
+    static let refreshTaskID = "de.pendelfuchs.app.refresh"
 
     /// Bei jedem Aufruf neu, damit die Einstellung „VVO-Daten nutzen“ sofort greift.
     private var transit: any TransitProvider { DataSources.router() }

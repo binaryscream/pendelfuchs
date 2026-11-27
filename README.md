@@ -1,7 +1,7 @@
 # Pendelfuchs
 
-> Früherer Arbeitsname: „Fahrplan XL“. Projektordner, Xcode-Projekt (`FahrplanXL`) und Bundle-ID
-> (`de.fahrplanxl.app`) heißen deshalb noch so.
+> Früherer Arbeitsname: „Fahrplan XL“. Projektordner und Xcode-Projekt (`FahrplanXL`) heißen deshalb noch so.
+> Bundle-ID ist `de.pendelfuchs.app` (bis 27.11.2026: `de.fahrplanxl.app`).
 
 Open-Source-Fahrplan-App für iOS 18+ (SwiftUI). Lizenz: GPL-3.0 (siehe `LICENSE`).
 
@@ -112,10 +112,12 @@ FAHRPLAN_LIVE_TESTS=1 swift test    # zusätzlich gegen die echte VVO-API
 - `Shared/` – Code, den App und Widget-Erweiterung gemeinsam nutzen (Linienfarben, Live-Aktivitäts-Attribute,
   Knöpfe der Aktivität, Auswahl von Haltestellen und Fahrten, Deep Links)
 - `Widgets/` – Widget-Erweiterung (Abfahrten, Strecke, Meine nächste Fahrt, Live-Aktivität); Daten teilt sie mit
-  der App über die App Group `group.de.fahrplanxl.app`
+  der App über die App Group `group.de.pendelfuchs.app`
 - `Packages/FahrplanKit/` – gemeinsame Logik mit Tests: Datenmodelle, Datenquellen und Router, gemerkte Fahrten,
   Favoriten, zuletzt verwendet, Erkennung von Meldungen (`TripWatch`), Live-Fahrzeuge
-- `docs/` – Datenquellen, Regionen, fertige Anfragen an VVO, TLMS und Transitous (`ANFRAGEN.md`)
+- `docs/` – Datenquellen, Regionen, fertige Anfragen an VVO, TLMS und Transitous (`ANFRAGEN.md`), Texte und
+  Antworten für App Store Connect samt Checkliste vor dem ersten Hochladen (`APP-STORE.md`)
+- `App/PrivacyInfo.xcprivacy`, `Widgets/PrivacyInfo.xcprivacy` – Datenschutz-Manifeste für den App Store
 - `design/pendelfuchs/` – die endgültigen App-Icons in sechs Varianten (Standard, Dunkel, Klar hell/dunkel, Getönt
   hell/dunkel). Im Asset-Katalog liegen Standard, Dunkel und eine Graustufenfassung für „Getönt“; die klaren und
   farbig getönten Varianten ließen sich nur über eine `.icon`-Datei aus Icon Composer einbinden.

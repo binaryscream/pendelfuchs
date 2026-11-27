@@ -104,7 +104,7 @@ struct DeparturesProvider: AppIntentTimelineProvider {
 
 struct DeparturesWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "de.fahrplanxl.departures", intent: SelectStopIntent.self,
+        AppIntentConfiguration(kind: "de.pendelfuchs.departures", intent: SelectStopIntent.self,
                                provider: DeparturesProvider()) { entry in
             DeparturesWidgetView(entry: entry)
         }

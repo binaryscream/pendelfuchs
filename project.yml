@@ -1,7 +1,7 @@
 # Xcode-Projekt wird aus dieser Datei erzeugt:  xcodegen generate
 name: FahrplanXL
 options:
-  bundleIdPrefix: de.fahrplanxl
+  bundleIdPrefix: de.pendelfuchs
   deploymentTarget:
     iOS: "18.0"
   createIntermediateGroups: true
@@ -38,14 +38,14 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleURLTypes:
-          - CFBundleURLName: de.fahrplanxl.app
+          - CFBundleURLName: de.pendelfuchs.app
             CFBundleURLSchemes:
-              - fahrplanxl
+              - pendelfuchs
         NSSupportsLiveActivities: true
         UIBackgroundModes:
           - fetch
         BGTaskSchedulerPermittedIdentifiers:
-          - de.fahrplanxl.app.refresh
+          - de.pendelfuchs.app.refresh
         CFBundleDisplayName: Pendelfuchs
         # So, wie Siri „Pendelfuchs“ oft versteht – damit Sätze mit dem App-Namen nicht bei anderen Apps landen.
         INAlternativeAppNames:
@@ -66,13 +66,13 @@ targets:
       path: App/FahrplanXL.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.de.fahrplanxl.app
+          - group.de.pendelfuchs.app
         # Für dringliche Meldungen, die einen Fokus durchbrechen, bräuchte es zusätzlich
         #   com.apple.developer.usernotifications.time-sensitive: true
         # Das erlaubt Apple nur mit bezahltem Entwicklerkonto – mit dem kostenlosen schlägt der Build fehl.
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: de.fahrplanxl.app
+        PRODUCT_BUNDLE_IDENTIFIER: de.pendelfuchs.app
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
@@ -98,9 +98,9 @@ targets:
       path: Widgets/FahrplanXLWidgets.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.de.fahrplanxl.app
+          - group.de.pendelfuchs.app
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: de.fahrplanxl.app.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: de.pendelfuchs.app.widgets
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic

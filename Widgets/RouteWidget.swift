@@ -224,7 +224,7 @@ struct RouteProvider: AppIntentTimelineProvider {
 
 struct RouteWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "de.fahrplanxl.route", intent: SelectRouteIntent.self,
+        AppIntentConfiguration(kind: "de.pendelfuchs.route", intent: SelectRouteIntent.self,
                                provider: RouteProvider()) { entry in
             RouteWidgetView(entry: entry)
         }
@@ -273,7 +273,7 @@ struct RouteWidgetView: View {
                     ForEach(shown, id: \.offset) { index, item in
                         if index > 0 { Divider() }
                         // Antippen öffnet genau diese Verbindung in der App.
-                        Link(destination: entry.linkURL(for: item.trip) ?? entry.linkURL ?? URL(string: "fahrplanxl://")!) {
+                        Link(destination: entry.linkURL(for: item.trip) ?? entry.linkURL ?? URL(string: "pendelfuchs://")!) {
                             RouteTripRow(trip: item.trip, run: item.run, now: entry.date)
                                 // Eine Verbindung = ein Satz, statt Zeiten, Balken und Linien einzeln.
                                 .accessibilityElement(children: .ignore)

@@ -5,7 +5,7 @@ import Foundation
 
 /// Gemeinsamer Speicher von App und Widget-Erweiterung (Favoriten, gemerkte Fahrten).
 enum AppGroup {
-    static let id = "group.de.fahrplanxl.app"
+    static let id = "group.de.pendelfuchs.app"
 
     /// Fällt auf `.standard` zurück, falls die App Group (z. B. ohne Signatur) nicht verfügbar ist.
     /// Ein gemeinsames Objekt für die ganze Anwendung: Mit je einem neuen `UserDefaults` pro Zugriff bemerkt
@@ -27,9 +27,9 @@ enum AppGroup {
     }
 }
 
-/// Deep Links, z. B. aus dem Widget: `fahrplanxl://stop?s=<Haltestelle als Base64-JSON>`.
+/// Deep Links, z. B. aus dem Widget: `pendelfuchs://stop?s=<Haltestelle als Base64-JSON>`.
 enum DeepLink {
-    static let scheme = "fahrplanxl"
+    static let scheme = "pendelfuchs"
 
     static func url(for stop: Stop) -> URL? {
         guard let token = StopToken.encode(stop) else { return nil }
@@ -40,7 +40,7 @@ enum DeepLink {
         return components.url
     }
 
-    /// Strecke für die Verbindungssuche: `fahrplanxl://route?o=<Start>&d=<Ziel>`, optional mit einer bestimmten
+    /// Strecke für die Verbindungssuche: `pendelfuchs://route?o=<Start>&d=<Ziel>`, optional mit einer bestimmten
     /// Verbindung (`t` = Plan-Abfahrt in Sekunden seit 1970, `l` = Linien), die dann gleich geöffnet wird.
     static func url(forRoute from: Stop, _ to: Stop, trip: Trip? = nil) -> URL? {
         guard let origin = StopToken.encode(from), let destination = StopToken.encode(to) else { return nil }
@@ -57,7 +57,7 @@ enum DeepLink {
         return components.url
     }
 
-    /// Gemerkte Fahrt: `fahrplanxl://saved?id=<UUID>`.
+    /// Gemerkte Fahrt: `pendelfuchs://saved?id=<UUID>`.
     static func url(forSavedTrip id: UUID) -> URL? {
         var components = URLComponents()
         components.scheme = scheme

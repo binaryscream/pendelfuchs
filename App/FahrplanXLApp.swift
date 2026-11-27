@@ -90,7 +90,7 @@ struct FahrplanXLApp: App {
                 .onChange(of: savedTrips.trips) {
                     FahrplanShortcuts.updateAppShortcutParameters()
                     // Das Widget „Meine nächste Fahrt“ zeigt gemerkte Fahrten.
-                    WidgetCenter.shared.reloadTimelines(ofKind: "de.fahrplanxl.nexttrip")
+                    WidgetCenter.shared.reloadTimelines(ofKind: "de.pendelfuchs.nexttrip")
                     // Gleich nach dem Anlegen der ersten regelmäßigen Fahrt um Erlaubnis fragen – nicht erst
                     // beim nächsten Öffnen der App.
                     Task {

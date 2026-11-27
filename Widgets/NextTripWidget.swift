@@ -126,7 +126,7 @@ struct NextTripProvider: AppIntentTimelineProvider {
 
 struct NextTripWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "de.fahrplanxl.nexttrip", intent: SelectSavedTripIntent.self,
+        AppIntentConfiguration(kind: "de.pendelfuchs.nexttrip", intent: SelectSavedTripIntent.self,
                                provider: NextTripProvider()) { entry in
             NextTripWidgetView(entry: entry)
         }
