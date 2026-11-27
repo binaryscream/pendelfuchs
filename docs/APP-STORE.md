@@ -171,7 +171,7 @@ Schönheitsfehler: Auf Bild 2 steht oben links „Carrier“ (Simulator). Bei Be
 
 ## Vor dem ersten Hochladen
 
-- [ ] Bezahltes Entwicklerkonto
+- [x] Bezahltes Entwicklerkonto (27.11.2026, Team-ID unverändert, dringliche Meldungen eingeschaltet)
 - [x] Domain, Website online, E-Mail-Adresse in App und Impressum eingetragen (`kontakt@pendelfuchs.de`)
 - [x] Kontakt-URL im User-Agent für Transitous auf die Website umgestellt (`TransitousProvider.contactURL`)
 - [ ] Antworten von VVO, TLMS und Transitous umgesetzt (`docs/ANFRAGEN.md`) – Transitous und TLMS erledigt, VVO offen

@@ -68,8 +68,8 @@ Benachrichtigungen bedeutet, steht unten und in der App unter Einstellungen → 
     - Antworten von VVO, TLMS und Transitous abwarten und umsetzen – Anfragen am 27.11.2026 versendet
       (VVO und TLMS per E-Mail, Transitous im Matrix-Raum; Texte und nächste Schritte: `docs/ANFRAGEN.md`)
     - Live-Aktivität endet nach der Ankunft nur, wenn iOS die App aufweckt – sonst erst nach bis zu 8 h (später ggf. kürzere Wartezeit oder Push-Server, siehe 12)
-    - Dringliche Meldungen (Fokus durchbrechen): im Code vorbereitet, braucht die Berechtigung
-      `com.apple.developer.usernotifications.time-sensitive` und damit ein bezahltes Entwicklerkonto (siehe `project.yml`)
+    - Dringliche Meldungen (Fokus durchbrechen): seit 27.11.2026 eingeschaltet (bezahltes Entwicklerkonto,
+      Berechtigung in `project.yml`) – auf dem Gerät noch prüfen
     - Vor einer Veröffentlichung: Datenschutzhinweis rechtlich prüfen lassen (E-Mail-Adresse und Website
       `pendelfuchs.de` mit Hilfe- und Datenschutzseite sind seit 27.11.2026 da)
     - Regionale Verbünde über TripKit nutzen inoffizielle Schnittstellen – vor einer Veröffentlichung je Verbund

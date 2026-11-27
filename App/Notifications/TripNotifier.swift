@@ -218,9 +218,8 @@ final class TripNotifier {
         content.body = notice.body
         content.sound = .default
         content.threadIdentifier = saved.id.uuidString
-        // Ausfall und Anschlussproblem dulden keinen Aufschub: als dringliche Meldung markiert. Wirksam (Fokus
-        // durchbrechen) wird das erst mit der Berechtigung aus `project.yml`, die ein bezahltes Entwicklerkonto
-        // braucht – ohne sie behandelt iOS die Meldung wie jede andere.
+        // Ausfall und Anschlussproblem dulden keinen Aufschub: als dringliche Meldung markiert, die einen Fokus
+        // durchbricht (Berechtigung in `project.yml`, nur mit bezahltem Entwicklerkonto).
         if notice.kind == .cancellation || notice.kind == .connection { content.interruptionLevel = .timeSensitive }
         // Antippen öffnet die Fahrt (siehe `NotificationPresenter`).
         content.userInfo = [NotificationRouter.savedTripKey: saved.id.uuidString]
