@@ -55,6 +55,11 @@ struct SettingsView: View {
                         Label("Anzeige", systemImage: "textformat.size")
                     }
                     NavigationLink {
+                        PrivacyView()
+                    } label: {
+                        Label("Datenschutz & Daten", systemImage: "hand.raised")
+                    }
+                    NavigationLink {
                         FAQView()
                     } label: {
                         Label("Hilfe & Fragen", systemImage: "questionmark.circle")
@@ -99,6 +104,12 @@ struct SettingsView: View {
                 Section("Über") {
                     LabeledContent("Version", value: Bundle.main.versionString)
                     LabeledContent("Lizenz", value: "GPL-3.0")
+                    LabeledContent("Kontakt", value: AppInfo.responsibleName)
+                    if let mail = AppInfo.contactURL {
+                        Link(destination: mail) {
+                            LabeledContent("E-Mail", value: AppInfo.contactEmail ?? "")
+                        }
+                    }
                 }
             }
             .navigationTitle("Einstellungen")

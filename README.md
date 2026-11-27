@@ -8,14 +8,25 @@ Karte: [MapLibre](https://maplibre.org) (BSD-2-Clause) mit Kacheln von [OpenFree
 Fahrplandaten: [Transitous](https://transitous.org/sources/) (ganz Deutschland) und im Gebiet des
 Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingungen: `docs/DATENQUELLEN.md`.
 
-## Ziele
+## Funktionen
 
-- **Abfahrtsmonitor** für den aktuellen Standort oder Favoriten-Haltestellen
-- **Widgets** für Favoriten-Haltestellen
-- **Regelmäßige Fahrten** (z. B. Mo–Fr 6:30 Zug von X nach Y)
-- **Live-Aktivität** für regelmäßige Fahrten (Sperrbildschirm / Dynamic Island)
-- **Intelligente Quellenwahl**: pro Verkehrsmittel/Region die beste Datenquelle
-  (Zug → DB, Bus/Tram im VVO-Gebiet → VVO/DVB, …)
+- **Abfahrten** für Favoriten, zuletzt verwendete Haltestellen und Haltestellen in der Nähe; Linien- und
+  Richtungsfilter, Früher/Später, Fahrtverlauf mit Zeitleiste
+- **Verbindungssuche** (Von – Nach – optionaler Zwischenhalt – Zeit) mit Suchoptionen (Deutschlandticket, Umstiege,
+  Gehgeschwindigkeit, Verkehrsmittel), zuletzt gesuchten Strecken und „Aktueller Standort“ als nächste Haltestelle
+- **Meine Fahrten**: Verbindungen merken, als regelmäßige Fahrt an Wochentagen speichern; Verpass-Assistent
+  (Ersatz bei Ausfall oder verpasstem Anschluss) mit den Suchoptionen der Fahrt
+- **Live-Aktivität** (Sperrbildschirm, Dynamic Island mit Countdown) – Start per Knopf, Widget, Erinnerung,
+  Siri oder Kurzbefehle-Automation
+- **Benachrichtigungen** (lokal, ohne Server): Ausfall, Verspätung, Gleiswechsel, Anschlussprobleme und eine fest
+  eingeplante Erinnerung vor der Abfahrt mit Knopf „Live-Aktivität starten“
+- **Widgets**: „Abfahrten“, „Strecke“ (mit Rückweg und Tausch-Knopf) und „Meine nächste Fahrt“
+- **Siri**: Abfahrten, Stand einer gemerkten Fahrt, Verbindung suchen, Live-Aktivität starten und beenden
+- **Karte** mit Streckenverlauf und Fahrzeugposition – in Dresden live aus [TLMS](https://tlm.solutions)
+- **Extras**: Kalendereintrag, Link zur DB-Buchung, Hilfe-Seite (FAQ), Datenschutzhinweis, Daten zurücksetzen
+
+Die App hat keinen eigenen Server, kein Konto, keine Werbung und kein Tracking. Was das für Live-Aktivität und
+Benachrichtigungen bedeutet, steht unten und in der App unter Einstellungen → „Hilfe & Fragen“.
 
 ## Roadmap
 
@@ -35,25 +46,41 @@ Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingung
 11. ✅ Verspätungsanzeige wählbar, Früher/Später im Abfahrtsmonitor, Strecken-Widget mit Rückweg und Tausch-Knopf, flüssigere Animationen
 12. Optional: Push-Server, damit Live-Aktivitäten auch im Hintergrund minutengenau aktualisiert werden
 13. ✅ Zuginfos: Auslastung (VVO) und Zugnummer; Verpass-Assistent pro Fahrt; Störungs-/Baustellenhinweise und Gleiswechsel
+15. ✅ Live-Fahrzeuge (TLMS) in Karte, Zeitleiste und „Nächster Halt“; Widget-Suche auf die eigene Gegend begrenzt
+16. ✅ Benachrichtigungen (Ausfall, Verspätung, Gleiswechsel, Anschluss), pro Fahrt schaltbar, Antippen öffnet die Fahrt
+17. ✅ Linienfilter, Kalendereintrag, DB-Ticket-Link, Siri-Befehle
+18. ✅ Durchsicht 11/2026: Live-Aktivität nach Phasenwechsel, Hintergrundprüfung, Ersatz bei Ausfall, Mitternacht,
+    Standort-Zeitgrenze, live nachladende Verbindungsansicht u. a.
+19. ✅ Widget „Meine nächste Fahrt“, Erinnerung vor der Abfahrt, „Zuletzt verwendet“, Countdown in der Dynamic
+    Island, Suchoptionen an gemerkten Fahrten, FAQ, Kartenknöpfe, wählbarer Start-Tab
 14. Offen (TODO):
     - Wagenreihung und Auslastung für Züge: offiziell derzeit nur für Eisenbahnunternehmen und Vertragspartner (DB API Marketplace geprüft 11/2026, siehe `docs/DATENQUELLEN.md`); alter Stand in der Git-Historie
     - Verpasster Anschluss, Stufe 2: Standort/Laufzeit einbeziehen (braucht Standort „Immer“, am besten mit Push-Server); Stufe 1 (Umstellung nach Echtzeitdaten) ist eingebaut
     - Anfrage an den VVO versenden (Entwurf: `docs/VVO-ANFRAGE.md`)
     - Live-Aktivität endet nach der Ankunft nur, wenn iOS die App aufweckt – sonst erst nach bis zu 8 h (später ggf. kürzere Wartezeit oder Push-Server, siehe 12)
+    - Dringliche Meldungen (Fokus durchbrechen): im Code vorbereitet, braucht die Berechtigung
+      `com.apple.developer.usernotifications.time-sensitive` und damit ein bezahltes Entwicklerkonto (siehe `project.yml`)
+    - Vor einer Veröffentlichung: Datenschutzhinweis rechtlich prüfen lassen, E-Mail-Adresse eintragen
+      (`AppInfo.contactEmail`; die Postanschrift steht schon drin), Datenschutz- und Support-Seite im Web für
+      App Store Connect
     - Offizielle VVO-Schnittstellen prüfen (TRIAS, SIRI-ET) statt der inoffiziellen WebAPI; Erlaubnis bei opendata@vvo-online.de klären
     - TLMS-Nutzungsbedingungen klären, bevor die App veröffentlicht wird (Entwurf: `docs/TLMS-ANFRAGE.md`)
-    - Kurzbefehle-Automation testen
+    - Am Gerät prüfen: Benachrichtigungen im Hintergrund, Erinnerung, Siri per Sprache, Live-Aktivität bei
+      Umstiegen, VoiceOver in den Widgets
 
-### Hinweise zur Live-Aktivität
+### Hinweise zur Live-Aktivität und zu Benachrichtigungen
 
 - Countdown und Fortschrittsbalken laufen auf dem Gerät selbst weiter (kein Server nötig).
-- Die noch offenen Fahrten stehen mit ihren Zeiten in der Aktivität (z. B. S1 18:36–18:58, Umstieg, 7 19:04–19:10);
-  erledigte fallen heraus.
-- An jedem Phasenwechsel (Abfahrt, Umstieg, Ankunft) zeichnet iOS die Aktivität neu; Knöpfe „↻“ (Echtzeit holen)
-  und „✕“ (beenden) direkt in der Aktivität. Ohne Push-Server endet sie automatisch nur, wenn die App läuft.
-- Echtzeitdaten (Verspätungen) werden aktualisiert, solange die App offen ist (jede Minute) und im
-  Hintergrund, wenn iOS die App kurz weckt (`BGAppRefreshTask`, ca. alle 15 min, nicht garantiert).
-- Automatischer Start: Kurzbefehle → Automation → Tageszeit → Aktion „Live-Aktivität starten“.
+- Die noch offenen Fahrten (höchstens zwei) stehen mit ihren Zeiten in der Aktivität; erledigte fallen heraus.
+- iOS zeichnet die Aktivität ohne die App nur einmal neu, zum nächsten Phasenwechsel (Abfahrt, Umstieg, Ankunft).
+  Für jeden weiteren Wechsel muss die App kurz laufen. Bei Fahrten mit Umstieg kann die Anzeige deshalb stehen
+  bleiben; „Stand HH:mm“ zeigt das Alter der Daten, der Knopf „↻“ holt sie wieder ein, „✕“ beendet.
+- Echtzeitdaten und Benachrichtigungen werden geprüft, solange die App offen ist (jede Minute) und im
+  Hintergrund, wenn iOS die App kurz weckt (`BGAppRefreshTask`, oft nur alle 15 min oder seltener, nicht garantiert).
+- Die Erinnerung vor der Abfahrt ist davon ausgenommen: Sie wird als lokale Benachrichtigung fest eingeplant
+  (nächste fünf Termine je Fahrt) und richtet sich nach dem Fahrplan.
+- Start ohne App: Knopf „Live“ im Widget „Meine nächste Fahrt“, Knopf in der Erinnerung, Siri oder
+  Kurzbefehle → Automation → Tageszeit → Aktion „Live-Aktivität starten“.
 
 Technische Notizen zu den Datenquellen: [`docs/DATENQUELLEN.md`](docs/DATENQUELLEN.md)
 
@@ -76,9 +103,14 @@ FAHRPLAN_LIVE_TESTS=1 swift test    # zusätzlich gegen die echte VVO-API
 
 ## Aufbau
 
-- `App/` – die iOS-App (SwiftUI)
-- `Shared/` – Code, den App und Widget-Erweiterung gemeinsam nutzen (Linienfarben, Live-Aktivitäts-Attribute)
-- `Widgets/` – Widget-Erweiterung (Abfahrten-Widget, Live-Aktivität); Daten teilt sie mit der App über die App Group `group.de.fahrplanxl.app`
-- `Packages/FahrplanKit/` – gemeinsame Logik: Datenmodelle, Datenquellen, Favoriten (später auch von Widgets genutzt)
+- `App/` – die iOS-App (SwiftUI): `Views/` (Ansichten), `LiveActivity/` (Live-Aktivität, Siri-Befehle),
+  `Notifications/` (Benachrichtigungen und Erinnerung)
+- `Shared/` – Code, den App und Widget-Erweiterung gemeinsam nutzen (Linienfarben, Live-Aktivitäts-Attribute,
+  Knöpfe der Aktivität, Auswahl von Haltestellen und Fahrten, Deep Links)
+- `Widgets/` – Widget-Erweiterung (Abfahrten, Strecke, Meine nächste Fahrt, Live-Aktivität); Daten teilt sie mit
+  der App über die App Group `group.de.fahrplanxl.app`
+- `Packages/FahrplanKit/` – gemeinsame Logik mit Tests: Datenmodelle, Datenquellen und Router, gemerkte Fahrten,
+  Favoriten, zuletzt verwendet, Erkennung von Meldungen (`TripWatch`), Live-Fahrzeuge
+- `docs/` – Datenquellen, Regionen, Entwürfe der Anfragen an VVO und TLMS
 - `design/` – Vorlage des App-Icons; `tools/make-app-icon.swift` erzeugt daraus die Icon-Varianten (`swift tools/make-app-icon.swift design/app-icon-source.png App/Assets.xcassets/AppIcon.appiconset`)
 - `project.yml` – Projektbeschreibung für XcodeGen (das `.xcodeproj` wird daraus erzeugt)

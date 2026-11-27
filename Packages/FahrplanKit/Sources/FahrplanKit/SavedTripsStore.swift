@@ -61,6 +61,11 @@ public final class SavedTripsStore {
         save()
     }
 
+    public func removeAll() {
+        trips = []
+        save()
+    }
+
     private func save() {
         if let data = try? JSONEncoder().encode(trips) {
             defaults.set(data, forKey: key)

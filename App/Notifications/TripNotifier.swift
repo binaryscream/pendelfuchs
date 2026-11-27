@@ -226,6 +226,9 @@ final class TripNotifier {
         try? await center.add(request)
     }
 
+    /// Vergisst, was schon gemeldet wurde (für „Daten zurücksetzen“).
+    func forgetMemories() { defaults.removeObject(forKey: memoryStorageKey) }
+
     // MARK: Gedächtnis (was schon gemeldet wurde)
 
     private let memoryStorageKey = "notifications.memory.v1"

@@ -42,6 +42,11 @@ public final class FavoritesStore {
         save()
     }
 
+    public func removeAll() {
+        stops = []
+        save()
+    }
+
     public func remove(atOffsets offsets: IndexSet) {
         stops = stops.enumerated().filter { !offsets.contains($0.offset) }.map(\.element)
         save()
