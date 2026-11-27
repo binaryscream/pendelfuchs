@@ -15,9 +15,12 @@ struct NotificationSettingsView: View {
 
     @AppStorage(TripNotifier.reminderKey, store: AppGroup.defaults) private var reminder = true
     @AppStorage(TripNotifier.reminderLeadKey, store: AppGroup.defaults) private var reminderLead = 20
+    @AppStorage(TripNotifier.urgentKey, store: AppGroup.defaults) private var urgent = true
 
     @Environment(\.scenePhase) private var scenePhase
     @State private var status: UNAuthorizationStatus?
+    /// Schalter „Dringliche Mitteilungen“ in den iPhone-Einstellungen (nur lesbar).
+    @State private var timeSensitive: UNNotificationSetting?
     @State private var testSent = false
     @State private var testError: String?
     /// Welcher der beiden Testknöpfe gerade wartet (für die Beschriftung).
@@ -62,6 +65,26 @@ struct NotificationSettingsView: View {
                     Text("Ohne eigenen Server prüft die App selbst: jede Minute, solange sie offen ist, und im Hintergrund, wenn iOS sie kurz weckt. Das ist nicht garantiert und oft nur etwa alle 15 Minuten – eine Meldung kann also später kommen.")
                 }
 
+                if cancellation || connection {
+                    Section {
+                        Toggle("Dringlich: Ausfall und Anschluss", isOn: $urgent)
+                        if urgent, timeSensitive == .disabled {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Label("In den iPhone-Einstellungen sind dringliche Mitteilungen aus",
+                                      systemImage: "exclamationmark.circle")
+                                    .foregroundStyle(.orange)
+                                Button("iPhone-Einstellungen öffnen") {
+                                    if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }
+                            }
+                        }
+                    } footer: {
+                        Text("Kommt auch durch einen Fokus wie „Nicht stören“ oder „Schlafen“. Gilt nur für Ausfälle und verpasste oder knappe Anschlüsse – Verspätungen und Gleiswechsel bleiben normale Meldungen.")
+                    }
+                }
+
                 Section {
                     Toggle("Erinnerung vor der Abfahrt", isOn: $reminder)
                     if reminder {
@@ -102,7 +125,11 @@ struct NotificationSettingsView: View {
             }
         }
         .navigationTitle("Benachrichtigungen")
-        .task(id: scenePhase) { status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus }
+        .task(id: scenePhase) {
+            let settings = await UNUserNotificationCenter.current().notificationSettings()
+            status = settings.authorizationStatus
+            timeSensitive = settings.timeSensitiveSetting
+        }
         .onChange(of: enabled) { _, isOn in
             Task {
                 if isOn { await requestAuthorization() }
@@ -153,6 +180,8 @@ struct NotificationSettingsView: View {
     private func requestAuthorization() async {
         let center = UNUserNotificationCenter.current()
         _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
-        status = await center.notificationSettings().authorizationStatus
+        let settings = await center.notificationSettings()
+        status = settings.authorizationStatus
+        timeSensitive = settings.timeSensitiveSetting
     }
 }

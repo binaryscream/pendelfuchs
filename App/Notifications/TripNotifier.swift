@@ -50,6 +50,15 @@ final class TripNotifier {
     /// So viele Minuten vor der Abfahrt kommt die Erinnerung.
     var reminderLead: Int { defaults.object(forKey: Self.reminderLeadKey) as? Int ?? 20 }
 
+    /// Ausfall und Anschlussproblem als dringliche Meldung, die einen Fokus durchbricht (Standard: an).
+    static let urgentKey = "notifications.urgent"
+    var urgentEnabled: Bool { defaults.object(forKey: Self.urgentKey) as? Bool ?? true }
+
+    /// Ob eine Meldung dieser Art dringlich sein soll.
+    static func isUrgent(_ kind: TripNoticeKind, enabled: Bool) -> Bool {
+        enabled && (kind == .cancellation || kind == .connection)
+    }
+
     /// Meldet iOS den Knopf unter der Erinnerung an (einmal beim Start der App).
     static func registerCategories() {
         // `.foreground`: Der Knopf öffnet die App – eine Live-Aktivität darf iOS nur von dort aus starten lassen.
@@ -219,8 +228,9 @@ final class TripNotifier {
         content.sound = .default
         content.threadIdentifier = saved.id.uuidString
         // Ausfall und Anschlussproblem dulden keinen Aufschub: als dringliche Meldung markiert, die einen Fokus
-        // durchbricht (Berechtigung in `project.yml`, nur mit bezahltem Entwicklerkonto).
-        if notice.kind == .cancellation || notice.kind == .connection { content.interruptionLevel = .timeSensitive }
+        // durchbricht – sofern in der App eingeschaltet (Berechtigung in `project.yml`, nur mit bezahltem
+        // Entwicklerkonto; den Schalter in den iPhone-Einstellungen kann die App nur auslesen).
+        if Self.isUrgent(notice.kind, enabled: urgentEnabled) { content.interruptionLevel = .timeSensitive }
         // Antippen öffnet die Fahrt (siehe `NotificationPresenter`).
         content.userInfo = [NotificationRouter.savedTripKey: saved.id.uuidString]
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
