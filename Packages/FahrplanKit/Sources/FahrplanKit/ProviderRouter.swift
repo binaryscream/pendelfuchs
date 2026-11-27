@@ -7,17 +7,24 @@ import Foundation
 /// - Standard überall: **Transitous** (ganz Deutschland, inkl. Fernverkehr).
 /// - Im VVO-Gebiet zusätzlich **VVO** (Preise, Auslastung) – nur wenn aktiviert (`vvo != nil`).
 ///   Fällt VVO aus, wird automatisch Transitous verwendet.
-/// - Zuordnung über die bundesweite Haltestellen-ID (DHID): `de:14628:3370` ↔ VVO `33003370`.
+/// - In Sachsen (außerhalb des VVO), Bayern, Baden-Württemberg, NRW und Mecklenburg-Vorpommern die
+///   **regionalen Verbünde über TripKit** (`RegionalProvider`) – nur wenn aktiviert (`useRegional`).
+///   Fällt der Verbund aus oder findet nichts, wird Transitous verwendet.
+/// - Zuordnung über die bundesweite Haltestellen-ID (DHID): `de:14628:3370` ↔ VVO `33003370`, Kreis → Verbund.
 public struct ProviderRouter: TransitProvider {
     public let id: ProviderID = .transitous
 
     public let transitous: TransitousProvider
     /// `nil`, wenn VVO-Daten nicht genutzt werden sollen.
     public let vvo: VVOProvider?
+    /// Ob regionale Verbünde über TripKit genutzt werden.
+    public let useRegional: Bool
 
-    public init(transitous: TransitousProvider = TransitousProvider(), vvo: VVOProvider? = VVOProvider()) {
+    public init(transitous: TransitousProvider = TransitousProvider(), vvo: VVOProvider? = VVOProvider(),
+                useRegional: Bool = true) {
         self.transitous = transitous
         self.vvo = vvo
+        self.useRegional = useRegional
     }
 
     // MARK: Zuordnung
@@ -26,13 +33,11 @@ public struct ProviderRouter: TransitProvider {
     static let vvoDistricts: Set<String> = ["14612", "14625", "14627", "14628"]
 
     /// `de-DELFI_de:14628:3370:0:1` → `33003370`, sofern die Haltestelle im VVO-Gebiet liegt.
+    /// Transitous setzt je nach Datensatz verschiedene Präfixe vor die DHID (`de-DELFI_`,
+    /// `at-Railway-Current-Reference-Data-2026_` …) – entscheidend ist nur der `de:Kreis:Nummer`-Teil.
     public static func vvoStopID(fromTransitousID id: String) -> String? {
-        let prefix = "de-DELFI_"
-        guard id.hasPrefix(prefix) else { return nil }
-        let parts = id.dropFirst(prefix.count).split(separator: ":")
-        guard parts.count >= 3, parts[0] == "de", vvoDistricts.contains(String(parts[1])),
-              let number = Int(parts[2]), number > 0, number < 1_000_000
-        else { return nil }
+        guard let dhid = DHID(transitousID: id), vvoDistricts.contains(dhid.district),
+              let number = Int(dhid.number), number > 0, number < 1_000_000 else { return nil }
         return "33" + String(format: "%06d", number)
     }
 
@@ -44,9 +49,15 @@ public struct ProviderRouter: TransitProvider {
         case .transitous:
             guard let id = Self.vvoStopID(fromTransitousID: stop.stopID) else { return nil }
             return Stop(provider: .vvo, stopID: id, name: stop.name, place: stop.place, coordinate: stop.coordinate)
-        case .db:
+        case .db, .vms, .vvv, .bayern, .nvbw, .nrw, .vmv:
             return nil
         }
+    }
+
+    /// Regionaler Verbund für eine Haltestelle, sofern regionale Daten eingeschaltet sind.
+    func regional(for stop: Stop) -> RegionalProvider? {
+        guard useRegional, let network = RegionalNetwork.for(stop) else { return nil }
+        return RegionalProvider(network: network)
     }
 
     /// Dieselbe Haltestelle als Transitous-Haltestelle (VVO-Haltestellen werden per Suche aufgelöst).
@@ -101,6 +112,16 @@ public struct ProviderRouter: TransitProvider {
                 // weiter mit Transitous
             }
         }
+        if let regional = regional(for: stop) {
+            do {
+                let found = try await regional.departures(at: stop, limit: limit, from: from)
+                if !found.isEmpty { return found }
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                // weiter mit Transitous
+            }
+        }
         return try await transitous.departures(at: asTransitousStop(stop), limit: limit, from: from)
     }
 
@@ -125,6 +146,19 @@ public struct ProviderRouter: TransitProvider {
             }
         }
 
+        // Start und Ziel (und Zwischenhalt) im selben regionalen Verbund → dessen Auskunft.
+        if let regional = regional(for: query.origin), RegionalNetwork.for(query.destination) == regional.network,
+           query.via.map({ RegionalNetwork.for($0) == regional.network }) ?? true {
+            do {
+                let trips = try await regional.trips(query)
+                if !trips.isEmpty { return trips }
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                // weiter mit Transitous
+            }
+        }
+
         var transitousQuery = query
         transitousQuery.origin = try await asTransitousStop(query.origin)
         transitousQuery.destination = try await asTransitousStop(query.destination)
@@ -144,6 +178,8 @@ public struct ProviderRouter: TransitProvider {
                 throw TransitError.service(message: "VVO-Daten sind ausgeschaltet.")
             }
             return try await vvo.journey(of: departure, at: vvoStop)
+        case .some(let source) where source.regionalNetwork != nil:
+            return try await RegionalProvider(network: source.regionalNetwork!).journey(of: departure, at: stop)
         default:
             return try await transitous.journey(of: departure, at: asTransitousStop(stop))
         }

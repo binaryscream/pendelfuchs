@@ -1,0 +1,41 @@
+{
+  "originHash" : "e1221df281ef313fb7438f392911fbc28fff66134dd0490e6239a7b0e2bb02ff",
+  "pins" : [
+    {
+      "identity" : "gzipswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/1024jp/GzipSwift",
+      "state" : {
+        "revision" : "7a7f17761c76a932662ab77028a4329f67d645a4",
+        "version" : "5.2.0"
+      }
+    },
+    {
+      "identity" : "swiftyjson",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SwiftyJSON/SwiftyJSON",
+      "state" : {
+        "revision" : "af76cf3ef710b6ca5f8c05f3a31307d44a3c5828",
+        "version" : "5.0.2"
+      }
+    },
+    {
+      "identity" : "swxmlhash",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/drmohundro/SWXMLHash",
+      "state" : {
+        "revision" : "a853604c9e9a83ad9954c7e3d2a565273982471f",
+        "version" : "7.0.2"
+      }
+    },
+    {
+      "identity" : "tripkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/alexander-albers/tripkit.git",
+      "state" : {
+        "revision" : "01ad2f0e5e6b859fefc3ed512096663478405751"
+      }
+    }
+  ],
+  "version" : 3
+}

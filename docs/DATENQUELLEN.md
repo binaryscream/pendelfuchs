@@ -108,6 +108,30 @@ Bekannte IDs: Dresden Hbf `33000028`, Pirna Bahnhof `33003370`.
   „streng genommen Erlaubnis nötig“, häufige Sperren → **nicht für die veröffentlichte App**.
 - `v6.db.transport.rest`: Domain löst nicht auf, eingestellt.
 
+## Regionale Verbünde über TripKit ✅ eingebaut (27.11.2026)
+
+Auf Wunsch eingebaut, **mit Vorbehalt**: Die Schnittstellen sind die Auskunftssysteme der Verbünde für ihre eigenen
+Apps und Websites, für Drittanbieter nicht offiziell freigegeben (Apple-Richtlinie 5.2.2, siehe oben). Vor einer
+Veröffentlichung je Verbund die Erlaubnis klären – oder auf deren offizielle Angebote (TRIAS, GTFS-RT, siehe
+`docs/REGIONEN.md`) umsteigen.
+
+- **Bibliothek:** TripKit (github.com/alexander-albers/tripkit, MIT), fest auf einen Stand gesetzt
+  (`Packages/FahrplanKit/Package.swift`). Bringt GzipSwift, SwiftyJSON und SWXMLHash mit (alle MIT).
+- **Nur EFA-Verbünde ohne Schlüssel:** VMS (Chemnitz, Erzgebirge, Mittelsachsen, Zwickau), VVV (Vogtland),
+  Bayern-Fahrplan (ganz Bayern), NVBW (Baden-Württemberg), mobil.nrw (NRW), MV-Fahrplan (Mecklenburg-Vorpommern).
+  HAFAS-Verbünde (Berlin, Köln-KVB, RMV, Österreich …) brauchen eine Kennung; Kennungen fremder Apps werden
+  bewusst nicht verwendet. Das VVO-Gebiet behält die eigene WebAPI-Anbindung.
+- **Zuordnung** (`RegionalNetwork.forDistrict`): über den Kreis in der bundesweiten Haltestellen-ID, unabhängig
+  vom Datensatz-Präfix bei Transitous (`de-DELFI_`, `at-Railway-…_`). Die Verbund-Haltestelle wird über die Lage
+  gesucht (nächste mit passendem Namen, höchstens 400 m) und für die Laufzeit der App gemerkt.
+- **Router:** Abfahrten an Haltestellen im Verbundgebiet und Verbindungen, deren Start und Ziel im selben Verbund
+  liegen, kommen vom Verbund; Fehler oder leeres Ergebnis → Transitous. Gemerkte Fahrten aus Verbunddaten haben
+  keine `refresh-itinerary`-Kennung und werden wie VVO-Fahrten neu gesucht.
+- **Schalter:** Einstellungen → „Regionale Verbünde“ (Standard an), Quellenangabe in den Einstellungen.
+- **Live-Probe** (27.11.2026, `RegionalProviderLiveTests`, mit `FAHRPLAN_LIVE_TESTS=1` über `xcodebuild test`
+  laufen lassen – `swift test` stürzt in TripKits Logging ab, weil dort keine App-Kennung existiert): alle sechs
+  Verbünde liefern Abfahrten, Fahrtverläufe und Verbindungen, alle außer VVV mit Echtzeit.
+
 ## Vergleich: ÖPNV Navigator (iOS) / TripKit
 
 Die iOS-App „ÖPNV Navigator“ (Alexander Albers) ist **nicht** quelloffen; offen ist nur ihre Datenbibliothek

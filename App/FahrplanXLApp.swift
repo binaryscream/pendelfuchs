@@ -13,6 +13,7 @@ struct FahrplanXLApp: App {
     @State private var recents: RecentsStore
     @AppStorage(AppearanceSetting.storageKey) private var appearance: AppearanceSetting = .system
     @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
+    @AppStorage(DataSources.useRegionalKey, store: AppGroup.defaults) private var useRegional = true
     @AppStorage(StopNameStyle.storageKey, store: AppGroup.defaults) private var stopNameStyle = StopNameStyle.withPlace
     @AppStorage(CancelledDisplay.hideKey, store: AppGroup.defaults) private var hideCancelled = false
     @AppStorage(DelayDisplay.storageKey, store: AppGroup.defaults) private var delayDisplay = DelayDisplay.badge
@@ -78,7 +79,7 @@ struct FahrplanXLApp: App {
                 .environment(savedTrips)
                 .environment(recents)
                 .environment(location)
-                .environment(\.transit, DataSources.router(useVVO: useVVO))
+                .environment(\.transit, DataSources.router(useVVO: useVVO, useRegional: useRegional))
                 .preferredColorScheme(appearance.colorScheme)
                 // Widgets zeigen standardmäßig den ersten Favoriten – nach Änderungen neu laden.
                 .onChange(of: favorites.stops) {
@@ -99,6 +100,7 @@ struct FahrplanXLApp: App {
                     }
                 }
                 .onChange(of: useVVO) { WidgetCenter.shared.reloadAllTimelines() }
+                .onChange(of: useRegional) { WidgetCenter.shared.reloadAllTimelines() }
                 .environment(\.stopNameStyle, stopNameStyle)
                 .onChange(of: stopNameStyle) { WidgetCenter.shared.reloadAllTimelines() }
                 .onChange(of: hideCancelled) { WidgetCenter.shared.reloadAllTimelines() }

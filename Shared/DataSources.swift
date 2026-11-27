@@ -12,10 +12,20 @@ enum DataSources {
         AppGroup.defaults.object(forKey: useVVOKey) as? Bool ?? true
     }
 
-    static func router(useVVO: Bool = DataSources.useVVO) -> ProviderRouter {
-        ProviderRouter(transitous: TransitousProvider(userAgent: TransitousProvider.userAgent(version: appVersion)),
-                       vvo: useVVO ? VVOProvider() : nil)
+    /// Ob in Sachsen, Bayern, Baden-Württemberg, NRW und Mecklenburg-Vorpommern die Auskunft der Verbünde
+    /// (über TripKit) genutzt wird.
+    static let useRegionalKey = "dataSources.useRegional"
+
+    static var useRegional: Bool {
+        AppGroup.defaults.object(forKey: useRegionalKey) as? Bool ?? true
     }
+
+    static func router(useVVO: Bool = DataSources.useVVO, useRegional: Bool = DataSources.useRegional) -> ProviderRouter {
+        ProviderRouter(transitous: TransitousProvider(userAgent: TransitousProvider.userAgent(version: appVersion)),
+                       vvo: useVVO ? VVOProvider() : nil, useRegional: useRegional)
+    }
+
+    static let tripKitURL = URL(string: "https://github.com/alexander-albers/tripkit")!
 
     /// Version aus der Info.plist (in App und Widget gleich).
     static var appVersion: String {

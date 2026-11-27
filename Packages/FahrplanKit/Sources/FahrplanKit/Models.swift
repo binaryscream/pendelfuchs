@@ -7,6 +7,13 @@ public enum ProviderID: String, Codable, Sendable, Hashable, CaseIterable {
     case vvo
     case db
     case transitous
+    // Regionale Verbünde über TripKit (siehe `RegionalNetwork`).
+    case vms
+    case vvv
+    case bayern
+    case nvbw
+    case nrw
+    case vmv
 
     /// Name für die Quellenangabe in der App.
     public var displayName: String {
@@ -14,8 +21,17 @@ public enum ProviderID: String, Codable, Sendable, Hashable, CaseIterable {
         case .vvo: "VVO"
         case .db: "Deutsche Bahn"
         case .transitous: "Transitous"
+        case .vms: "VMS"
+        case .vvv: "Vogtland (VVV)"
+        case .bayern: "Bayern-Fahrplan"
+        case .nvbw: "NVBW"
+        case .nrw: "mobil.nrw"
+        case .vmv: "MV-Fahrplan"
         }
     }
+
+    /// Regionaler Verbund, falls die Daten über TripKit kommen.
+    public var regionalNetwork: RegionalNetwork? { RegionalNetwork(rawValue: rawValue) }
 }
 
 /// WGS84-Koordinate (unabhängig von CoreLocation, damit auch Widgets/Tests sie nutzen können).

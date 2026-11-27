@@ -25,6 +25,8 @@ Verkehrsverbunds Oberelbe optional die VVO-WebAPI. Details und Nutzungsbedingung
   eingeplante Erinnerung vor der Abfahrt mit Knopf „Live-Aktivität starten“
 - **Widgets**: „Abfahrten“, „Strecke“ (mit Rückweg und Tausch-Knopf) und „Meine nächste Fahrt“
 - **Siri**: Abfahrten, Stand einer gemerkten Fahrt, Verbindung suchen, Live-Aktivität starten und beenden
+- **Regionale Verbünde** (Sachsen außerhalb des VVO, Bayern, Baden-Württemberg, NRW, Mecklenburg-Vorpommern) über
+  [TripKit](https://github.com/alexander-albers/tripkit) – zusätzlich zu Transitous, abschaltbar
 - **Karte** mit Streckenverlauf und Fahrzeugposition – in Dresden live aus [TLMS](https://tlm.solutions)
 - **Extras**: Kalendereintrag, Link zur DB-Buchung, Hilfe-Seite (FAQ), Datenschutzhinweis, Daten zurücksetzen
 
@@ -67,6 +69,8 @@ Benachrichtigungen bedeutet, steht unten und in der App unter Einstellungen → 
     - Vor einer Veröffentlichung: Datenschutzhinweis rechtlich prüfen lassen, E-Mail-Adresse eintragen
       (`AppInfo.contactEmail`; die Postanschrift steht schon drin), Datenschutz- und Support-Seite im Web für
       App Store Connect
+    - Regionale Verbünde über TripKit nutzen inoffizielle Schnittstellen – vor einer Veröffentlichung je Verbund
+      Erlaubnis klären oder auf offizielle Angebote umsteigen (`docs/DATENQUELLEN.md`, `docs/REGIONEN.md`)
     - Offizielle VVO-Schnittstellen prüfen (TRIAS, SIRI-ET) statt der inoffiziellen WebAPI – je nach Antwort des VVO
     - Ohne Zustimmung von TLMS die Live-Positionen vor einer Veröffentlichung abschalten (siehe `docs/ANFRAGEN.md`)
     - Am Gerät prüfen: Benachrichtigungen im Hintergrund, Erinnerung, Siri per Sprache, Live-Aktivität bei

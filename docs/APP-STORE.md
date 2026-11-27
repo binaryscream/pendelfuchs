@@ -77,7 +77,7 @@ GUT ZU WISSEN
 Weil es keinen eigenen Server gibt, holt die App neue Echtzeitdaten, solange sie offen ist und wenn iOS sie im Hintergrund kurz weckt. Benachrichtigungen können deshalb etwas später kommen; die Erinnerung vor der Abfahrt ist fest eingeplant und kommt pünktlich.
 
 DATENQUELLEN
-Fahrplandaten für ganz Deutschland von Transitous (u. a. DELFI e. V., CC BY 4.0), im Gebiet des Verkehrsverbunds Oberelbe zusätzlich vom VVO. Live-Fahrzeuge in Dresden von TLMS. Karten von OpenFreeMap, © OpenMapTiles, Kartendaten © OpenStreetMap-Mitwirkende.
+Fahrplandaten für ganz Deutschland von Transitous (u. a. DELFI e. V., CC BY 4.0), im Gebiet des Verkehrsverbunds Oberelbe zusätzlich vom VVO, in weiteren Regionen von den Verbünden VMS, VVV, Bayern-Fahrplan, NVBW, mobil.nrw und MV-Fahrplan. Live-Fahrzeuge in Dresden von TLMS. Karten von OpenFreeMap, © OpenMapTiles, Kartendaten © OpenStreetMap-Mitwirkende.
 
 Pendelfuchs ist Open Source (GPL-3.0) und kostenlos.
 ```
@@ -167,6 +167,7 @@ Vorschlag, in dieser Reihenfolge:
 - [ ] Domain, Website online, E-Mail-Adresse in App und Impressum eingetragen
 - [ ] Kontakt-URL im User-Agent für Transitous auf die Website umgestellt (`TransitousProvider.contactURL`)
 - [ ] Antworten von VVO, TLMS und Transitous umgesetzt (`docs/ANFRAGEN.md`)
+- [ ] Erlaubnis der regionalen Verbünde (TripKit) geklärt – oder „Regionale Verbünde“ vor dem Hochladen abschalten
 - [ ] Quelltext auf GitHub öffentlich (Bedingung von Transitous)
 - [ ] Rechtstexte geprüft
 - [ ] Bildschirmfotos aufgenommen

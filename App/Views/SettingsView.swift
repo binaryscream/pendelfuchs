@@ -39,6 +39,7 @@ enum AppearanceSetting: String, CaseIterable, Identifiable {
 
 struct SettingsView: View {
     @AppStorage(DataSources.useVVOKey, store: AppGroup.defaults) private var useVVO = true
+    @AppStorage(DataSources.useRegionalKey, store: AppGroup.defaults) private var useRegional = true
 
     var body: some View {
         NavigationStack {
@@ -70,10 +71,11 @@ struct SettingsView: View {
 
                 Section {
                     Toggle("VVO-Daten im VVO-Gebiet", isOn: $useVVO)
+                    Toggle("Regionale Verbünde", isOn: $useRegional)
                 } header: {
                     Text("Datenquellen")
                 } footer: {
-                    Text("Fahrplandaten für ganz Deutschland kommen von Transitous. Im Gebiet des Verkehrsverbunds Oberelbe (Dresden, Meißen, Pirna, Bautzen …) kann die App zusätzlich die Daten des VVO nutzen – mit Fahrpreisen und Auslastung.")
+                    Text("Fahrplandaten für ganz Deutschland kommen von Transitous. Im Gebiet des Verkehrsverbunds Oberelbe (Dresden, Meißen, Pirna, Bautzen …) kann die App zusätzlich die Daten des VVO nutzen – mit Fahrpreisen und Auslastung. „Regionale Verbünde“ fragt in Chemnitz/Mittelsachsen, im Vogtland, in Bayern, Baden-Württemberg, Nordrhein-Westfalen und Mecklenburg-Vorpommern die Auskunft des jeweiligen Verbunds ab. Klappt das nicht, springt Transitous ein.")
                 }
 
                 Section {
@@ -94,6 +96,13 @@ struct SettingsView: View {
                     }
                     if useVVO {
                         LabeledContent("VVO-Gebiet", value: "Verkehrsverbund Oberelbe")
+                    }
+                    if useRegional {
+                        LabeledContent("Regionale Verbünde",
+                                       value: RegionalNetwork.allCases.map(\.providerID.displayName).joined(separator: ", "))
+                        Link(destination: DataSources.tripKitURL) {
+                            LabeledContent("Anbindung", value: "TripKit (MIT-Lizenz)")
+                        }
                     }
                 } header: {
                     Text("Quellenangaben")
