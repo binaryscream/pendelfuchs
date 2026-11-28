@@ -187,17 +187,38 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
 
     /// Nächster Termin der regelmäßigen Fahrt. Eine gerade abgefahrene Fahrt zählt noch
     /// `grace` lang als aktuell, damit man sie unterwegs weiter sieht.
+    /// - Parameter schedule: Feiertage und Pause (Urlaub), an denen die Fahrt aussetzt.
     public func nextOccurrence(after now: Date = .now, grace: TimeInterval = 15 * 60,
-                               calendar: Calendar = .current) -> Date? {
+                               calendar: Calendar = .current, schedule: TripSchedule = .current) -> Date? {
         guard isRegular else { return nil }
         let today = calendar.startOfDay(for: now)
         // Ab gestern: Eine Fahrt kurz vor Mitternacht zählt nach 0 Uhr noch `grace` lang als aktuell.
-        for offset in -1...7 {
+        // Weit genug voraus, damit auch nach einem längeren Urlaub ein Termin gefunden wird.
+        for offset in -1...Self.lookAheadDays {
             guard let day = calendar.date(byAdding: .day, value: offset, to: today),
                   weekdays.contains(Weekday(date: day, calendar: calendar)),
+                  schedule.skipReason(on: day, origin: origin, calendar: calendar) == nil,
                   let candidate = departure.date(on: day, calendar: calendar)
             else { continue }
             if candidate >= now.addingTimeInterval(-grace) { return candidate }
+        }
+        return nil
+    }
+
+    static let lookAheadDays = 70
+
+    /// Setzt die Fahrt am nächsten gewählten Wochentag aus (Feiertag, Pause)? Dann der Grund – für Hinweise
+    /// wie „Heute Feiertag“.
+    public func skippedOccurrence(after now: Date = .now, calendar: Calendar = .current,
+                                  schedule: TripSchedule = .current) -> (day: Date, reason: TripSchedule.SkipReason)? {
+        guard isRegular else { return nil }
+        let today = calendar.startOfDay(for: now)
+        for offset in 0...7 {
+            guard let day = calendar.date(byAdding: .day, value: offset, to: today),
+                  weekdays.contains(Weekday(date: day, calendar: calendar)),
+                  let candidate = departure.date(on: day, calendar: calendar), candidate >= now
+            else { continue }
+            return schedule.skipReason(on: day, origin: origin, calendar: calendar).map { (day, $0) }
         }
         return nil
     }

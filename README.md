@@ -23,6 +23,8 @@ und Stadtbus in Dresden: [TLMS](https://tlm.solutions). Details und Nutzungsbedi
   Gehgeschwindigkeit, Verkehrsmittel), zuletzt gesuchten Strecken und „Aktueller Standort“ als nächste Haltestelle
 - **Meine Fahrten**: Verbindungen merken, als regelmäßige Fahrt an Wochentagen speichern; Verpass-Assistent
   (Ersatz bei Ausfall oder verpasstem Anschluss) mit den Suchoptionen der Fahrt
+- **Feiertage & Urlaub**: Regelmäßige Fahrten setzen an gesetzlichen Feiertagen aus (Bundesland der
+  Starthaltestelle, auf dem Gerät berechnet) und während einer Pause mit Anfang und Ende
 - **Live-Aktivität** (Sperrbildschirm, Dynamic Island mit Countdown) – Start per Knopf, Widget, Erinnerung,
   Siri oder Kurzbefehle-Automation
 - **Benachrichtigungen** (lokal, ohne Server): Ausfall, Verspätung, Gleiswechsel, Anschlussprobleme und eine fest

@@ -2,6 +2,7 @@
 
 import FahrplanKit
 import SwiftUI
+import WidgetKit
 
 // MARK: - Tab „Meine Fahrten“
 
@@ -18,6 +19,11 @@ struct MyTripsView: View {
     /// Fahrt, deren Löschen gerade bestätigt werden soll.
     @State private var deleting: SavedTrip?
     @Environment(\.stopNameStyle) private var nameStyle
+    /// Nur zum Beobachten: Ändert sich die Pause oder die Feiertagsregel, wird die Liste neu gezeichnet.
+    @AppStorage(TripSchedule.pauseFromKey, store: AppGroup.defaults) private var pauseFrom = 0.0
+    @AppStorage(TripSchedule.pauseUntilKey, store: AppGroup.defaults) private var pauseUntil = 0.0
+    @AppStorage(TripSchedule.skipHolidaysKey, store: AppGroup.defaults) private var skipHolidays = true
+    @AppStorage(TripSchedule.stateKey, store: AppGroup.defaults) private var holidayState = ""
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -56,6 +62,22 @@ struct MyTripsView: View {
         let regular = store.regular(now: now)
         let bookmarked = store.bookmarked
         List {
+            if !regular.isEmpty, let pause = TripSchedule.current.activePause(on: now) {
+                Section {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label(pauseText(pause, now: now), systemImage: "beach.umbrella")
+                            .foregroundStyle(.orange)
+                        Button("Pause beenden") {
+                            pauseFrom = 0
+                            pauseUntil = 0
+                            WidgetCenter.shared.reloadAllTimelines()
+                            Task { await TripNotifier.shared.scheduleReminders() }
+                        }
+                    }
+                } footer: {
+                    Text("Regelmäßige Fahrten setzen aus. Ändern unter Einstellungen → Feiertage & Urlaub.")
+                }
+            }
             if !regular.isEmpty {
                 Section("Regelmäßig") {
                     ForEach(regular) { row($0, now: now) }
@@ -80,6 +102,15 @@ struct MyTripsView: View {
                 }
             }
         }
+    }
+
+    private func pauseText(_ pause: ClosedRange<Date>, now: Date) -> String {
+        let until = pause.upperBound.formatted(.dateTime.weekday(.abbreviated).day().month(.wide))
+        if Calendar.current.startOfDay(for: pause.lowerBound) > now {
+            let from = pause.lowerBound.formatted(.dateTime.weekday(.abbreviated).day().month(.wide))
+            return "Pause vom \(from) bis einschließlich \(until)"
+        }
+        return "Pause bis einschließlich \(until)"
     }
 
     private func row(_ saved: SavedTrip, now: Date) -> some View {
@@ -138,6 +169,14 @@ struct SavedTripRow: View {
                 .labelStyle(.titleAndIcon)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
+                // Feiertag am nächsten gewählten Wochentag (die Pause steht schon über der Liste).
+                if let skipped = saved.skippedOccurrence(after: now), case .holiday(let name) = skipped.reason {
+                    Label("\(relativeDay(skipped.day, now: now).capitalizedFirst) Feiertag: \(name)",
+                          systemImage: "calendar.badge.minus")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .labelStyle(.titleAndIcon)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -526,5 +565,8 @@ func relativeDay(_ date: Date, now: Date) -> String {
     if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now), calendar.isDate(date, inSameDayAs: tomorrow) {
         return "morgen"
     }
+    // Ab einer Woche voraus wäre der Wochentag allein mehrdeutig (z. B. der erste Termin nach dem Urlaub).
+    let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: date)).day ?? 0
+    if days >= 7 { return date.formatted(.dateTime.weekday(.abbreviated).day().month(.twoDigits)) }
     return Weekday(date: date, calendar: calendar).fullName
 }

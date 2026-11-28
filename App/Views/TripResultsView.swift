@@ -221,7 +221,7 @@ func durationText(_ interval: TimeInterval) -> String {
     return minutes < 60 ? "\(minutes) min" : "\(minutes / 60) h \(String(format: "%02d", minutes % 60)) min"
 }
 
-private extension String {
+extension String {
     /// „morgen“ → „Morgen“ (Wochentage sind schon großgeschrieben).
     var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
 }

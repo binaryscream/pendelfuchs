@@ -50,6 +50,11 @@ struct SettingsView: View {
                         Label("Benachrichtigungen", systemImage: "bell.badge")
                     }
                     NavigationLink {
+                        ScheduleSettingsView()
+                    } label: {
+                        Label("Feiertage & Urlaub", systemImage: "beach.umbrella")
+                    }
+                    NavigationLink {
                         DisplaySettingsView()
                     } label: {
                         Label("Anzeige", systemImage: "textformat.size")
