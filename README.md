@@ -85,6 +85,12 @@ Benachrichtigungen bedeutet, steht unten und in der App unter Einstellungen → 
       Fahrten (`TripSnapshotStore`). Vorher im Matrix-Raum von Transitous fragen, ob Abfragen auf Vorrat (einmal
       täglich je Haltestelle) in Ordnung sind. Nicht über VVO/TripKit. Stufe 2 (ganze Linien aus GTFS mit
       Offline-Routensuche) bräuchte einen eigenen Server zum Aufbereiten – bewusst nicht geplant
+    - Idee: Standort-Funktionen zum Einschalten (Stand 28.11.2026, noch nicht begonnen): zuerst Ausstiegsalarm,
+      später Verpass-Tracker (siehe „Verpasster Anschluss, Stufe 2“). Bedingungen: standardmäßig aus, je
+      Funktion ein Schalter mit Hinweis (Akku, Standort „Immer“); der Standort wird nur auf dem Gerät mit den
+      Haltestellen-Koordinaten verglichen und verlässt es nicht; geortet wird nur rund um eine laufende Fahrt.
+      Dazu Datenschutzhinweis (App und Website) und Prüfnotizen für Apple anpassen. Kein geteilter Live-Standort
+      (bräuchte einen Server)
     - Idee: Live-Aktivität zur Erinnerungszeit von selbst starten (geplanter Start, seit iOS 26 in ActivityKit) –
       nächstes größeres Vorhaben, Zuverlässigkeit nur am Gerät prüfbar
     - Idee: Link beim Teilen, der die Verbindung beim Empfänger in der App öffnet (Universal Links, braucht eine
