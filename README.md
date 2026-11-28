@@ -24,7 +24,8 @@ und Stadtbus in Dresden: [TLMS](https://tlm.solutions). Details und Nutzungsbedi
 - **Meine Fahrten**: Verbindungen merken, als regelmäßige Fahrt an Wochentagen speichern; Verpass-Assistent
   (Ersatz bei Ausfall oder verpasstem Anschluss) mit den Suchoptionen der Fahrt
 - **Feiertage & Urlaub**: Regelmäßige Fahrten setzen an gesetzlichen Feiertagen aus (Bundesland der
-  Starthaltestelle, auf dem Gerät berechnet) und während einer Pause mit Anfang und Ende
+  Starthaltestelle oder fest gewählt, auf dem Gerät berechnet; Ausnahme je Fahrt) und während einer Pause mit
+  Anfang und Ende
 - **Live-Aktivität** (Sperrbildschirm, Dynamic Island mit Countdown) – Start per Knopf, Widget, Erinnerung,
   Siri oder Kurzbefehle-Automation
 - **Benachrichtigungen** (lokal, ohne Server): Ausfall, Verspätung, Gleiswechsel, Anschlussprobleme und eine fest
@@ -34,7 +35,8 @@ und Stadtbus in Dresden: [TLMS](https://tlm.solutions). Details und Nutzungsbedi
 - **Regionale Verbünde** (Sachsen außerhalb des VVO, Bayern, Baden-Württemberg, NRW, Mecklenburg-Vorpommern) über
   [TripKit](https://github.com/alexander-albers/tripkit) – zusätzlich zu Transitous, zusammen mit dem VVO abschaltbar
 - **Karte** mit Streckenverlauf und Fahrzeugposition – in Dresden live aus [TLMS](https://tlm.solutions)
-- **Extras**: Kalendereintrag, Link zur DB-Buchung, Hilfe-Seite (FAQ), Datenschutzhinweis, Daten zurücksetzen
+- **Ohne Netz**: gemerkte Fahrten zeigen den zuletzt geladenen Stand mit Uhrzeit („Stand 18:12“)
+- **Extras**: Verbindung als Text teilen, Rückfahrt mit einem Tipp suchen, Kalendereintrag, Link zur DB-Buchung, Hilfe-Seite (FAQ), Datenschutzhinweis, Daten zurücksetzen
 
 Die App hat keinen eigenen Server, kein Konto, keine Werbung und kein Tracking. Was das für Live-Aktivität und
 Benachrichtigungen bedeutet, steht unten und in der App unter Einstellungen → „Hilfe & Fragen“.
@@ -77,6 +79,16 @@ Benachrichtigungen bedeutet, steht unten und in der App unter Einstellungen → 
       ActivityKit kennt kein vorab geplantes Ende (geprüft 11/2026); zuverlässig ginge es nur mit Push-Server
     - Push-Server (APNs) für pünktliche Meldungen und Live-Updates: seit dem bezahlten Entwicklerkonto möglich,
       bewusst noch nicht gebaut (Betrieb, Datenschutz)
+    - Idee: Fahrpläne offline (Stand 28.11.2026, noch nicht begonnen). Stufe 1, machbar ohne Server: Abfahrten
+      einer Favoriten-Haltestelle für etwa 7 Tage über Transitous auf Vorrat laden („Offline speichern“), ohne
+      Netz als „laut Fahrplan, Stand vom …“ zeigen, mit Ablaufdatum – passt zum Zwischenspeicher der gemerkten
+      Fahrten (`TripSnapshotStore`). Vorher im Matrix-Raum von Transitous fragen, ob Abfragen auf Vorrat (einmal
+      täglich je Haltestelle) in Ordnung sind. Nicht über VVO/TripKit. Stufe 2 (ganze Linien aus GTFS mit
+      Offline-Routensuche) bräuchte einen eigenen Server zum Aufbereiten – bewusst nicht geplant
+    - Idee: Live-Aktivität zur Erinnerungszeit von selbst starten (geplanter Start, seit iOS 26 in ActivityKit) –
+      nächstes größeres Vorhaben, Zuverlässigkeit nur am Gerät prüfbar
+    - Idee: Link beim Teilen, der die Verbindung beim Empfänger in der App öffnet (Universal Links, braucht eine
+      Datei auf pendelfuchs.de) – sinnvoll, sobald die App im App Store ist
     - Vor einer Veröffentlichung: Datenschutzhinweis und Impressum rechtlich prüfen lassen, Version 1.0 setzen,
       App-Store-Eintrag ausfüllen (`docs/APP-STORE.md`)
     - Am Gerät prüfen (läuft über TestFlight seit 27.11.2026): Benachrichtigungen im Hintergrund, dringliche

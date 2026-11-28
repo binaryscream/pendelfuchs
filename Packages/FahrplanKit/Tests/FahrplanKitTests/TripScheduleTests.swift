@@ -92,6 +92,23 @@ import Testing
         #expect(calendar.component(.day, from: off) == 18, "abgeschaltet: fährt auch am Feiertag")
     }
 
+    @Test func tripCanRunOnHolidaysButStillPauses() throws {
+        var shift = saved(from: pirna)
+        shift.runsOnHolidays = true
+        let tuesdayEvening = day(2026, 11, 17, hour: 20)
+        let next = try #require(shift.nextOccurrence(after: tuesdayEvening, calendar: calendar, schedule: TripSchedule()))
+        #expect(calendar.component(.day, from: next) == 18, "fährt auch am Buß- und Bettag")
+        #expect(shift.skippedOccurrence(after: day(2026, 11, 18, hour: 6), calendar: calendar,
+                                        schedule: TripSchedule()) == nil)
+        // Die Pause gilt trotzdem.
+        let paused = TripSchedule(pause: day(2026, 11, 18, hour: 0)...day(2026, 11, 18, hour: 0))
+        let after = try #require(shift.nextOccurrence(after: tuesdayEvening, calendar: calendar, schedule: paused))
+        #expect(calendar.component(.day, from: after) == 19)
+        // Ausgeschaltet wird nichts gespeichert – alte Daten bleiben gleich.
+        shift.runsOnHolidays = false
+        #expect(shift.onHolidays == nil)
+    }
+
     @Test func chosenStateOverridesTheStop() throws {
         // Wohnen in Sachsen, arbeiten nach bayerischem Kalender (oder umgekehrt): das gewählte Land zählt.
         let tuesdayEvening = day(2026, 11, 17, hour: 20)

@@ -78,6 +78,10 @@ struct SavedTripStatusIntent: AppIntent {
             return .result(dialog: "\(title): \(note). \(SiriText.trip(trip, now: now))")
         case .notFound:
             return .result(dialog: "\(title): Die Verbindung wurde zur gewohnten Zeit nicht gefunden.")
+        case .cached(let trip, _, let fetchedAt):
+            // Ohne Netz: der letzte Stand, klar als solcher benannt.
+            let time = fetchedAt.formatted(date: .omitted, time: .shortened)
+            return .result(dialog: "\(title): Gerade sind keine Fahrplandaten erreichbar. Stand \(time) Uhr: \(SiriText.trip(trip, now: now))")
         case .failed:
             return .result(dialog: "\(title): Gerade sind keine Fahrplandaten erreichbar.")
         case .idle, .loading:

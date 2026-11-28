@@ -149,7 +149,7 @@ struct TripDetailView: View {
 
             // Ganz unten: Kalender und Buchung.
             if trip.arrival.expectedTime > .now {
-                TripActionsSection(trip: trip)
+                TripActionsSection(trip: trip, returnQuery: query.reversed())
             }
         }
         .listSectionSpacing(.compact)

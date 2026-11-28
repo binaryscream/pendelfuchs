@@ -5,15 +5,24 @@ import EventKitUI
 import FahrplanKit
 import SwiftUI
 
-/// „In Kalender eintragen“ und „Bei der DB buchen“ für eine Verbindung.
+/// „Teilen“, „Rückfahrt suchen“, „In Kalender eintragen“ und „Bei der DB buchen“ für eine Verbindung.
 struct TripActionsSection: View {
     let trip: Trip
+    /// Suche für die Rückfahrt (Start und Ziel getauscht); ohne sie gibt es den Knopf nicht.
+    var returnQuery: TripQuery?
 
     @Environment(\.stopNameStyle) private var style
     @State private var showCalendar = false
 
     var body: some View {
         Section {
+            let text = trip.shareText(style: style)
+            if !text.isEmpty {
+                ShareLink(item: text) {
+                    Label("Verbindung teilen", systemImage: "square.and.arrow.up")
+                }
+            }
+            if let returnQuery { ReturnTripButton(query: returnQuery) }
             Button {
                 showCalendar = true
             } label: {
@@ -31,6 +40,25 @@ struct TripActionsSection: View {
             }
         } footer: {
             Text("Öffnet die Verbindungssuche von bahn.de bzw. den DB Navigator mit Start, Ziel und Uhrzeit. Die App selbst verkauft keine Tickets.")
+        }
+    }
+}
+
+/// „Rückfahrt suchen“: öffnet die Verbindungssuche mit getauschtem Start und Ziel, ab jetzt.
+struct ReturnTripButton: View {
+    /// Die schon umgedrehte Suche (siehe `TripQuery.reversed`, `SavedTrip.returnQuery`).
+    let query: TripQuery
+
+    @Environment(\.showRoute) private var showRoute
+
+    var body: some View {
+        Button {
+            // Mit der aktuellen Uhrzeit – die Ansicht kann schon länger offen sein.
+            var now = query
+            now.time = .now
+            showRoute(RouteLink(query: now, trip: nil))
+        } label: {
+            Label("Rückfahrt suchen", systemImage: "arrow.uturn.backward")
         }
     }
 }

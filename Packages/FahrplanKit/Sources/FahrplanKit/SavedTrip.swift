@@ -142,6 +142,23 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
         set { notifications = newValue }
     }
 
+    /// Fährt auch an Feiertagen (Ausnahme von „An Feiertagen aussetzen“). Optional gespeichert, damit ältere
+    /// Daten lesbar bleiben; `nil` = setzt an Feiertagen aus.
+    public var onHolidays: Bool?
+
+    public var runsOnHolidays: Bool {
+        get { onHolidays ?? false }
+        set { onHolidays = newValue ? true : nil }
+    }
+
+    /// Warum die Fahrt an diesem Tag aussetzt (Pause, Feiertag) – `nil`, wenn sie fährt.
+    public func skipReason(on day: Date, calendar: Calendar = .current,
+                           schedule: TripSchedule = .current) -> TripSchedule.SkipReason? {
+        guard let reason = schedule.skipReason(on: day, origin: origin, calendar: calendar) else { return nil }
+        if case .holiday = reason, runsOnHolidays { return nil }
+        return reason
+    }
+
     /// Sucheinstellungen, mit denen die Fahrt gefunden wurde (Deutschlandticket, Umstiege, Verkehrsmittel …).
     /// Optional gespeichert, damit ältere Daten lesbar bleiben; `nil` = Standard.
     public var searchOptions: TripOptions?
@@ -197,7 +214,7 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
         for offset in -1...Self.lookAheadDays {
             guard let day = calendar.date(byAdding: .day, value: offset, to: today),
                   weekdays.contains(Weekday(date: day, calendar: calendar)),
-                  schedule.skipReason(on: day, origin: origin, calendar: calendar) == nil,
+                  skipReason(on: day, calendar: calendar, schedule: schedule) == nil,
                   let candidate = departure.date(on: day, calendar: calendar)
             else { continue }
             if candidate >= now.addingTimeInterval(-grace) { return candidate }
@@ -218,7 +235,7 @@ public struct SavedTrip: Codable, Sendable, Hashable, Identifiable {
                   weekdays.contains(Weekday(date: day, calendar: calendar)),
                   let candidate = departure.date(on: day, calendar: calendar), candidate >= now
             else { continue }
-            return schedule.skipReason(on: day, origin: origin, calendar: calendar).map { (day, $0) }
+            return skipReason(on: day, calendar: calendar, schedule: schedule).map { (day, $0) }
         }
         return nil
     }

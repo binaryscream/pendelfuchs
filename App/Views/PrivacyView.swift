@@ -197,6 +197,7 @@ struct PrivacyView: View {
     /// Gemerkte Fahrten samt allem, was an ihnen hängt: Live-Aktivitäten, Erinnerungen, Meldungsgedächtnis.
     private func clearSavedTrips() {
         savedTrips.removeAll()
+        AppGroup.snapshots.removeAll()
         TripNotifier.shared.forgetMemories()
         Task {
             await TripActivityManager.shared.endAll()

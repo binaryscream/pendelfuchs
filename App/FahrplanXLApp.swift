@@ -80,6 +80,10 @@ struct FahrplanXLApp: App {
                 .environment(recents)
                 .environment(location)
                 .environment(\.transit, DataSources.router(useNetworks: useNetworks))
+                .environment(\.showRoute) { link in
+                    selectedTab = .trips
+                    openRoute = link
+                }
                 .preferredColorScheme(appearance.colorScheme)
                 // Widgets zeigen standardmäßig den ersten Favoriten – nach Änderungen neu laden.
                 .onChange(of: favorites.stops) {
@@ -153,4 +157,7 @@ enum AppTab: String, Hashable {
 extension EnvironmentValues {
     /// Aktive Datenquelle (wählt je Anfrage zwischen Transitous und VVO).
     @Entry var transit: any TransitProvider = DataSources.router()
+    /// Öffnet die Verbindungssuche mit einer Strecke (z. B. für die Rückfahrt) – wechselt dazu in den Tab
+    /// „Verbindungen“.
+    @Entry var showRoute: @MainActor @Sendable (RouteLink) -> Void = { _ in }
 }

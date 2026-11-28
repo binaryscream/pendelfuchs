@@ -12,6 +12,13 @@ enum AppGroup {
     /// SwiftUI (`@AppStorage`) Änderungen aus anderen Ansichten nicht sofort. `UserDefaults` ist thread-sicher.
     nonisolated(unsafe) static let defaults: UserDefaults = UserDefaults(suiteName: id) ?? .standard
 
+    /// Zuletzt geladener Stand gemerkter Fahrten (für die Anzeige ohne Netz), im Cache-Ordner der App-Gruppe.
+    static let snapshots: TripSnapshotStore = {
+        let base = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: id)
+            ?? FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        return TripSnapshotStore(directory: base.appendingPathComponent("Library/Caches/TripSnapshots"))
+    }()
+
     /// Schlüssel, die früher in `UserDefaults.standard` lagen.
     private static let migratedKeys = ["favoriteStops.v1", "savedTrips.v1"]
 

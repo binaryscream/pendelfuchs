@@ -204,7 +204,7 @@ struct SavedTripDetailView: View {
 
     private var liveTrip: Trip? {
         switch live {
-        case .found(let trip), .rerouted(let trip, _): trip
+        case .found(let trip), .rerouted(let trip, _), .cached(let trip, _, _): trip
         default: nil
         }
     }
@@ -255,6 +255,19 @@ struct SavedTripDetailView: View {
                             NavigationLink(value: MyTripsRoute.detail(trip, saved.query(on: upcoming))) {
                                 TripRow(trip: trip, now: .now)
                             }
+                        case .cached(let trip, let note, let fetchedAt):
+                            Label("Keine Verbindung – Stand \(fetchedAt.formatted(date: .omitted, time: .shortened)) Uhr",
+                                  systemImage: "wifi.slash")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            if let note {
+                                Label(note, systemImage: "arrow.triangle.branch")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.orange)
+                            }
+                            NavigationLink(value: MyTripsRoute.detail(trip, saved.query(on: upcoming))) {
+                                TripRow(trip: trip, now: .now)
+                            }
                         case .notFound:
                             Text("Diese Verbindung wurde zur gewohnten Zeit nicht gefunden – vielleicht hat sich der Fahrplan geändert.")
                                 .foregroundStyle(.secondary)
@@ -282,7 +295,9 @@ struct SavedTripDetailView: View {
                         ForEach(Array(trip.rides.enumerated()), id: \.offset) { _, leg in
                             RideSection(leg: leg, now: now)
                         }
-                        TripActionsSection(trip: trip)
+                        TripActionsSection(trip: trip, returnQuery: saved.returnQuery())
+                    } else {
+                        Section { ReturnTripButton(query: saved.returnQuery()) }
                     }
                 }
 
@@ -365,6 +380,16 @@ struct SavedTripSettingsSections: View {
                 Text(saved.isRegular
                      ? "\(saved.weekdays.summary) um \(saved.departure.formatted)"
                      : "Wähle die Tage, an denen du diese Fahrt nimmst.")
+            }
+
+            if saved.isRegular, AppGroup.defaults.object(forKey: TripSchedule.skipHolidaysKey) as? Bool ?? true {
+                Section {
+                    Toggle(isOn: binding(saved, \.runsOnHolidays)) {
+                        Label("Fährt auch an Feiertagen", systemImage: "calendar.badge.checkmark")
+                    }
+                } footer: {
+                    Text("Ausnahme für diese Fahrt: Sie setzt an gesetzlichen Feiertagen nicht aus. Eine Pause (Urlaub) gilt trotzdem.")
+                }
             }
 
             Section {
@@ -491,16 +516,29 @@ enum LiveState: Equatable {
     /// Gemerkte Fahrt nicht fahrbar – stattdessen diese Verbindung (mit Hinweis).
     case rerouted(Trip, String)
     case notFound
+    /// Keine Verbindung zum Fahrplandienst – der zuletzt geladene Stand (mit Umplan-Hinweis und Uhrzeit).
+    case cached(Trip, note: String?, fetchedAt: Date)
     case failed(String)
 
-    /// Sucht die gemerkte Verbindung am angegebenen Tag und gleicht sie ab.
+    /// Sucht die gemerkte Verbindung am angegebenen Tag und gleicht sie ab. Ohne Netz: der letzte Stand.
     static func load(_ saved: SavedTrip, on day: Date, using transit: any TransitProvider) async -> LiveState {
+        let occurrence = saved.departure.date(on: day) ?? day
+        let snapshots = AppGroup.snapshots
         do {
+            #if DEBUG
+            // Nur in Testbuilds: Start mit `-simulateOffline` täuscht fehlendes Netz vor (Anzeige des letzten Stands).
+            if ProcessInfo.processInfo.arguments.contains("-simulateOffline") { throw URLError(.notConnectedToInternet) }
+            #endif
             let lookup = try await SavedTripLookup.lookup(saved, on: day, using: transit, suite: AppGroup.id)
             guard let resolved = lookup.resolved else { return .notFound }
+            snapshots.save(resolved.trip, note: resolved.note, for: saved.id, occurrence: occurrence)
+            snapshots.prune()
             if let note = resolved.note { return .rerouted(resolved.trip, note) }
             return .found(resolved.trip)
         } catch {
+            if let snapshot = snapshots.load(for: saved.id, occurrence: occurrence) {
+                return .cached(snapshot.trip, note: snapshot.note, fetchedAt: snapshot.fetchedAt)
+            }
             return .failed(error.localizedDescription)
         }
     }
@@ -526,6 +564,9 @@ private struct LiveBadge: View {
             }
         case .rerouted:
             badge("Umgeplant", .orange)
+        case .cached(_, _, let fetchedAt):
+            // Alter Stand – keine Echtzeit behaupten.
+            badge("Stand \(fetchedAt.formatted(date: .omitted, time: .shortened))", .gray)
         case .notFound:
             Image(systemName: "questionmark.circle").foregroundStyle(.secondary)
                 .accessibilityLabel("Verbindung nicht gefunden")

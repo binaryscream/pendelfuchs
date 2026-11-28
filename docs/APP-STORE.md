@@ -190,6 +190,32 @@ Bekannt: Im Hintergrund prüft die App nur, wenn iOS sie weckt (oft etwa alle 15
 Feedback: in der App einen Screenshot machen und „Feedback senden“ wählen – oder per E-Mail an kontakt@pendelfuchs.de.
 ```
 
+### Update-Hinweise je Build („Was zu testen ist“)
+
+In App Store Connect: **TestFlight → Build antippen → Testdetails → „Was zu testen ist“**. Die Tester sehen den
+Text in der TestFlight-App beim Build. Neueste zuerst.
+
+**Build 0.1.0 (3)**
+```
+Neu in diesem Build:
+
+• Feiertage: Regelmäßige Fahrten setzen an gesetzlichen Feiertagen aus – keine Erinnerung, keine Meldungen. Das Bundesland erkennt die App an der Starthaltestelle; unter Einstellungen → „Feiertage & Urlaub“ lässt es sich fest wählen, dort steht auch die Liste der kommenden Feiertage. Ausnahme je Fahrt: „Fährt auch an Feiertagen“.
+• Urlaub: Pause mit Anfang und Ende. Solange setzen alle regelmäßigen Fahrten aus, danach geht es von selbst weiter.
+• Verbindung teilen: schickt die Verbindung als lesbaren Text, z. B. per WhatsApp oder Nachrichten.
+• Rückfahrt suchen: ein Tipp sucht dieselbe Strecke in Gegenrichtung.
+• Ohne Netz: Gemerkte Fahrten zeigen den zuletzt geladenen Stand („Stand 18:12“) statt einer Fehlermeldung.
+• Dringliche Meldungen: neuer Testknopf unter Einstellungen → Benachrichtigungen.
+
+Bitte ausprobieren:
+• Stimmen die angezeigten Feiertage für dein Bundesland?
+• Pause einschalten: Verschwinden Erinnerungen, und zeigt „Meine Fahrten“ den ersten Termin danach?
+• Flugmodus an, dann „Meine Fahrten“ öffnen: Erscheint der letzte Stand?
+• „Nicht stören“ an, dann „Test: dringliche Meldung“: Kommt sie trotzdem?
+• Teilen und Rückfahrt (ganz unten in einer Verbindung).
+
+Feedback: Screenshot machen und „Feedback senden“ wählen – oder an kontakt@pendelfuchs.de.
+```
+
 ## Bildschirmfotos
 
 Pflicht ist ein Satz für das **6,9-Zoll-iPhone** (Hochformat **1320 × 2868** Pixel, PNG oder JPEG, ohne
